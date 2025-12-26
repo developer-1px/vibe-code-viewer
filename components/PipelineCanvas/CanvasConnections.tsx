@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { CanvasNode } from '../../entities/VariableNode';
+import { getEdgeColor } from '../../entities/VariableNode/lib/styleUtils';
 
 interface CanvasConnectionsProps {
     layoutLinks: {source: string, target: string}[];
@@ -105,6 +106,7 @@ const CanvasConnections: React.FC<CanvasConnectionsProps> = ({ layoutLinks, layo
     
           // 3. Draw Bezier for each end point
           const isCrossFile = consumerNode.filePath !== dependencyNode.filePath;
+          const edgeColor = getEdgeColor(dependencyNode.type);
 
           endPoints.forEach((endPoint, idx) => {
               const endX = endPoint.x;
@@ -120,7 +122,7 @@ const CanvasConnections: React.FC<CanvasConnectionsProps> = ({ layoutLinks, layo
                     key={`${link.source}-${link.target}-${idx}`}
                     d={d}
                     fill="none"
-                    stroke={isCrossFile ? "#94a3b8" : "#38bdf8"}
+                    stroke={isCrossFile ? "#94a3b8" : edgeColor}
                     strokeWidth={isHorizontal ? "3" : "2"}
                     strokeOpacity={isHorizontal ? "0.8" : "0.5"}
                     strokeDasharray={isCrossFile ? "8,8" : "none"}

@@ -38,3 +38,17 @@ export const getSlotColor = (type: VariableNode['type']): string => {
             return 'bg-slate-500/60 border-slate-400/80 shadow-slate-500/30 group-hover/line:border-slate-300';
     }
 };
+
+export const getEdgeColor = (type: VariableNode['type']): string => {
+    switch (type) {
+        case 'template': return '#ec4899'; // pink-500
+        case 'computed': return '#0ea5e9'; // sky-500
+        case 'ref': return '#10b981'; // emerald-500
+        case 'call': return '#eab308'; // yellow-500
+        case 'module': return '#f97316'; // orange-500
+        case 'function': return '#f59e0b'; // amber-500
+        case 'hook': return '#8b5cf6'; // violet-500
+        case 'store': return '#14b8a6'; // teal-500
+        default: return '#38bdf8'; // sky-400 (default blue)
+    }
+};
