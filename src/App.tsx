@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import Sidebar from './components/Sidebar.tsx';
 import PipelineCanvas from './widgets/PipelineCanvas.tsx';
@@ -27,24 +27,17 @@ const App: React.FC = () => {
   }, []);
 
   // Parse project on file change and store in atom
-  const graphData = useMemo(() => {
+  useMemo(() => {
     try {
       const data = parseVueCode(files, entryFile);
       setParseError(null);
       setGraphData(data);
-      return data;
     } catch (e: any) {
       console.warn("Project Parse Error:", e);
       setParseError(e.message || "Syntax Error");
-      setGraphData(null);
-      return null;
+      // Keep previous valid data in atom on error
     }
   }, [files, entryFile, setGraphData]);
-
-  const [lastValidData, setLastValidData] = useState(graphData);
-  if (graphData && graphData !== lastValidData) {
-    setLastValidData(graphData);
-  }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-vibe-dark text-slate-200 font-sans">
@@ -93,7 +86,7 @@ const App: React.FC = () => {
 
         {/* Canvas Area */}
         <div className="flex-1 relative">
-          {lastValidData && <PipelineCanvas />}
+          <PipelineCanvas />
         </div>
       </div>
     </div>
