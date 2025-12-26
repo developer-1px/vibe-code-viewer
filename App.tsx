@@ -8,6 +8,7 @@ import { Box, AlertCircle, PanelLeft } from 'lucide-react';
 const App: React.FC = () => {
   const [files, setFiles] = useState<Record<string, string>>(DEFAULT_FILES);
   const [activeFile, setActiveFile] = useState<string>(DEFAULT_ENTRY_FILE);
+  const [entryFile, setEntryFile] = useState<string>(DEFAULT_ENTRY_FILE);
   const [parseError, setParseError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
@@ -27,7 +28,7 @@ const App: React.FC = () => {
   // Parse project on file change
   const graphData = useMemo(() => {
     try {
-      const data = parseVueCode(files, DEFAULT_ENTRY_FILE);
+      const data = parseVueCode(files, entryFile);
       setParseError(null);
       return data;
     } catch (e: any) {
@@ -35,7 +36,7 @@ const App: React.FC = () => {
       setParseError(e.message || "Syntax Error");
       return null;
     }
-  }, [files]);
+  }, [files, entryFile]);
 
   const [lastValidData, setLastValidData] = useState(graphData);
   if (graphData && graphData !== lastValidData) {
@@ -53,22 +54,37 @@ const App: React.FC = () => {
       if(window.confirm("Reset all files to default?")) {
           setFiles(DEFAULT_FILES);
           setActiveFile(DEFAULT_ENTRY_FILE);
+          setEntryFile(DEFAULT_ENTRY_FILE);
+      }
+  };
+
+  const handleFolderUpload = (uploadedFiles: Record<string, string>) => {
+      setFiles(uploadedFiles);
+      // Try to find a default entry file
+      const vueFiles = Object.keys(uploadedFiles).filter(f => f.endsWith('.vue'));
+      if (vueFiles.length > 0) {
+          const entry = vueFiles.find(f => f.includes('Index') || f.includes('index') || f.includes('App')) || vueFiles[0];
+          setEntryFile(entry);
+          setActiveFile(entry);
       }
   };
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-vibe-dark text-slate-200 font-sans">
       {/* Left Sidebar - Code Input */}
-      <div 
-        className={`transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 ${isSidebarOpen ? 'w-[400px]' : 'w-0'}`}
+      <div
+        className={`transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 relative z-50 ${isSidebarOpen ? 'w-[400px]' : 'w-0'}`}
       >
         <div className="w-[400px] h-full">
-           <Sidebar 
-             files={files} 
-             activeFile={activeFile} 
-             onFileChange={handleFileChange} 
+           <Sidebar
+             files={files}
+             activeFile={activeFile}
+             entryFile={entryFile}
+             onFileChange={handleFileChange}
              onSelectFile={setActiveFile}
              onReset={handleReset}
+             onFolderUpload={handleFolderUpload}
+             onEntryFileChange={setEntryFile}
            />
         </div>
       </div>
@@ -77,7 +93,7 @@ const App: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0 bg-[#0f172a]">
         
         {/* Minimal Header */}
-        <header className="h-14 bg-vibe-panel/50 backdrop-blur border-b border-vibe-border flex items-center px-6 justify-between z-10 transition-all duration-300">
+        <header className="h-14 bg-vibe-panel/50 backdrop-blur border-b border-vibe-border flex items-center px-6 justify-between relative z-0 transition-all duration-300">
             <div className="flex items-center gap-4">
                 <button 
                   onClick={() => setIsSidebarOpen(prev => !prev)}
@@ -109,7 +125,7 @@ const App: React.FC = () => {
 
         {/* Canvas Area */}
         <div className="flex-1 relative">
-            {lastValidData && <PipelineCanvas initialData={lastValidData} entryFile={DEFAULT_ENTRY_FILE} />}
+            {lastValidData && <PipelineCanvas initialData={lastValidData} entryFile={entryFile} />}
         </div>
       </div>
     </div>

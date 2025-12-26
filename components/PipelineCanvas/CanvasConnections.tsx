@@ -146,7 +146,7 @@ const CanvasConnections: React.FC<CanvasConnectionsProps> = ({ layoutLinks, layo
     }, [layoutNodes, drawConnections]);
 
     return (
-        <svg className="absolute top-0 left-0 w-full h-full overflow-visible pointer-events-none z-50">
+        <svg className="absolute top-0 left-0 w-full h-full overflow-visible pointer-events-none z-5">
             {paths}
         </svg>
     );

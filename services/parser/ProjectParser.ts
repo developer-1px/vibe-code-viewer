@@ -1,7 +1,7 @@
 import { GraphData, VariableNode } from '../../entities/VariableNode';
 import { parse as parseSFC } from '@vue/compiler-sfc';
 import { parse as parseBabel } from '@babel/parser';
-import { resolvePath, findFileInProject } from './pathUtils';
+import { resolvePath, findFileInProject, findFileByName } from './pathUtils';
 import { extractIdentifiersFromPattern, findDependenciesInAST, traverseTemplateAST } from './astUtils';
 
 export class ProjectParser {
@@ -69,7 +69,15 @@ export class ProjectParser {
             if (node.type === 'ImportDeclaration') {
                 const source = node.source.value;
                 const resolvedPath = resolvePath(filePath, source);
-                const targetFile = resolvedPath ? findFileInProject(this.files, resolvedPath) : null;
+                let targetFile = resolvedPath ? findFileInProject(this.files, resolvedPath) : null;
+
+                // Fallback: If path resolution failed, try to find by filename
+                if (!targetFile && source) {
+                    targetFile = findFileByName(this.files, source);
+                    if (targetFile) {
+                        console.log(`📁 Fallback: Found "${source}" as "${targetFile}"`);
+                    }
+                }
 
                 if (targetFile) {
                     // Recurse
@@ -278,15 +286,17 @@ export class ProjectParser {
              if (initCode.includes('computed')) type = 'computed';
              else if (initCode.includes('use') && !initCode.includes('useRoute')) type = 'hook';
              else if (initCode.includes('storeToRefs')) type = 'store';
-             
+
              ids.forEach(name => createNode(name, type, decl.init, isExport));
          });
      } else if (targetNode.type === 'FunctionDeclaration') {
          const name = targetNode.id ? targetNode.id.name : 'default';
-         createNode(name, 'function', targetNode.body, isExport, isDefaultExport ? 'default' : name);
+         // Pass entire function node (not just body) to preserve parameter info
+         createNode(name, 'function', targetNode, isExport, isDefaultExport ? 'default' : name);
      } else if (targetNode.type === 'ClassDeclaration') {
          const name = targetNode.id ? targetNode.id.name : 'default';
-         createNode(name, 'function', targetNode.body, isExport, isDefaultExport ? 'default' : name);
+         // Pass entire class node to preserve constructor/method info
+         createNode(name, 'function', targetNode, isExport, isDefaultExport ? 'default' : name);
      }
   }
 

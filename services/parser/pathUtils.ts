@@ -47,6 +47,45 @@ export const findFileInProject = (files: Record<string, string>, resolvedPath: s
     if (files[resolvedPath + '.js']) return resolvedPath + '.js';
     // Try index
     if (files[resolvedPath + '/index.ts']) return resolvedPath + '/index.ts';
-    
+
+    return null;
+};
+
+/**
+ * Fallback: Find file by filename when path resolution fails
+ * Useful when alias configuration is unknown
+ */
+export const findFileByName = (files: Record<string, string>, importPath: string): string | null => {
+    // Extract filename from import path
+    // e.g., "@/components/Button.vue" -> "Button.vue"
+    // e.g., "~/utils/helper" -> "helper"
+    const pathParts = importPath.split('/');
+    let fileName = pathParts[pathParts.length - 1];
+
+    // If no extension, try common extensions
+    const extensions = fileName.includes('.') ? [''] : ['.vue', '.ts', '.js'];
+
+    for (const ext of extensions) {
+        const searchName = fileName + ext;
+
+        // Search through all files for matching filename
+        const matchingFiles = Object.keys(files).filter(filePath => {
+            const filePathParts = filePath.split('/');
+            const actualFileName = filePathParts[filePathParts.length - 1];
+            return actualFileName === searchName;
+        });
+
+        if (matchingFiles.length === 1) {
+            // Exact single match found
+            return matchingFiles[0];
+        } else if (matchingFiles.length > 1) {
+            // Multiple matches - try to pick the best one
+            // Prefer files with shorter paths (likely closer to root)
+            matchingFiles.sort((a, b) => a.length - b.length);
+            console.warn(`Multiple files found for "${searchName}":`, matchingFiles, '- using first match:', matchingFiles[0]);
+            return matchingFiles[0];
+        }
+    }
+
     return null;
 };
