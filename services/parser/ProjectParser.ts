@@ -70,9 +70,10 @@ export class ProjectParser {
     console.log('   dependencies:', parseResult.dependencies);
     console.log('   tokenRanges:', parseResult.tokenRanges.length, 'ranges');
 
+    const fileName = filePath.split('/').pop() || 'Component';
     const templateNode: VariableNode = {
          id: templateId,
-         label: '<template>',
+         label: `${fileName} <template>`,
          filePath,
          type: 'template',
          codeSnippet: templateContent, // Don't trim! AST offsets are based on original content

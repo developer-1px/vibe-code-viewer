@@ -22,6 +22,7 @@ const PipelineCanvas: React.FC<PipelineCanvasProps> = ({ initialData, entryFile 
   const [visibleNodeIds, setVisibleNodeIds] = useState<Set<string>>(new Set());
   const [lastExpandedId, setLastExpandedId] = useState<string | null>(null);
   const [isAllCopied, setIsAllCopied] = useState(false);
+  const [edgeRefreshTrigger, setEdgeRefreshTrigger] = useState(0);
 
   // 1. Layout Logic
   const { 
@@ -54,10 +55,13 @@ const PipelineCanvas: React.FC<PipelineCanvasProps> = ({ initialData, entryFile 
     if (lastExpandedId && layoutNodes.length > 0) {
         const targetNode = layoutNodes.find(n => n.id === lastExpandedId);
         if (targetNode) {
-            const timer = setTimeout(() => { 
-                centerOnNode(targetNode); 
-                setLastExpandedId(null); 
-            }, 100); 
+            const timer = setTimeout(() => {
+                centerOnNode(targetNode, () => {
+                    // Trigger edge refresh after transition completes
+                    setEdgeRefreshTrigger(prev => prev + 1);
+                });
+                setLastExpandedId(null);
+            }, 100);
             return () => clearTimeout(timer);
         }
     }
@@ -65,15 +69,16 @@ const PipelineCanvas: React.FC<PipelineCanvasProps> = ({ initialData, entryFile 
 
   // --- Handlers ---
 
-  const handleTokenClick = (token: string, sourceNodeId: string) => {
+  const handleTokenClick = (token: string, sourceNodeId: string, event: React.MouseEvent) => {
     if (fullNodeMap.has(token)) {
         const isCurrentlyVisible = visibleNodeIds.has(token);
+        const forceExpand = event.metaKey || event.ctrlKey; // cmd (Mac) or ctrl (Windows/Linux)
 
         setVisibleNodeIds(prev => {
             const next = new Set(prev);
-            
-            if (isCurrentlyVisible) {
-                // TOGGLE OFF (Fold)
+
+            if (isCurrentlyVisible && !forceExpand) {
+                // TOGGLE OFF (Fold) - only if not force expanding
                 // Just remove the clicked token. Layout logic naturally hides children
                 // that become unreachable from the roots.
                 next.delete(token);
@@ -107,8 +112,8 @@ const PipelineCanvas: React.FC<PipelineCanvasProps> = ({ initialData, entryFile 
             return next;
         });
 
-        // Only center camera if we are Unfolding (Expanding)
-        if (!isCurrentlyVisible) {
+        // Center camera if we are Unfolding (Expanding) OR force expanding
+        if (!isCurrentlyVisible || forceExpand) {
             setLastExpandedId(token);
         }
     }
@@ -130,6 +135,70 @@ const PipelineCanvas: React.FC<PipelineCanvasProps> = ({ initialData, entryFile 
     if (targetNode) {
       centerOnNode(targetNode);
     }
+  };
+
+  const handleToggleAllDependencies = (nodeId: string, shouldExpand: boolean) => {
+    const node = fullNodeMap.get(nodeId);
+    if (!node || node.dependencies.length === 0) return;
+
+    setVisibleNodeIds(prev => {
+      const next = new Set(prev);
+
+      if (shouldExpand) {
+        // Expand all dependencies recursively
+        const expandRecursive = (id: string) => {
+          if (next.has(id)) return;
+          next.add(id);
+
+          const depNode = fullNodeMap.get(id);
+          if (depNode) {
+            // Stop expanding if we hit a template node
+            if (depNode.type === 'template') return;
+
+            depNode.dependencies.forEach(depId => {
+              if (fullNodeMap.has(depId)) {
+                expandRecursive(depId);
+              }
+            });
+          }
+        };
+
+        node.dependencies.forEach(depId => {
+          if (fullNodeMap.has(depId)) {
+            expandRecursive(depId);
+          }
+        });
+
+        // Center on the first expanded dependency
+        if (node.dependencies.length > 0) {
+          setLastExpandedId(node.dependencies[0]);
+        }
+      } else {
+        // Collapse all dependencies
+        const collapseRecursive = (id: string, toRemove: Set<string>) => {
+          toRemove.add(id);
+          const depNode = fullNodeMap.get(id);
+          if (depNode) {
+            depNode.dependencies.forEach(depId => {
+              if (fullNodeMap.has(depId)) {
+                collapseRecursive(depId, toRemove);
+              }
+            });
+          }
+        };
+
+        const toRemove = new Set<string>();
+        node.dependencies.forEach(depId => {
+          if (fullNodeMap.has(depId)) {
+            collapseRecursive(depId, toRemove);
+          }
+        });
+
+        toRemove.forEach(id => next.delete(id));
+      }
+
+      return next;
+    });
   };
 
   const handleCopyAllCode = async () => {
@@ -231,11 +300,12 @@ const PipelineCanvas: React.FC<PipelineCanvasProps> = ({ initialData, entryFile 
         <CanvasBackground groups={componentGroups} />
 
         {/* Connections */}
-        <CanvasConnections 
-            layoutLinks={layoutLinks} 
-            layoutNodes={layoutNodes} 
-            transform={transform} 
-            contentRef={contentRef} 
+        <CanvasConnections
+            layoutLinks={layoutLinks}
+            layoutNodes={layoutNodes}
+            transform={transform}
+            contentRef={contentRef}
+            refreshTrigger={edgeRefreshTrigger}
         />
 
         {/* Nodes */}
@@ -253,9 +323,11 @@ const PipelineCanvas: React.FC<PipelineCanvasProps> = ({ initialData, entryFile 
                     node={node}
                     onTokenClick={handleTokenClick}
                     onSlotClick={handleSlotClick}
+                    onToggleAllDependencies={handleToggleAllDependencies}
                     activeDependencies={[]}
                     allKnownIds={Array.from(fullNodeMap.keys())}
                     nodeMap={fullNodeMap}
+                    visibleNodeIds={visibleNodeIds}
                 />
             </div>
         ))}

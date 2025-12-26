@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { CanvasNode } from '../model/types';
-import { Terminal, Box, FunctionSquare, LayoutTemplate, Database, Link2, PlayCircle, BoxSelect, Copy, Check } from 'lucide-react';
+import { Terminal, Box, FunctionSquare, LayoutTemplate, Database, Link2, PlayCircle, BoxSelect, Copy, Check, ChevronsDown, ChevronsUp } from 'lucide-react';
 
 // Extracted Logic
 import { extractTokenRanges } from '../lib/tokenUtils';
@@ -10,17 +10,25 @@ import { getNodeBorderColor, getTokenStyle, getSlotColor } from '../lib/styleUti
 
 interface CodeCardProps {
   node: CanvasNode;
-  onTokenClick: (token: string, sourceNodeId: string) => void;
+  onTokenClick: (token: string, sourceNodeId: string, event: React.MouseEvent) => void;
   onSlotClick?: (tokenId: string) => void;
+  onToggleAllDependencies?: (nodeId: string, shouldExpand: boolean) => void;
   activeDependencies: string[];
   allKnownIds: string[];
   nodeMap?: Map<string, CanvasNode>;
+  visibleNodeIds?: Set<string>;
 }
 
-const CodeCard: React.FC<CodeCardProps> = ({ node, onTokenClick, onSlotClick, activeDependencies, nodeMap }) => {
+const CodeCard: React.FC<CodeCardProps> = ({ node, onTokenClick, onSlotClick, onToggleAllDependencies, activeDependencies, nodeMap, visibleNodeIds }) => {
 
   const isTemplate = node.type === 'template';
   const [isCopied, setIsCopied] = useState(false);
+
+  // Check if all dependencies are expanded
+  const allDepsExpanded = useMemo(() => {
+    if (!visibleNodeIds || node.dependencies.length === 0) return false;
+    return node.dependencies.every(depId => visibleNodeIds.has(depId));
+  }, [node.dependencies, visibleNodeIds]);
 
   const handleCopyCode = async () => {
     try {
@@ -29,6 +37,13 @@ const CodeCard: React.FC<CodeCardProps> = ({ node, onTokenClick, onSlotClick, ac
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy code:', err);
+    }
+  };
+
+  const handleToggleAll = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onToggleAllDependencies && node.dependencies.length > 0) {
+      onToggleAllDependencies(node.id, !allDepsExpanded);
     }
   };
 
@@ -78,6 +93,20 @@ const CodeCard: React.FC<CodeCardProps> = ({ node, onTokenClick, onSlotClick, ac
       {/* Header */}
       <div className={`px-3 py-1.5 border-b border-white/5 flex justify-between items-center bg-black/20`}>
         <div className="flex items-center gap-2 overflow-hidden">
+          {/* Toggle All Dependencies Button */}
+          {node.dependencies.length > 0 && onToggleAllDependencies && (
+            <button
+              onClick={handleToggleAll}
+              className="p-1 rounded hover:bg-white/10 transition-colors group/toggle"
+              title={allDepsExpanded ? "Collapse all dependencies" : "Expand all dependencies"}
+            >
+              {allDepsExpanded ? (
+                <ChevronsUp className="w-3.5 h-3.5 text-slate-400 group-hover/toggle:text-slate-200" />
+              ) : (
+                <ChevronsDown className="w-3.5 h-3.5 text-slate-400 group-hover/toggle:text-slate-200" />
+              )}
+            </button>
+          )}
           {getIcon()}
           <div className="flex flex-col">
               <span className="font-bold text-xs text-slate-100 truncate max-w-[300px]">{node.label}</span>
@@ -161,7 +190,7 @@ const CodeCard: React.FC<CodeCardProps> = ({ node, onTokenClick, onSlotClick, ac
                                                 `}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    if (segment.tokenId) onTokenClick(segment.tokenId, node.id);
+                                                    if (segment.tokenId) onTokenClick(segment.tokenId, node.id, e);
                                                 }}
                                             >
                                                 {segment.text}

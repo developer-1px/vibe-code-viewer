@@ -7,9 +7,10 @@ interface CanvasConnectionsProps {
     layoutNodes: CanvasNode[];
     transform: { k: number, x: number, y: number };
     contentRef: React.RefObject<HTMLDivElement>;
+    refreshTrigger?: number;
 }
 
-const CanvasConnections: React.FC<CanvasConnectionsProps> = ({ layoutLinks, layoutNodes, transform, contentRef }) => {
+const CanvasConnections: React.FC<CanvasConnectionsProps> = ({ layoutLinks, layoutNodes, transform, contentRef, refreshTrigger }) => {
     const [paths, setPaths] = useState<React.ReactElement[]>([]);
 
     const drawConnections = useCallback(() => {
@@ -17,6 +18,8 @@ const CanvasConnections: React.FC<CanvasConnectionsProps> = ({ layoutLinks, layo
             setPaths([]);
             return;
         }
+
+        console.log('🎨 Drawing connections for', layoutNodes.length, 'nodes');
         
         const contentRect = contentRef.current.getBoundingClientRect();
         const newPaths: React.ReactElement[] = [];
@@ -136,16 +139,27 @@ const CanvasConnections: React.FC<CanvasConnectionsProps> = ({ layoutLinks, layo
     
     }, [layoutLinks, transform.k, layoutNodes]);
 
+    // Draw on zoom/pan transform changes
     useEffect(() => {
         const handle = requestAnimationFrame(drawConnections);
         return () => cancelAnimationFrame(handle);
     }, [drawConnections, transform]);
 
-    // Initial draw delay
+    // Draw when explicitly triggered after centerOnNode transition completes
     useEffect(() => {
-        const t = setTimeout(drawConnections, 50); 
-        return () => clearTimeout(t);
-    }, [layoutNodes, drawConnections]);
+        if (refreshTrigger === undefined || refreshTrigger === 0) return;
+
+        console.log('🔄 Refresh triggered after transition');
+        // Double rAF to ensure DOM is fully updated
+        let handle2: number;
+        const handle1 = requestAnimationFrame(() => {
+            handle2 = requestAnimationFrame(drawConnections);
+        });
+        return () => {
+            cancelAnimationFrame(handle1);
+            if (handle2) cancelAnimationFrame(handle2);
+        };
+    }, [refreshTrigger, drawConnections]);
 
     return (
         <svg className="absolute top-0 left-0 w-full h-full overflow-visible pointer-events-none z-5">

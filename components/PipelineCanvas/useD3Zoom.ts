@@ -42,26 +42,33 @@ export const useD3Zoom = (containerRef: React.RefObject<HTMLDivElement>) => {
         }
       }, []);
 
-      const centerOnNode = useCallback((node: CanvasNode) => {
+      const centerOnNode = useCallback((node: CanvasNode, onComplete?: () => void) => {
         if (!containerRef.current || !zoomBehaviorRef.current) return;
-        
+
         const nodeEl = document.getElementById(`node-${node.visualId}`);
         if (!nodeEl) return;
-        
+
         const { width, height } = containerRef.current.getBoundingClientRect();
         const rect = nodeEl.getBoundingClientRect();
         const currentK = transform.k;
-        
+
         const w = rect.width / currentK;
         const h = rect.height / currentK;
         const centerX = node.x + w / 2;
         const centerY = node.y + h / 2;
-        
+
         const targetX = width / 2 - centerX * currentK;
         const targetY = height / 2 - centerY * currentK;
-        
+
         const newTransform = d3.zoomIdentity.translate(targetX, targetY).scale(currentK);
-        d3.select(containerRef.current).transition().duration(600).ease(d3.easeCubicOut).call(zoomBehaviorRef.current.transform, newTransform);
+        d3.select(containerRef.current)
+            .transition()
+            .duration(600)
+            .ease(d3.easeCubicOut)
+            .call(zoomBehaviorRef.current.transform, newTransform)
+            .on('end', () => {
+                if (onComplete) onComplete();
+            });
       }, [transform.k]);
 
       return { transform, centerOnNode };
