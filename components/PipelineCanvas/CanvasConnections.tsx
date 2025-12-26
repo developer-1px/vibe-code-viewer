@@ -7,10 +7,9 @@ interface CanvasConnectionsProps {
     layoutNodes: CanvasNode[];
     transform: { k: number, x: number, y: number };
     contentRef: React.RefObject<HTMLDivElement>;
-    refreshTrigger?: number;
 }
 
-const CanvasConnections: React.FC<CanvasConnectionsProps> = ({ layoutLinks, layoutNodes, transform, contentRef, refreshTrigger }) => {
+const CanvasConnections: React.FC<CanvasConnectionsProps> = ({ layoutLinks, layoutNodes, transform, contentRef }) => {
     const [paths, setPaths] = useState<React.ReactElement[]>([]);
 
     const drawConnections = useCallback(() => {
@@ -139,27 +138,11 @@ const CanvasConnections: React.FC<CanvasConnectionsProps> = ({ layoutLinks, layo
     
     }, [layoutLinks, transform.k, layoutNodes]);
 
-    // Draw on zoom/pan transform changes
+    // Draw on zoom/pan transform changes (during manual pan/zoom)
     useEffect(() => {
         const handle = requestAnimationFrame(drawConnections);
         return () => cancelAnimationFrame(handle);
-    }, [drawConnections, transform]);
-
-    // Draw when explicitly triggered after centerOnNode transition completes
-    useEffect(() => {
-        if (refreshTrigger === undefined || refreshTrigger === 0) return;
-
-        console.log('🔄 Refresh triggered after transition');
-        // Double rAF to ensure DOM is fully updated
-        let handle2: number;
-        const handle1 = requestAnimationFrame(() => {
-            handle2 = requestAnimationFrame(drawConnections);
-        });
-        return () => {
-            cancelAnimationFrame(handle1);
-            if (handle2) cancelAnimationFrame(handle2);
-        };
-    }, [refreshTrigger, drawConnections]);
+    }, [drawConnections, transform, layoutNodes]);
 
     return (
         <svg className="absolute top-0 left-0 w-full h-full overflow-visible pointer-events-none z-5">

@@ -22,7 +22,6 @@ const PipelineCanvas: React.FC<PipelineCanvasProps> = ({ initialData, entryFile 
   const [visibleNodeIds, setVisibleNodeIds] = useState<Set<string>>(new Set());
   const [lastExpandedId, setLastExpandedId] = useState<string | null>(null);
   const [isAllCopied, setIsAllCopied] = useState(false);
-  const [edgeRefreshTrigger, setEdgeRefreshTrigger] = useState(0);
 
   // 1. Layout Logic
   const { 
@@ -55,13 +54,12 @@ const PipelineCanvas: React.FC<PipelineCanvasProps> = ({ initialData, entryFile 
     if (lastExpandedId && layoutNodes.length > 0) {
         const targetNode = layoutNodes.find(n => n.id === lastExpandedId);
         if (targetNode) {
+            // Wait a bit for layout to settle, then center
             const timer = setTimeout(() => {
-                centerOnNode(targetNode, () => {
-                    // Trigger edge refresh after transition completes
-                    setEdgeRefreshTrigger(prev => prev + 1);
-                });
+                centerOnNode(targetNode);
                 setLastExpandedId(null);
             }, 100);
+
             return () => clearTimeout(timer);
         }
     }
@@ -305,7 +303,6 @@ const PipelineCanvas: React.FC<PipelineCanvasProps> = ({ initialData, entryFile 
             layoutNodes={layoutNodes}
             transform={transform}
             contentRef={contentRef}
-            refreshTrigger={edgeRefreshTrigger}
         />
 
         {/* Nodes */}
