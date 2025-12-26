@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import Sidebar from './components/Sidebar.tsx';
 import PipelineCanvas from './widgets/PipelineCanvas.tsx';
-import { parseVueCode } from './services/codeParser.ts';
+import { parseProject } from './services/codeParser.ts';
 import { Box, AlertCircle, PanelLeft } from 'lucide-react';
 import { filesAtom, entryFileAtom, isSidebarOpenAtom, graphDataAtom } from './store/atoms';
 
@@ -29,7 +29,7 @@ const App: React.FC = () => {
   // Parse project on file change and store in atom
   useMemo(() => {
     try {
-      const data = parseVueCode(files, entryFile);
+      const data = parseProject(files, entryFile);
       setParseError(null);
       setGraphData(data);
     } catch (e: any) {

@@ -18,7 +18,7 @@ interface VisualTreeNode extends CanvasNode {
 }
 
 export const useCanvasLayout = (
-    initialData: GraphData,
+    initialData: GraphData | null,
     entryFile: string,
     visibleNodeIds: Set<string>
 ) => {
@@ -34,6 +34,7 @@ export const useCanvasLayout = (
     const setVisibleNodeIdsAtom = useSetAtom(visibleNodeIdsAtom);
 
     const fullNodeMap = useMemo(() => {
+        if (!initialData) return new Map<string, VariableNode>();
         return new Map<string, VariableNode>(initialData.nodes.map(n => [n.id, n]));
     }, [initialData]);
 

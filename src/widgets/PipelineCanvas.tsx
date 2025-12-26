@@ -27,7 +27,7 @@ const PipelineCanvas: React.FC = () => {
     layoutNodes,
     layoutLinks,
     componentGroups
-  } = useCanvasLayout(graphData!, entryFile, visibleNodeIds);
+  } = useCanvasLayout(graphData, entryFile, visibleNodeIds);
 
   // 2. Zoom Logic (handles auto-centering internally)
   const { transform } = useD3Zoom(containerRef);

@@ -40,11 +40,3 @@ export const loadExampleFiles = (): Record<string, string> => {
   console.log('📦 Loaded files:', Object.keys(files));
   return files;
 };
-
-// Get available entry files
-export const getAvailableEntryFiles = (): string[] => {
-  const files = loadExampleFiles();
-  return Object.keys(files).filter(path =>
-    path.endsWith('App.vue') || path.endsWith('App.tsx')
-  );
-};
