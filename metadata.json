@@ -1,0 +1,5 @@
+{
+  "name": "Vue Logic Visualizer",
+  "description": "A developer tool to visualize variable dependencies and logic pipelines in Vue.js components using D3.js and Gemini AI for explanation.",
+  "requestFramePermissions": []
+}
