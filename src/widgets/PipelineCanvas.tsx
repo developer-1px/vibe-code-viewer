@@ -4,7 +4,7 @@ import CodeCard from '../entities/VariableNode/ui/CodeCard.tsx';
 
 // Hooks & Sub-components
 import { useCanvasLayout } from './PipelineCanvas/useCanvasLayout.ts';
-import { useD3Zoom } from './PipelineCanvas/useD3Zoom.ts';
+import D3ZoomContainer from './PipelineCanvas/D3ZoomContainer.tsx';
 import CanvasConnections from './PipelineCanvas/CanvasConnections.tsx';
 import CanvasBackground from './PipelineCanvas/CanvasBackground.tsx';
 import CopyAllCodeButton from '../features/CopyAllCodeButton.tsx';
@@ -16,7 +16,6 @@ import { useGraphData } from '../hooks/useGraphData';
 
 const PipelineCanvas: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   // Read atoms
   const visibleNodeIds = useAtomValue(visibleNodeIdsAtom);
@@ -24,32 +23,20 @@ const PipelineCanvas: React.FC = () => {
   const { data: graphData } = useGraphData();
 
   // 1. Layout Logic (handles atom sync & initialization internally)
-  const {
-    layoutNodes
-  } = useCanvasLayout(graphData, entryFile, visibleNodeIds);
-
-  // 2. Zoom Logic (handles auto-centering internally)
-  const { transform } = useD3Zoom(containerRef);
-
+  const { layoutNodes } = useCanvasLayout(graphData, entryFile, visibleNodeIds);
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-vibe-dark select-none" ref={containerRef}>
-      
+
       {/* Controls */}
       <ResetViewButton />
 
       {/* Copy All Code Button - Bottom Right */}
       <CopyAllCodeButton />
 
-      <div 
-        ref={contentRef}
-        className="origin-top-left absolute top-0 left-0 w-full h-full"
-        style={{ 
-            transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`,
-        }}
-      >
+      <D3ZoomContainer containerRef={containerRef}>
         {/* Background Groups */}
-        <CanvasBackground />
+        {/*<CanvasBackground />*/}
 
         {/* Connections */}
         <CanvasConnections />
@@ -68,7 +55,7 @@ const PipelineCanvas: React.FC = () => {
                 <CodeCard node={node} />
             </div>
         ))}
-      </div>
+      </D3ZoomContainer>
     </div>
   );
 };
