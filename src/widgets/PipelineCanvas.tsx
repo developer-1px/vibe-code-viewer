@@ -25,8 +25,7 @@ const PipelineCanvas: React.FC = () => {
   // 1. Layout Logic (handles atom sync & initialization internally)
   const {
     layoutNodes,
-    layoutLinks,
-    componentGroups
+    layoutLinks
   } = useCanvasLayout(graphData, entryFile, visibleNodeIds);
 
   // 2. Zoom Logic (handles auto-centering internally)
@@ -50,7 +49,7 @@ const PipelineCanvas: React.FC = () => {
         }}
       >
         {/* Background Groups */}
-        <CanvasBackground groups={componentGroups} />
+        <CanvasBackground />
 
         {/* Connections */}
         <CanvasConnections

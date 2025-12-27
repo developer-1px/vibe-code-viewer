@@ -1,8 +1,11 @@
 
-// Hardcoded examples to ensure stability across different environments
-// where import.meta.glob might not be available or fails at runtime.
+/**
+ * Load example files using import.meta.glob if available,
+ * otherwise fallback to hardcoded examples.
+ */
 
-const FILES: Record<string, string> = {
+// Hardcoded fallback examples for environments where import.meta.glob is not available
+const HARDCODED_FILES: Record<string, string> = {
   // --- Vue Example ---
   'examples/vue/App.vue': `<template>
   <div class="app">
@@ -282,7 +285,122 @@ export default function App() {
 }`
 };
 
+/**
+ * Dynamically load files using import.meta.glob (if available)
+ */
+const loadDynamicFiles = (): Record<string, string> | null => {
+  try {
+    const files: Record<string, string> = {};
+
+    // @ts-expect-error - import.meta.glob is a Vite feature
+    const srcFiles = import.meta.glob('/src/**/*.{tsx,ts,vue}', {
+      query: '?raw',
+      eager: true
+    });
+
+    // Process src files (skip internal visualizer files)
+    Object.entries(srcFiles || {}).forEach(([path, module]) => {
+      const filePath = path.replace(/^\//, '');
+      files[filePath] = (module as any).default;
+    });
+
+    if (Object.keys(files).length > 0) {
+      return files;
+    }
+    return null;
+  } catch (error) {
+    // import.meta.glob not available or failed
+    return null;
+  }
+};
+
+/**
+ * Load files dynamically using import.meta.glob (Vite feature)
+ * Falls back to hardcoded examples if not available
+ */
 export const loadExampleFiles = (): Record<string, string> => {
-  console.log('📦 Loading hardcoded example files:', Object.keys(FILES).length);
-  return FILES;
+  // Try dynamic loading first
+  const dynamicFiles = loadDynamicFiles();
+  if (dynamicFiles) {
+    console.log('📦 Loaded files dynamically via import.meta.glob:', Object.keys(dynamicFiles).length);
+    return dynamicFiles;
+  }
+
+  // Fallback to hardcoded examples
+  console.log('📦 Loading hardcoded example files:', Object.keys(HARDCODED_FILES).length);
+  return HARDCODED_FILES;
+};
+
+/**
+ * Find the most appropriate entry file from loaded files
+ *
+ * Priority order:
+ * 1. App.vue (Vue examples)
+ * 2. App.tsx (React examples)
+ * 3. main.vue, main.tsx
+ * 4. index.vue, index.tsx
+ * 5. First .vue or .tsx file found
+ */
+export const findEntryFile = (files: Record<string, string>): string => {
+  const filePaths = Object.keys(files);
+
+  if (filePaths.length === 0) {
+    throw new Error('No files available to find entry point');
+  }
+
+  // Priority 1: Look for App.vue or App.tsx
+  const appVue = filePaths.find(path => path.endsWith('App.vue'));
+  if (appVue) {
+    console.log('📍 Entry file detected: App.vue ->', appVue);
+    return appVue;
+  }
+
+  const appTsx = filePaths.find(path => path.endsWith('App.tsx'));
+  if (appTsx) {
+    console.log('📍 Entry file detected: App.tsx ->', appTsx);
+    return appTsx;
+  }
+
+  // Priority 2: Look for main.vue or main.tsx
+  const mainVue = filePaths.find(path => path.endsWith('main.vue'));
+  if (mainVue) {
+    console.log('📍 Entry file detected: main.vue ->', mainVue);
+    return mainVue;
+  }
+
+  const mainTsx = filePaths.find(path => path.endsWith('main.tsx'));
+  if (mainTsx) {
+    console.log('📍 Entry file detected: main.tsx ->', mainTsx);
+    return mainTsx;
+  }
+
+  // Priority 3: Look for index.vue or index.tsx
+  const indexVue = filePaths.find(path => path.endsWith('index.vue'));
+  if (indexVue) {
+    console.log('📍 Entry file detected: index.vue ->', indexVue);
+    return indexVue;
+  }
+
+  const indexTsx = filePaths.find(path => path.endsWith('index.tsx'));
+  if (indexTsx) {
+    console.log('📍 Entry file detected: index.tsx ->', indexTsx);
+    return indexTsx;
+  }
+
+  // Priority 4: Fallback to first .vue or .tsx file
+  const firstVue = filePaths.find(path => path.endsWith('.vue'));
+  if (firstVue) {
+    console.log('📍 Entry file detected: first .vue ->', firstVue);
+    return firstVue;
+  }
+
+  const firstTsx = filePaths.find(path => path.endsWith('.tsx'));
+  if (firstTsx) {
+    console.log('📍 Entry file detected: first .tsx ->', firstTsx);
+    return firstTsx;
+  }
+
+  // Last resort: return first file
+  console.warn('⚠️ No standard entry file found, using first file:', filePaths[0]);
+  return filePaths[0];
 };

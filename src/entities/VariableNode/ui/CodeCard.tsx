@@ -3,7 +3,15 @@ import React, { useMemo } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { CanvasNode } from '../../CanvasNode';
 
-// Extracted Logic
+// Model - Business Logic
+import {
+  checkAllDepsExpanded,
+  expandDependenciesRecursive,
+  collapseDependencies,
+  getFirstDependency
+} from '../model/nodeVisibility';
+
+// Lib - Pure Utilities
 import { extractTokenRanges } from '../lib/tokenUtils.ts';
 import { processCodeLines } from '../lib/lineUtils.ts';
 import { getNodeBorderColor } from '../lib/styleUtils.ts';
@@ -29,8 +37,7 @@ const CodeCard: React.FC<CodeCardProps> = ({ node }) => {
 
   // Check if all dependencies are expanded
   const allDepsExpanded = useMemo(() => {
-    if (node.dependencies.length === 0) return false;
-    return node.dependencies.every(depId => visibleNodeIds.has(depId));
+    return checkAllDepsExpanded(node.dependencies, visibleNodeIds);
   }, [node.dependencies, visibleNodeIds]);
 
   const handleToggleAll = (e: React.MouseEvent) => {
@@ -38,62 +45,21 @@ const CodeCard: React.FC<CodeCardProps> = ({ node }) => {
     if (node.dependencies.length === 0) return;
 
     setVisibleNodeIds(prev => {
-      const next = new Set(prev);
-
       if (!allDepsExpanded) {
         // Expand all dependencies recursively
-        const expandRecursive = (id: string) => {
-          if (next.has(id)) return;
-          next.add(id);
-
-          const depNode = fullNodeMap.get(id);
-          if (depNode) {
-            // Stop expanding if we hit a template node
-            if (depNode.type === 'template') return;
-
-            depNode.dependencies.forEach(depId => {
-              if (fullNodeMap.has(depId)) {
-                expandRecursive(depId);
-              }
-            });
-          }
-        };
-
-        node.dependencies.forEach(depId => {
-          if (fullNodeMap.has(depId)) {
-            expandRecursive(depId);
-          }
-        });
+        const newVisible = expandDependenciesRecursive(node.id, fullNodeMap, prev);
 
         // Center on the first expanded dependency
-        if (node.dependencies.length > 0) {
-          setLastExpandedId(node.dependencies[0]);
+        const firstDep = getFirstDependency(node.id, fullNodeMap);
+        if (firstDep) {
+          setLastExpandedId(firstDep);
         }
+
+        return newVisible;
       } else {
-        // Collapse all dependencies
-        const collapseRecursive = (id: string, toRemove: Set<string>) => {
-          toRemove.add(id);
-          const depNode = fullNodeMap.get(id);
-          if (depNode) {
-            depNode.dependencies.forEach(depId => {
-              if (fullNodeMap.has(depId)) {
-                collapseRecursive(depId, toRemove);
-              }
-            });
-          }
-        };
-
-        const toRemove = new Set<string>();
-        node.dependencies.forEach(depId => {
-          if (fullNodeMap.has(depId)) {
-            collapseRecursive(depId, toRemove);
-          }
-        });
-
-        toRemove.forEach(id => next.delete(id));
+        // Collapse dependencies (keep nodes reachable from other paths)
+        return collapseDependencies(node.id, fullNodeMap, prev);
       }
-
-      return next;
     });
   };
 

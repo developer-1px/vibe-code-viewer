@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useSetAtom } from 'jotai';
 import { GraphData, VariableNode } from '../../entities/VariableNode';
-import { CanvasNode, ComponentGroup } from '../../entities/CanvasNode';
+import { CanvasNode } from '../../entities/CanvasNode';
 import { LEVEL_SPACING, VERTICAL_GAP, estimateNodeHeight, getUsageIndex, hasCycle } from './utils.ts';
 import {
   layoutNodesAtom,
@@ -25,7 +25,6 @@ export const useCanvasLayout = (
 ) => {
     const [layoutNodes, setLayoutNodes] = useState<CanvasNode[]>([]);
     const [layoutLinks, setLayoutLinks] = useState<{source: string, target: string}[]>([]);
-    const [componentGroups, setComponentGroups] = useState<ComponentGroup[]>([]);
 
     // Atom setters
     const setLayoutNodesAtom = useSetAtom(layoutNodesAtom);
@@ -265,45 +264,6 @@ export const useCanvasLayout = (
 
     }, [visibleNodeIds, fullNodeMap, templateRootId, entryFile]);
 
-    // --- Compute Component Groups ---
-    useEffect(() => {
-        if (layoutNodes.length === 0) {
-            setComponentGroups([]);
-            return;
-        }
-
-        const groups: Record<string, CanvasNode[]> = {};
-        layoutNodes.forEach(node => {
-            if (!groups[node.filePath]) groups[node.filePath] = [];
-            groups[node.filePath].push(node);
-        });
-
-        const calculatedGroups: ComponentGroup[] = Object.entries(groups).map(([filePath, nodes]) => {
-            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-            
-            nodes.forEach(n => {
-                const h = estimateNodeHeight(n);
-                const w = n.type === 'template' ? 900 : 550; 
-                
-                if (n.x < minX) minX = n.x;
-                if (n.x + w > maxX) maxX = n.x + w;
-                if (n.y < minY) minY = n.y;
-                if (n.y + h > maxY) maxY = n.y + h;
-            });
-
-            return {
-                filePath,
-                minX: minX - 40, 
-                maxX: maxX + 40,
-                minY: minY - 60, 
-                maxY: maxY + 40,
-                label: filePath.split('/').pop() || 'Unknown Component'
-            };
-        });
-
-        setComponentGroups(calculatedGroups);
-    }, [layoutNodes]);
-
     // --- Sync atoms with layout data ---
     useEffect(() => {
         setLayoutNodesAtom(layoutNodes);
@@ -332,7 +292,6 @@ export const useCanvasLayout = (
     return {
         layoutNodes,
         layoutLinks,
-        componentGroups,
         fullNodeMap,
         templateRootId
     };
