@@ -21,8 +21,6 @@ const CanvasConnections: React.FC = () => {
             return;
         }
 
-        console.log('🎨 Drawing connections for', layoutNodes.length, 'nodes');
-
         const contentRect = contentElement.getBoundingClientRect();
         const newPaths: React.ReactElement[] = [];
     

@@ -1,7 +1,6 @@
 import { GraphData } from '../entities/VariableNode';
-import { ProjectParser } from './parser/ProjectParser.ts';
+import { parseProject as parseProjectFunctional } from './parser/parseProject';
 
 export const parseProject = (files: Record<string, string>, entryFile: string): GraphData => {
-    const parser = new ProjectParser(files);
-    return parser.parseProject(entryFile);
+    return parseProjectFunctional(files, entryFile);
 };
