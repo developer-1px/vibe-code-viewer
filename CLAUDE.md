@@ -53,11 +53,16 @@ The application uses **Jotai** for global state management instead of prop drill
 - `filesAtom` - Virtual file system (Record<string, string>)
 - `activeFileAtom` - Currently selected file in editor
 - `entryFileAtom` - Entry point for parsing
+- `isSidebarOpenAtom` - Sidebar visibility state
 - `graphDataAtom` - Parsed dependency graph
+- `parseErrorAtom` - Parser error messages
 - `layoutNodesAtom` - D3 layout-computed node positions
+- `layoutLinksAtom` - Layout-computed edges between nodes
 - `fullNodeMapAtom` - Map of all nodes by ID
 - `templateRootIdAtom` - Root template/JSX node ID
+- `transformAtom` - Canvas transform state (zoom/pan)
 - `visibleNodeIdsAtom` - Set of nodes to display (filtering)
+- `lastExpandedIdAtom` - Last expanded node for navigation
 
 **Architecture Pattern**: Feature components use atoms directly instead of receiving props from parent:
 ```typescript
@@ -75,19 +80,33 @@ const ResetFilesButton = ({ onReset }: { onReset: () => void }) => {
 
 ### Core Parsing Pipeline
 
-The application uses a multi-stage parsing pipeline to analyze projects:
+The application uses a **dual-parser architecture** with a multi-stage pipeline:
 
-1. **Entry Point**: `services/codeParser.ts` - Entry function `parseProject()`
-2. **Project Parser**: `services/parser/ProjectParser.ts` - Main orchestrator that:
-   - Processes files recursively starting from entry file
-   - Uses `@vue/compiler-sfc` to parse `.vue` files (extracts script and template)
-   - Uses `@babel/parser` to parse JavaScript/TypeScript AST with JSX support
-   - Tracks imports/exports across files
-   - Builds dependency graph of variables, composables, hooks, and components
-   - **Filters framework primitives** (useState, useEffect, ref, computed, etc.)
-   - Extracts JSX snippets from React component returns
-3. **AST Utilities**: `services/parser/astUtils.ts` - Helper functions for traversing AST nodes
-4. **Path Resolution**: `services/parser/pathUtils.ts` - Resolves import paths and finds files in the virtual file system
+#### Standard Parser (`services/parser/`)
+Main entry: `services/parser/parseProject.ts` - 7-step processing pipeline per file:
+
+1. **Import Scanning** - Process imports, recursively parse imported files, create import nodes
+2. **Declaration Processing** - Scan top-level declarations (variables, functions, classes)
+3. **Initial Dependency Resolution** - Link nodes to their dependencies via AST traversal
+4. **Return Statement Extraction** - Extract return statements, create function-local variable nodes
+5. **Secondary Dependency Resolution** - Resolve dependencies for function-local variables
+6. **Template/JSX Processing** - Handle Vue templates or React JSX
+7. **File Root Creation** - Create FILE_ROOT for pure TypeScript files
+
+**Key Modules**:
+- `core/` - Core processing (importScanner, declarationProcessor, expressionProcessor, dependencyResolver, returnStatementExtractor, defaultExport)
+- `processors/` - File-type specific (vueProcessor, templateProcessor, jsxProcessor, fileRootProcessor, reactComponentProcessor)
+- `ast/` - AST analysis (returnExtractor, localReferenceExtractor, hooksDetector, tokenExtractor)
+- `utils/` - Analysis utilities (purityChecker, mutabilityChecker)
+
+#### Functional Parser (`services/functionalParser/`)
+Specialized parser for pure TypeScript files focusing on:
+- **Functional Programming Analysis** - Identifying pure vs impure functions
+- **External Dependencies Only** - Highlights imports and closures, excludes local variables
+- **DFS Traversal** - Depth-first scope tracking with closure detection
+- **Non-Component Code** - Optimized for utility functions and business logic
+
+See `/docs/PARSER_ARCHITECTURE.md` and `/docs/FUNCTIONAL_PARSER.md` for detailed technical documentation.
 
 ### Framework Primitives Filtering
 
@@ -232,19 +251,31 @@ The app operates on an in-memory file system:
 
 ### Parser Node Types
 
-The parser categorizes variables into types:
-- `module`: Imported components/functions/utilities
-- `hook`: React custom hooks (e.g., `useUsers`, `useCounter`)
-- `composable`: Vue composable functions (e.g., `useFetch...`)
-- `computed`: Vue computed properties
-- `ref`: Vue refs
-- `reactive`: Vue reactive objects
-- `store`: State management (e.g., Pinia stores)
-- `call`: Top-level function calls in entry file
-- `function`: Regular functions
-- `template`: Vue template root node
-- `const`: Constants
-- `let`/`var`: Mutable variables
+The parser categorizes variables into functional programming-aware types:
+
+**Pure/Immutable (Calculations)**:
+- `pure-function`: Pure functions with no side effects, state hooks, or mutations
+- `immutable-data`: Constants with immutable values (primitives, literals)
+- `computed`: Memoized/computed values (useMemo, useCallback)
+
+**State Management (State Actions)**:
+- `state-ref`: State value references (first element of useState/useReducer destructuring)
+- `state-action`: State mutation functions (setters, dispatch functions)
+- `mutable-ref`: Mutable references (useRef)
+- `ref`: Generic references (legacy, backward compatibility)
+
+**Side Effects (Effect Actions)**:
+- `effect-action`: Functions with side effects or effect hooks
+- `hook`: Custom hooks (complex logic, assumed impure by default)
+
+**Structural**:
+- `template`: Templates/JSX (TEMPLATE_ROOT, JSX_ROOT)
+- `module`: Imports/exports/FILE_ROOT
+- `call`: Top-level function calls
+- `function`: Generic functions (legacy, re-classified during analysis)
+- `store`: State store references (storeToRefs)
+
+See `/docs/PARSER_ARCHITECTURE.md` section 2 for detailed node creation conditions.
 
 ## Project Structure
 
@@ -274,10 +305,16 @@ The parser categorizes variables into types:
 │   │       └── NodeCard.tsx
 │   ├── services/
 │   │   ├── codeParser.ts           # Public parsing API (parseProject)
-│   │   └── parser/                 # Core parsing logic
-│   │       ├── ProjectParser.ts    # Main parser class
-│   │       ├── astUtils.ts         # AST traversal helpers
-│   │       └── pathUtils.ts        # Import path resolution
+│   │   ├── parser/                 # Standard parser (React/Vue components)
+│   │   │   ├── parseProject.ts     # Main entry point (7-step pipeline)
+│   │   │   ├── core/               # Core processors
+│   │   │   ├── processors/         # File-type processors
+│   │   │   ├── ast/                # AST analysis utilities
+│   │   │   └── utils/              # Purity & mutability checkers
+│   │   └── functionalParser/       # Functional parser (TypeScript utilities)
+│   │       ├── index.ts            # Functional thinking analysis
+│   │       ├── core/               # DFS traversal & function analyzer
+│   │       └── utils/              # Scope tracking & closure detection
 │   ├── entities/                   # Domain entities
 │   │   ├── VariableNode/           # Graph node entity
 │   │   └── CanvasNode/             # Layout-enhanced node
@@ -295,17 +332,36 @@ The parser categorizes variables into types:
 │           ├── UserCard.tsx
 │           └── useUsers.ts
 ├── docs/                           # Documentation
+│   ├── PARSER_ARCHITECTURE.md      # Comprehensive parser technical docs
+│   ├── FUNCTIONAL_PARSER.md        # Functional parser documentation
 │   ├── 프로젝트_활용방안_및_비전.md  # Project vision and use cases
-│   └── 정규식_분석_보고서.md        # Regex analysis report (why AST > regex)
+│   ├── 정규식_분석_보고서.md        # Regex analysis report (why AST > regex)
+│   └── 경쟁사_분석_보고서.md        # Competitor analysis
 └── CLAUDE.md                       # This file
 ```
 
 ## Development Notes
 
+### Parser Selection
+- **Pure TypeScript files** (`.ts`, non-component): Uses Functional Parser for external dependency analysis
+- **Vue files** (`.vue`): Uses Standard Parser with Vue template analysis
+- **React files** (`.tsx`): Uses Standard Parser with JSX analysis
+- **Fallback**: If Functional Parser fails, falls back to Standard Parser
+
+### Key Implementation Details
 - The parser builds a dependency graph where edges represent "depends on" relationships
-- Error handling: If parsing fails, the UI maintains last valid graph
+- Error handling: If parsing fails, the UI maintains last valid graph (stored in `parseErrorAtom`)
 - The custom layout algorithm automatically positions nodes in a hierarchical tree structure
-- Framework primitives (useState, ref, etc.) are automatically filtered out
+- Framework primitives (useState, ref, etc.) are automatically filtered out via `constants.ts`
 - JSX snippets are extracted from React component returns for visualization
 - Vue templates are analyzed for component usage and linked to imports
 - Both Vue and React examples are included for testing and demonstration
+- Purity analysis uses whitelisting (pure methods) and blacklisting (side effects)
+- Mutability detection tracks array mutations, object mutations, and reassignments
+
+### Important Files to Reference
+- `/docs/PARSER_ARCHITECTURE.md` - Deep dive into 7-step pipeline, node types, classification systems
+- `/docs/FUNCTIONAL_PARSER.md` - Functional parser API, scope tracking, external dependencies
+- `src/services/parser/constants.ts` - Framework primitive lists (React/Vue hooks to filter)
+- `src/services/parser/utils/purityChecker.ts` - Pure function classification logic
+- `src/services/parser/utils/mutabilityChecker.ts` - Mutation detection logic

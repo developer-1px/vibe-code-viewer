@@ -154,24 +154,56 @@ export const processCodeLines = (
             const isImportSource = token.type === 'import-source';
             const isString = token.type === 'string';
             const isComment = token.type === 'comment';
+            const isExternalImport = token.type === 'external-import';
+            const isExternalClosure = token.type === 'external-closure';
+            const isKeyword = token.type === 'keyword';
+            const isPunctuation = token.type === 'punctuation';
 
             let fullDepId: string | undefined;
             if (isSelf) {
                 fullDepId = nodeId;
-            } else if (isPrimitive || isString || isComment) {
+            } else if (isPrimitive || isString || isComment || isKeyword || isPunctuation) {
                 fullDepId = undefined;
             } else if (isImportSource) {
                 // For imports, link to the first dependency (usually the default export or file root of the imported file)
                 fullDepId = dependencies.length > 0 ? dependencies[0] : undefined;
+            } else if (isExternalImport || isExternalClosure) {
+                // For functional parser external dependencies, find matching dependency
+                fullDepId = dependencies.find(d => d.endsWith(`::${token.text}`));
+
+                // Debug: Log external dependency matching
+                console.log('🔍 External dependency lookup:', {
+                    tokenText: token.text,
+                    tokenType: token.type,
+                    dependencies,
+                    found: fullDepId
+                });
             } else {
                 fullDepId = dependencies.find(d => d.endsWith(`::${token.text}`));
+
+                // Debug: Log token matching for module nodes
+                if (nodeId.includes('::FILE_ROOT') && token.type === 'dependency') {
+                    console.log('🔍 Module token lookup:', {
+                        tokenText: token.text,
+                        tokenType: token.type,
+                        dependencies,
+                        found: fullDepId
+                    });
+                }
             }
 
-            if (token.type === 'dependency' || isImportSource) hasInputDeps = true;
+            if (token.type === 'dependency' || isImportSource || isExternalImport || isExternalClosure) hasInputDeps = true;
 
             segments.push({
                 text: token.text,
-                type: isSelf ? 'self' : isPrimitive ? 'primitive' : isImportSource ? 'import-source' : isString ? 'string' : isComment ? 'comment' : 'token',
+                type: isSelf ? 'self' :
+                      isPrimitive ? 'primitive' :
+                      isImportSource ? 'import-source' :
+                      isString ? 'string' :
+                      isComment ? 'comment' :
+                      isExternalImport ? 'external-import' :
+                      isExternalClosure ? 'external-closure' :
+                      'token',
                 tokenId: fullDepId
             });
 

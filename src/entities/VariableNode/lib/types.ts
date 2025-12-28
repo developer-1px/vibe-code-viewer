@@ -2,11 +2,11 @@
 export interface TokenRange {
   start: number;
   end: number;
-  type: 'self' | 'dependency' | 'other-known' | 'text' | 'primitive' | 'import-source' | 'string' | 'comment';
+  type: 'self' | 'dependency' | 'other-known' | 'text' | 'primitive' | 'import-source' | 'string' | 'comment' | 'external-import' | 'external-closure' | 'keyword' | 'punctuation';
   text: string;
 }
 
-export type SegmentType = 'text' | 'self' | 'token' | 'primitive' | 'import-source' | 'string' | 'comment' | 'directive-if' | 'directive-for' | 'directive-else' | 'directive-else-if';
+export type SegmentType = 'text' | 'self' | 'token' | 'primitive' | 'import-source' | 'string' | 'comment' | 'directive-if' | 'directive-for' | 'directive-else' | 'directive-else-if' | 'external-import' | 'external-closure' | 'keyword' | 'punctuation';
 
 export interface LineSegment {
     text: string;

@@ -3,8 +3,7 @@ import React, { useMemo } from 'react';
 import { CanvasNode } from '../../CanvasNode';
 
 // Lib - Pure Utilities
-import { extractTokenRanges } from '../lib/tokenUtils.ts';
-import { processCodeLines } from '../lib/lineUtils.ts';
+import { renderCodeLines } from '../lib/renderCodeLines.ts';
 import { getNodeBorderColor } from '../lib/styleUtils.ts';
 
 // UI Components
@@ -21,21 +20,59 @@ const CodeCard: React.FC<CodeCardProps> = ({ node }) => {
   const isTemplate = node.type === 'template';
 
   // --- 1. Prepare Data (Pure Logic) ---
-  const tokenRanges = useMemo(() => {
-    return extractTokenRanges(node.codeSnippet, node.id, node.dependencies, isTemplate);
-  }, [node.codeSnippet, node.id, node.dependencies, isTemplate]);
+  const isModule = node.type === 'module';
+
+  // Extract external references (imports + closures) from functionAnalysis
+  const externalReferences = useMemo(() => {
+    if (!node.functionAnalysis) {
+      console.log('🔍 No functionAnalysis for node:', node.id);
+      return [];
+    }
+
+    console.log('🔍 FunctionAnalysis for', node.id, ':', {
+      totalExternalDeps: node.functionAnalysis.externalDeps.length,
+      externalDeps: node.functionAnalysis.externalDeps,
+    });
+
+    // Map all external dependencies (both imports and closures)
+    const references = node.functionAnalysis.externalDeps.map(dep => {
+      // For imports, use the source path as the node ID
+      if (dep.type === 'import' && dep.source) {
+        // Try to resolve the import to a function node in that file
+        const nodeId = `${dep.source}::${dep.name}`;
+        return {
+          nodeId,
+          name: dep.name,
+          summary: `from ${dep.source}`,
+          type: 'pure-function' as const, // Visual type for styling
+        };
+      }
+
+      // For closures, use the current file path
+      return {
+        nodeId: `${node.filePath}::${dep.name}`,
+        name: dep.name,
+        summary: 'closure',
+        type: 'function' as const, // Visual type for styling
+      };
+    });
+
+    console.log('🔍 External references extracted:', references);
+
+    return references;
+  }, [node.functionAnalysis, node.filePath]);
 
   const processedLines = useMemo(() => {
-    return processCodeLines(
-        node.codeSnippet,
-        node.startLine || 1,
-        node.id,
-        node.dependencies,
-        tokenRanges,
-        isTemplate,
-        node.templateTokenRanges // AST-based token positions for templates
+    return renderCodeLines(
+      node.codeSnippet,
+      node.startLine || 1,
+      node.id,
+      node.dependencies,
+      node.localVariableNames,
+      node.functionAnalysis,
+      node.filePath
     );
-  }, [node.codeSnippet, node.startLine, node.id, node.dependencies, tokenRanges, isTemplate, node.templateTokenRanges]);
+  }, [node.codeSnippet, node.startLine, node.id, node.dependencies, node.localVariableNames, node.functionAnalysis, node.filePath]);
 
 
   const maxWidthClass = 'max-w-[700px]';
@@ -52,15 +89,23 @@ const CodeCard: React.FC<CodeCardProps> = ({ node }) => {
       {/* Header */}
       <CodeCardHeader node={node} />
 
-      {/* Local References (for JSX_ROOT only) */}
-      {node.localReferences && node.localReferences.length > 0 && (
+      {/* Variables Section: Show external references from functionAnalysis OR localReferences for other types */}
+      {(externalReferences.length > 0 || (node.localReferences && node.localReferences.length > 0)) && (
         <div className="flex flex-col gap-0.5 bg-[#0d1526] border-y border-white/5 py-2">
           <div className="px-3 text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">
-            Local References
+            {externalReferences.length > 0 ? 'External References' : (node.type === 'module' ? 'Variables' : 'Local References')}
           </div>
-          {node.localReferences.map((ref, idx) => (
-            <LocalReferenceItem key={`${ref.nodeId}-${idx}`} reference={ref} />
-          ))}
+          {/* Show external references if available (for functions analyzed by functional parser) */}
+          {externalReferences.length > 0 ? (
+            externalReferences.map((ref, idx) => (
+              <LocalReferenceItem key={`${ref.nodeId}-${idx}`} reference={ref} />
+            ))
+          ) : (
+            /* Otherwise show localReferences (for JSX_ROOT, TEMPLATE_ROOT, FILE_ROOT) */
+            node.localReferences?.map((ref, idx) => (
+              <LocalReferenceItem key={`${ref.nodeId}-${idx}`} reference={ref} />
+            ))
+          )}
         </div>
       )}
 

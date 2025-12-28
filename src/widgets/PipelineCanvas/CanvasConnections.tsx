@@ -114,9 +114,12 @@ const CanvasConnections: React.FC = () => {
               const dist = Math.abs(endX - startX);
               const d = `M ${startX} ${startY} C ${startX + dist * curveStrength} ${startY}, ${endX - dist * curveStrength} ${endY}, ${endX} ${endY}`;
 
+              // Use global counter for unique key
+              const uniqueKey = `${link.source}-${link.target}-${newPaths.length}`;
+
               newPaths.push(
                 <path
-                    key={`${link.source}-${link.target}-${idx}`}
+                    key={uniqueKey}
                     d={d}
                     fill="none"
                     stroke={isCrossFile ? "#94a3b8" : edgeColor}

@@ -16,6 +16,10 @@ const FileItem: React.FC<FileItemProps> = ({
   onFileClick,
   onSetEntryFile
 }) => {
+  const handleDoubleClick = () => {
+    onSetEntryFile(fileName);
+  };
+
   return (
     <li
       className={`
@@ -43,8 +47,13 @@ const FileItem: React.FC<FileItemProps> = ({
         </button>
       )}
 
-      {/* File name with icon */}
-      <div onClick={() => onFileClick(fileName)} className="flex items-center gap-2 flex-1 min-w-0">
+      {/* File name with icon - Single click to open, Double click to set as entry */}
+      <div
+        onClick={() => onFileClick(fileName)}
+        onDoubleClick={handleDoubleClick}
+        className="flex items-center gap-2 flex-1 min-w-0"
+        title="Double-click to set as entry file"
+      >
         <FileText className="w-3 h-3 opacity-70 flex-shrink-0" />
         <span className="flex-1 truncate">{fileName}</span>
       </div>
