@@ -157,7 +157,7 @@ const VueTemplateSection: React.FC<VueTemplateSectionProps> = ({ template, node,
       {templateLines.map((line, idx) => (
         <div
           key={idx}
-          className="flex items-start hover:bg-white/5 transition-colors duration-200"
+          className="flex items-start"
         >
           {/* Line Number */}
           <div className="flex-shrink-0 w-12 px-2 py-0.5 text-right text-xs text-slate-600 select-none font-mono">

@@ -35,7 +35,9 @@ const CodeCardReferences: React.FC<CodeCardReferencesProps> = ({ node }) => {
   }, [node.functionAnalysis]);
 
   // Check if we have any references to show
-  const hasReferences = externalReferences.length > 0 || (node.localReferences && node.localReferences.length > 0);
+  const hasReferences = externalReferences.length > 0 ||
+    (node.localReferences && node.localReferences.length > 0) ||
+    (node.vueTemplateRefs && node.vueTemplateRefs.length > 0);
 
   if (!hasReferences) return null;
 
@@ -50,10 +52,16 @@ const CodeCardReferences: React.FC<CodeCardReferencesProps> = ({ node }) => {
           <LocalReferenceItem key={`${ref.nodeId}-${idx}`} reference={ref} />
         ))
       ) : (
-        /* Otherwise show localReferences (for JSX_ROOT, TEMPLATE_ROOT, FILE_ROOT) */
-        node.localReferences?.map((ref, idx) => (
-          <LocalReferenceItem key={`${ref.nodeId}-${idx}`} reference={ref} />
-        ))
+        <>
+          {/* Local references (for JSX_ROOT, TEMPLATE_ROOT, FILE_ROOT) */}
+          {node.localReferences?.map((ref, idx) => (
+            <LocalReferenceItem key={`${ref.nodeId}-${idx}`} reference={ref} />
+          ))}
+          {/* Vue Template references (for Vue Module nodes) */}
+          {node.vueTemplateRefs?.map((ref, idx) => (
+            <LocalReferenceItem key={`vue-${ref.nodeId}-${idx}`} reference={ref} />
+          ))}
+        </>
       )}
     </div>
   );

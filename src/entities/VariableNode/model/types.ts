@@ -51,6 +51,7 @@ export interface VariableNode {
 
   // === NEW: Vue Template ===
   vueTemplate?: string; // For Vue module nodes: raw template content
+  vueTemplateRefs?: LocalReference[]; // For Vue module nodes: components used in template
 }
 
 export interface GraphData {

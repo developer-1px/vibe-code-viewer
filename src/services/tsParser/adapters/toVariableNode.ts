@@ -62,13 +62,44 @@ export function tsProjectToGraphData(
         dependencies: allTopLevelItems,
       };
 
-      // Vue 파일이면 template 추출
+      // Vue 파일이면 template 추출 + 컴포넌트 참조 생성
       if (isVueFile(fileAnalysis.filePath)) {
         const fullContent = files[fileAnalysis.filePath];
         if (fullContent) {
           const template = extractVueTemplate(fullContent, fileAnalysis.filePath);
           if (template) {
             fileRootNode.vueTemplate = template;
+
+            // Template에서 사용된 컴포넌트 추출 (PascalCase 태그)
+            const componentRegex = /<(\w+)/g;
+            const usedComponents = new Set<string>();
+            let match;
+
+            while ((match = componentRegex.exec(template)) !== null) {
+              const name = match[1];
+              // PascalCase인지 확인
+              if (name[0] === name[0].toUpperCase()) {
+                usedComponents.add(name);
+              }
+            }
+
+            // dependencies에서 해당 컴포넌트 찾아서 LocalReference 생성
+            const templateRefs: any[] = [];
+            usedComponents.forEach(componentName => {
+              const depId = fileRootNode.dependencies.find(dep => dep.endsWith(`::${componentName}`));
+              if (depId) {
+                templateRefs.push({
+                  name: componentName,
+                  nodeId: depId,
+                  summary: 'used in template',
+                  type: 'template'
+                });
+              }
+            });
+
+            if (templateRefs.length > 0) {
+              fileRootNode.vueTemplateRefs = templateRefs;
+            }
           }
         }
       }
