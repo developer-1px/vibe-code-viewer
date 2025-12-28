@@ -86,6 +86,24 @@ export function extractFileVariables(
         isFunction: false,
       });
     }
+
+    // 함수 선언 (function declaration)
+    if (ts.isFunctionDeclaration(node) && node.name) {
+      const isExported = hasExportModifier(node);
+      const name = node.name.text;
+      const fullStatement = node.getText(sourceFile);
+      const statementLine = sourceFile.getLineAndCharacterOfPosition(node.getStart()).line + 1;
+
+      variables.push({
+        name,
+        id: `${filePath}::${name}`,
+        line: statementLine,
+        isConst: true, // 함수 선언은 재할당 불가
+        isExported,
+        codeSnippet: fullStatement,
+        isFunction: true,
+      });
+    }
   });
 
   return variables;
