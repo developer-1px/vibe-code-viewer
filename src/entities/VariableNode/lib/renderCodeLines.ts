@@ -171,7 +171,10 @@ export function renderCodeLines(node: CanvasNode): CodeLine[] {
       const basicKind = getSegmentKind(node);
       if (basicKind) {
         markPosition(lineIdx, start, end, basicKind);
-        if (basicKind === 'string') return; // String은 자식 순회 안 함
+        // Keyword, Punctuation, String은 자식 순회 안 함 (리프 노드)
+        if (basicKind === 'keyword' || basicKind === 'punctuation' || basicKind === 'string') {
+          return;
+        }
       }
 
       // Hook 2: Identifier 체크
