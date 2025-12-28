@@ -248,8 +248,37 @@ function getDefinedIn(
     if (importInfo) {
       // 상대 경로를 절대 경로로 해결
       const resolvedPath = resolvePath(fileContext.filePath, importInfo.source, fileContext.files);
+
       if (resolvedPath) {
-        return `${resolvedPath}::${name}`;
+        // index.ts 파일인 경우 FILE_ROOT로 연결
+        if (resolvedPath.endsWith('/index.ts') || resolvedPath.endsWith('/index.tsx')) {
+          const definedIn = `${resolvedPath}::FILE_ROOT`;
+
+          // Debug: Sidebar vs Header 비교
+          if (name === 'Sidebar' || name === 'Header') {
+            console.log(`🔍 [getDefinedIn] ${name} (index.ts → FILE_ROOT):`, {
+              importSource: importInfo.source,
+              resolvedPath,
+              definedIn,
+            });
+          }
+
+          return definedIn;
+        }
+
+        // 일반 파일인 경우 이름으로 연결
+        const definedIn = `${resolvedPath}::${name}`;
+
+        // Debug: Sidebar vs Header 비교
+        if (name === 'Sidebar' || name === 'Header') {
+          console.log(`🔍 [getDefinedIn] ${name} (direct):`, {
+            importSource: importInfo.source,
+            resolvedPath,
+            definedIn,
+          });
+        }
+
+        return definedIn;
       }
       // 해결 실패 시 원래 source 사용
       return `${importInfo.source}::${name}`;

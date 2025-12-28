@@ -23,30 +23,35 @@ const LocalReferenceItem: React.FC<LocalReferenceItemProps> = ({ reference }) =>
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    console.log('🔍 LocalReferenceItem clicked:', {
-      name: reference.name,
-      nodeId: reference.nodeId,
-      isLinkable,
-      hasInFullNodeMap: fullNodeMap.has(reference.nodeId),
-      fullNodeMapKeys: Array.from(fullNodeMap.keys()).filter(k => k.includes(reference.name)),
-    });
+    // Debug: Sidebar vs Header 비교
+    if (reference.name === 'Sidebar' || reference.name === 'Header') {
+      console.log(`🎯 [LocalReferenceItem] ${reference.name} clicked:`, {
+        nodeId: reference.nodeId,
+        isLinkable,
+        hasInFullNodeMap: fullNodeMap.has(reference.nodeId),
+        allMatchingKeys: Array.from(fullNodeMap.keys()).filter(k => k.includes(reference.name)),
+      });
+    }
 
     if (!isLinkable) {
-      console.log('❌ Not linkable, checking FILE_ROOT fallback');
       // Try FILE_ROOT fallback
       const filePath = reference.nodeId.split('::')[0];
       const fileRootId = `${filePath}::FILE_ROOT`;
 
+      if (reference.name === 'Sidebar' || reference.name === 'Header') {
+        console.log(`🔄 [LocalReferenceItem] ${reference.name} trying FILE_ROOT fallback:`, {
+          fileRootId,
+          hasFileRoot: fullNodeMap.has(fileRootId),
+        });
+      }
+
       if (fullNodeMap.has(fileRootId)) {
-        console.log('✅ Found FILE_ROOT:', fileRootId);
         setVisibleNodeIds((prev: Set<string>) => {
           const next = new Set(prev);
           next.add(fileRootId);
           return next;
         });
         setLastExpandedId(fileRootId);
-      } else {
-        console.log('❌ FILE_ROOT not found:', fileRootId);
       }
       return;
     }
