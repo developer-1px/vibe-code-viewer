@@ -298,20 +298,8 @@ const loadDynamicFiles = (): Record<string, string> | null => {
       eager: true
     });
 
-    // @ts-expect-error - import.meta.glob is a Vite feature
-    const exampleFiles = import.meta.glob('/examples/**/*.{tsx,ts,vue}', {
-      query: '?raw',
-      eager: true
-    });
-
     // Process src files
     Object.entries(srcFiles || {}).forEach(([path, module]) => {
-      const filePath = path.replace(/^\//, '');
-      files[filePath] = (module as any).default;
-    });
-
-    // Process example files
-    Object.entries(exampleFiles || {}).forEach(([path, module]) => {
       const filePath = path.replace(/^\//, '');
       files[filePath] = (module as any).default;
     });

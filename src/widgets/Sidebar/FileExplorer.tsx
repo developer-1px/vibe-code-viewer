@@ -1,45 +1,23 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { useSetAtom } from 'jotai';
+import React, { useMemo, useRef, useEffect } from 'react';
+import { useAtom, useSetAtom } from 'jotai';
 import { FolderOpen, Search, X } from 'lucide-react';
-import { FileItem } from '../../entities/File';
+import { FileItem, fuzzyMatch } from '../../entities/File';
 import UploadFolderButton from '../../features/UploadFolderButton';
-import { lastExpandedIdAtom } from '../../store/atoms';
+import { lastExpandedIdAtom, fileSearchQueryAtom, focusedFileIndexAtom } from '../../store/atoms';
 
 interface FileExplorerProps {
   files: Record<string, string>;
-  entryFile: string;
-  onSetEntryFile: (fileName: string) => void;
 }
 
-const FileExplorer: React.FC<FileExplorerProps> = ({
-  files,
-  entryFile,
-  onSetEntryFile
-}) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [focusedIndex, setFocusedIndex] = useState<number>(0);
+const FileExplorer: React.FC<FileExplorerProps> = ({ files }) => {
+  const [searchQuery, setSearchQuery] = useAtom(fileSearchQueryAtom);
+  const [focusedIndex, setFocusedIndex] = useAtom(focusedFileIndexAtom);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const lastShiftPressRef = useRef<number>(0);
   const fileListRef = useRef<HTMLUListElement>(null);
 
   // Canvas navigation atom
   const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
-
-  // Fuzzy matching 함수
-  const fuzzyMatch = (text: string, query: string): boolean => {
-    const lowerText = text.toLowerCase();
-    const lowerQuery = query.toLowerCase();
-
-    let queryIndex = 0;
-
-    for (let i = 0; i < lowerText.length && queryIndex < lowerQuery.length; i++) {
-      if (lowerText[i] === lowerQuery[queryIndex]) {
-        queryIndex++;
-      }
-    }
-
-    return queryIndex === lowerQuery.length;
-  };
 
   // 검색어로 필터링된 파일 목록 (Fuzzy Search)
   const filteredFiles = useMemo(() => {
@@ -58,7 +36,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
   // 필터링된 파일이 변경되면 focusedIndex 리셋
   useEffect(() => {
     setFocusedIndex(0);
-  }, [filteredFiles]);
+  }, [filteredFiles, setFocusedIndex]);
 
   // Focused 파일이 변경되면 카메라 이동
   useEffect(() => {
@@ -69,34 +47,21 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     }
   }, [focusedIndex, filteredFiles, setLastExpandedId]);
 
-  // 파일 클릭 핸들러 (엔트리 파일이면 노드로 이동)
-  const handleFileClick = useCallback((fileName: string) => {
-    if (fileName === entryFile) {
-      // 이미 엔트리 파일이면 해당 노드로 이동
-      const fileRootId = `${fileName}::FILE_ROOT`;
-      setLastExpandedId(fileRootId);
-    } else {
-      // 엔트리 파일이 아니면 엔트리로 설정
-      onSetEntryFile(fileName);
-    }
-  }, [entryFile, setLastExpandedId, onSetEntryFile]);
-
   // 검색 필드에서 키보드 네비게이션
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (filteredFiles.length === 0) return;
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setFocusedIndex(prev => Math.min(prev + 1, filteredFiles.length - 1));
+      setFocusedIndex(Math.min(focusedIndex + 1, filteredFiles.length - 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setFocusedIndex(prev => Math.max(prev - 1, 0));
+      setFocusedIndex(Math.max(focusedIndex - 1, 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const selectedFile = filteredFiles[focusedIndex];
-      if (selectedFile) {
-        handleFileClick(selectedFile);
-      }
+      // FileItem의 handleClick will be triggered by clicking
+      const focusedElement = fileListRef.current?.children[focusedIndex] as HTMLElement;
+      focusedElement?.click();
     } else if (e.key === 'Escape') {
       e.preventDefault();
       setSearchQuery('');
@@ -127,11 +92,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
-
-  // 마우스로 파일 클릭 시 focus 업데이트
-  const handleMouseEnter = (index: number) => {
-    setFocusedIndex(index);
-  };
 
   // Focused 파일을 화면에 표시 (스크롤)
   useEffect(() => {
@@ -191,11 +151,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
             <FileItem
               key={fileName}
               fileName={fileName}
-              isEntry={fileName === entryFile}
-              isFocused={index === focusedIndex}
-              searchQuery={searchQuery}
-              onSetEntryFile={handleFileClick}
-              onMouseEnter={() => handleMouseEnter(index)}
+              index={index}
             />
           ))
         ) : (

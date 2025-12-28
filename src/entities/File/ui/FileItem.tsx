@@ -1,54 +1,24 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { FileText, Star } from 'lucide-react';
+import type { FileItemProps } from '../model/types';
+import { getFuzzyMatchIndices, splitFilePath } from '../lib/fuzzyMatch';
+import { entryFileAtom, lastExpandedIdAtom, fileSearchQueryAtom, focusedFileIndexAtom } from '../../../store/atoms';
 
-interface FileItemProps {
-  fileName: string;
-  isEntry: boolean;
-  isFocused: boolean;
-  searchQuery: string;
-  onSetEntryFile: (fileName: string) => void;
-  onMouseEnter: () => void;
-}
+const FileItem: React.FC<FileItemProps> = ({ fileName, index }) => {
+  // Atoms
+  const entryFile = useAtomValue(entryFileAtom);
+  const setEntryFile = useSetAtom(entryFileAtom);
+  const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
+  const searchQuery = useAtomValue(fileSearchQueryAtom);
+  const focusedIndex = useAtomValue(focusedFileIndexAtom);
+  const setFocusedIndex = useSetAtom(focusedFileIndexAtom);
 
-const FileItem: React.FC<FileItemProps> = ({
-  fileName,
-  isEntry,
-  isFocused,
-  searchQuery,
-  onSetEntryFile,
-  onMouseEnter
-}) => {
+  // Computed values
+  const isEntry = fileName === entryFile;
+  const isFocused = index === focusedIndex;
   // 파일명과 폴더 경로 분리
-  const { name, folder } = useMemo(() => {
-    const lastSlash = fileName.lastIndexOf('/');
-    if (lastSlash === -1) {
-      return { name: fileName, folder: '' };
-    }
-    return {
-      name: fileName.slice(lastSlash + 1),
-      folder: fileName.slice(0, lastSlash)
-    };
-  }, [fileName]);
-
-  // Fuzzy matching으로 하이라이트할 인덱스 찾기
-  const getFuzzyMatchIndices = (text: string, query: string): number[] => {
-    if (!query.trim()) return [];
-
-    const lowerText = text.toLowerCase();
-    const lowerQuery = query.toLowerCase();
-    const indices: number[] = [];
-
-    let queryIndex = 0;
-
-    for (let i = 0; i < lowerText.length && queryIndex < lowerQuery.length; i++) {
-      if (lowerText[i] === lowerQuery[queryIndex]) {
-        indices.push(i);
-        queryIndex++;
-      }
-    }
-
-    return queryIndex === lowerQuery.length ? indices : [];
-  };
+  const { name, folder } = useMemo(() => splitFilePath(fileName), [fileName]);
 
   // 검색어 하이라이트를 위한 파일명 분리 (Fuzzy)
   const highlightedName = useMemo(() => {
@@ -76,10 +46,26 @@ const FileItem: React.FC<FileItemProps> = ({
     }));
   }, [folder, searchQuery]);
 
+  // Handlers
+  const handleClick = useCallback(() => {
+    if (isEntry) {
+      // 이미 엔트리 파일이면 해당 노드로 이동
+      const fileRootId = `${fileName}::FILE_ROOT`;
+      setLastExpandedId(fileRootId);
+    } else {
+      // 엔트리 파일이 아니면 엔트리로 설정
+      setEntryFile(fileName);
+    }
+  }, [isEntry, fileName, setEntryFile, setLastExpandedId]);
+
+  const handleMouseEnter = useCallback(() => {
+    setFocusedIndex(index);
+  }, [index, setFocusedIndex]);
+
   return (
     <li
-      onClick={() => onSetEntryFile(fileName)}
-      onMouseEnter={onMouseEnter}
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
       className={`
         px-3 py-1 text-[11px] font-mono cursor-pointer flex items-center gap-2 border-l-2 transition-colors group
         ${isEntry

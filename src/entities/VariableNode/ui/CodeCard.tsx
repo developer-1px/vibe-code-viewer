@@ -9,32 +9,13 @@ import { getNodeBorderColor } from '../lib/styleUtils.ts';
 import CodeCardHeader from './components/CodeCardHeader.tsx';
 import CodeCardCopyButton from './components/CodeCardCopyButton.tsx';
 import CodeCardLine from './components/CodeCardLine.tsx';
-import LocalReferenceItem from './components/LocalReferenceItem.tsx';
+import CodeCardReferences from './components/CodeCardReferences.tsx';
 
 interface CodeCardProps {
   node: CanvasNode;
 }
 
 const CodeCard: React.FC<CodeCardProps> = ({ node }) => {
-  // Extract external references from functionAnalysis
-  const externalReferences = useMemo(() => {
-    if (!node.functionAnalysis) return [];
-
-    return node.functionAnalysis.externalDeps
-      .filter(dep => dep.definedIn)
-      .map(dep => {
-        const refType: 'pure-function' | 'function' = dep.type === 'import' ? 'pure-function' : 'function';
-        return {
-          nodeId: dep.definedIn!,
-          name: dep.name,
-          summary: dep.type === 'import' && dep.source
-            ? `from ${dep.source}`
-            : dep.closureScope === 'file' ? 'file-level' : 'closure',
-          type: refType,
-        };
-      });
-  }, [node.functionAnalysis]);
-
   // Render code lines with syntax highlighting
   const processedLines = useMemo(() => {
     return renderCodeLines(node);
@@ -53,24 +34,7 @@ const CodeCard: React.FC<CodeCardProps> = ({ node }) => {
       <CodeCardHeader node={node} />
 
       {/* Variables Section: Show external references from functionAnalysis OR localReferences for other types */}
-      {(externalReferences.length > 0 || (node.localReferences && node.localReferences.length > 0)) && (
-        <div className="flex flex-col gap-0.5 bg-[#0d1526] border-y border-white/5 py-2">
-          <div className="px-3 text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">
-            {externalReferences.length > 0 ? 'External References' : (node.type === 'module' ? 'Variables' : 'Local References')}
-          </div>
-          {/* Show external references if available (for functions analyzed by functional parser) */}
-          {externalReferences.length > 0 ? (
-            externalReferences.map((ref, idx) => (
-              <LocalReferenceItem key={`${ref.nodeId}-${idx}`} reference={ref} />
-            ))
-          ) : (
-            /* Otherwise show localReferences (for JSX_ROOT, TEMPLATE_ROOT, FILE_ROOT) */
-            node.localReferences?.map((ref, idx) => (
-              <LocalReferenceItem key={`${ref.nodeId}-${idx}`} reference={ref} />
-            ))
-          )}
-        </div>
-      )}
+      <CodeCardReferences node={node} />
 
       {/* Code Lines */}
       <div className="flex flex-col bg-[#0b1221] py-2 rounded-b-lg">

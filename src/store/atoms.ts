@@ -26,3 +26,7 @@ export const transformAtom = atom({ k: 1, x: 0, y: 0 });
 // Visibility and navigation atoms (read-write)
 export const visibleNodeIdsAtom = atom(new Set<string>());
 export const lastExpandedIdAtom = atom(null as string | null);
+
+// File Explorer atoms
+export const fileSearchQueryAtom = atom('');
+export const focusedFileIndexAtom = atom(0);

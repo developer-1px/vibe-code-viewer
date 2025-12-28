@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtomValue } from 'jotai';
 import { Box, FileCode } from 'lucide-react';
-import { filesAtom, entryFileAtom } from '../../store/atoms';
+import { filesAtom } from '../../store/atoms';
 import ResetFilesButton from '../../features/ResetFilesButton';
 import FileExplorer from './FileExplorer';
 
 const Sidebar: React.FC = () => {
   const files = useAtomValue(filesAtom);
-  const [entryFile, setEntryFile] = useAtom(entryFileAtom);
   const [width, setWidth] = useState(400);
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -53,11 +52,7 @@ const Sidebar: React.FC = () => {
       </div>
 
       {/* File Explorer */}
-      <FileExplorer
-        files={files}
-        entryFile={entryFile}
-        onSetEntryFile={setEntryFile}
-      />
+      <FileExplorer files={files} />
 
       {/* Footer */}
       <div className="p-3 border-t border-vibe-border bg-[#162032] flex justify-between items-center flex-shrink-0">
