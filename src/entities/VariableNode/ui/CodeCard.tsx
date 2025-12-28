@@ -22,6 +22,12 @@ const CodeCard: React.FC<CodeCardProps> = ({ node }) => {
     return renderCodeLines(node);
   }, [node]);
 
+  // Script 영역의 마지막 라인 번호 계산
+  const scriptEndLine = useMemo(() => {
+    if (processedLines.length === 0) return 0;
+    return processedLines[processedLines.length - 1].num;
+  }, [processedLines]);
+
   return (
     <div
       id={`node-${node.visualId || node.id}`}
@@ -46,7 +52,7 @@ const CodeCard: React.FC<CodeCardProps> = ({ node }) => {
 
       {/* Vue Template Section (Module 노드이면서 vueTemplate이 있을 때만) */}
       {node.type === 'module' && node.vueTemplate && (
-        <VueTemplateSection template={node.vueTemplate} />
+        <VueTemplateSection template={node.vueTemplate} node={node} scriptEndLine={scriptEndLine} />
       )}
 
       {/* Copy Button - Bottom Right */}

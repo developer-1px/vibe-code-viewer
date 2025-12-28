@@ -29,7 +29,7 @@ export function extractVueScript(vueContent: string, filePath: string): string |
 }
 
 /**
- * Vue SFC에서 <template> 코드 추출
+ * Vue SFC에서 <template> 전체 추출 (태그 포함)
  */
 export function extractVueTemplate(vueContent: string, filePath: string): string | null {
   try {
@@ -39,7 +39,13 @@ export function extractVueTemplate(vueContent: string, filePath: string): string
       return null;
     }
 
-    return descriptor.template.content;
+    // <template>부터 </template>까지 전체 추출
+    const templateBlock = descriptor.template;
+    const startTag = `<template>`;
+    const endTag = `</template>`;
+    const fullTemplate = `${startTag}\n${templateBlock.content}\n${endTag}`;
+
+    return fullTemplate;
   } catch (error) {
     console.error(`❌ Error parsing Vue template ${filePath}:`, error);
     return null;
