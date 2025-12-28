@@ -4,6 +4,7 @@
  */
 
 import * as ts from 'typescript';
+import type { CanvasNode } from '../../CanvasNode';
 import type { FunctionAnalysis } from '../../../services/functionalParser/types';
 
 export interface CodeSegment {
@@ -92,15 +93,15 @@ function foldFunctionBodies(code: string, isTsx: boolean): string {
 /**
  * TypeScript 코드를 파싱해서 라인별 segment로 변환
  */
-export function renderCodeLines(
-  codeSnippet: string,
-  startLineNum: number,
-  nodeId: string,
-  dependencies: string[],
-  localVariableNames?: string[],
-  functionAnalysis?: FunctionAnalysis,
-  filePath?: string
-): CodeLine[] {
+export function renderCodeLines(node: CanvasNode): CodeLine[] {
+  const codeSnippet = node.codeSnippet;
+  const startLineNum = node.startLine || 1;
+  const nodeId = node.id;
+  const dependencies = node.dependencies;
+  const localVariableNames = node.localVariableNames;
+  const functionAnalysis = node.functionAnalysis;
+  const filePath = node.filePath;
+
   const isTsx = filePath?.endsWith('.tsx') || filePath?.endsWith('.jsx') || false;
   const isModule = nodeId.endsWith('::FILE_ROOT');
 

@@ -84,10 +84,10 @@ const CodeCardToken: React.FC<CodeCardTokenProps> = ({ text, tokenId, nodeId }) 
     <span
       data-token={tokenId}
       className={`
-        inline-block px-0.5 rounded transition-all duration-200
+        inline-block px-0.5 rounded transition-all duration-200 select-text
         ${isLinkable ? 'cursor-pointer border' : 'cursor-default'}
-        ${isLinkable 
-          ? getTokenStyle(isActive, isComponent) 
+        ${isLinkable
+          ? getTokenStyle(isActive, isComponent)
           : (isComponent ? 'text-emerald-300' : 'text-blue-300') // Fallback style for broken/missing links
         }
       `}

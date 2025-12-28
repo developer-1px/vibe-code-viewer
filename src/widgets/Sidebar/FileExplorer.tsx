@@ -60,6 +60,15 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
     setFocusedIndex(0);
   }, [filteredFiles]);
 
+  // Focused 파일이 변경되면 카메라 이동
+  useEffect(() => {
+    if (filteredFiles.length > 0 && focusedIndex >= 0 && focusedIndex < filteredFiles.length) {
+      const focusedFile = filteredFiles[focusedIndex];
+      const fileRootId = `${focusedFile}::FILE_ROOT`;
+      setLastExpandedId(fileRootId);
+    }
+  }, [focusedIndex, filteredFiles, setLastExpandedId]);
+
   // 파일 클릭 핸들러 (엔트리 파일이면 노드로 이동)
   const handleFileClick = useCallback((fileName: string) => {
     if (fileName === entryFile) {

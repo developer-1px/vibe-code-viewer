@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { CanvasNode } from '../../CanvasNode';
 
@@ -38,16 +37,8 @@ const CodeCard: React.FC<CodeCardProps> = ({ node }) => {
 
   // Render code lines with syntax highlighting
   const processedLines = useMemo(() => {
-    return renderCodeLines(
-      node.codeSnippet,
-      node.startLine || 1,
-      node.id,
-      node.dependencies,
-      node.localVariableNames,
-      node.functionAnalysis,
-      node.filePath
-    );
-  }, [node.codeSnippet, node.startLine, node.id, node.dependencies, node.localVariableNames, node.functionAnalysis, node.filePath]);
+    return renderCodeLines(node);
+  }, [node]);
 
   return (
     <div
