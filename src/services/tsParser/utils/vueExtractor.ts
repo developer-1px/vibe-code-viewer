@@ -29,6 +29,24 @@ export function extractVueScript(vueContent: string, filePath: string): string |
 }
 
 /**
+ * Vue SFC에서 <template> 코드 추출
+ */
+export function extractVueTemplate(vueContent: string, filePath: string): string | null {
+  try {
+    const { descriptor } = parse(vueContent, { filename: filePath });
+
+    if (!descriptor.template) {
+      return null;
+    }
+
+    return descriptor.template.content;
+  } catch (error) {
+    console.error(`❌ Error parsing Vue template ${filePath}:`, error);
+    return null;
+  }
+}
+
+/**
  * Vue 파일인지 확인
  */
 export function isVueFile(filePath: string): boolean {

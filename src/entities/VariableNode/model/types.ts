@@ -48,6 +48,9 @@ export interface VariableNode {
 
   // === NEW: Functional Parser metadata ===
   functionAnalysis?: FunctionAnalysis; // Functional parser analysis with external dependencies
+
+  // === NEW: Vue Template ===
+  vueTemplate?: string; // For Vue module nodes: raw template content
 }
 
 export interface GraphData {

@@ -10,6 +10,7 @@ import CodeCardHeader from './components/CodeCardHeader.tsx';
 import CodeCardCopyButton from './components/CodeCardCopyButton.tsx';
 import CodeCardLine from './components/CodeCardLine.tsx';
 import CodeCardReferences from './components/CodeCardReferences.tsx';
+import VueTemplateSection from './components/VueTemplateSection.tsx';
 
 interface CodeCardProps {
   node: CanvasNode;
@@ -37,11 +38,16 @@ const CodeCard: React.FC<CodeCardProps> = ({ node }) => {
       <CodeCardReferences node={node} />
 
       {/* Code Lines */}
-      <div className="flex flex-col bg-[#0b1221] py-2 rounded-b-lg">
+      <div className="flex flex-col bg-[#0b1221] py-2">
         {processedLines.map((line, i) => (
           <CodeCardLine key={i} line={line} node={node} />
         ))}
       </div>
+
+      {/* Vue Template Section (Module 노드이면서 vueTemplate이 있을 때만) */}
+      {node.type === 'module' && node.vueTemplate && (
+        <VueTemplateSection template={node.vueTemplate} />
+      )}
 
       {/* Copy Button - Bottom Right */}
       <CodeCardCopyButton codeSnippet={node.codeSnippet} />

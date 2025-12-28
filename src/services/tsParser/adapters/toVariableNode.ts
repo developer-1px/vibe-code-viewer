@@ -20,12 +20,14 @@ import {
   getParameters,
   getLocalVariables as getLocalVariablesFromAST,
 } from '../utils/astGetters';
+import { isVueFile, extractVueTemplate } from '../utils/vueExtractor';
 
 /**
  * 프로젝트 분석 결과를 GraphData로 변환
  */
 export function tsProjectToGraphData(
-  projectAnalysis: TSProjectAnalysis
+  projectAnalysis: TSProjectAnalysis,
+  files: Record<string, string>
 ): GraphData {
   const nodes: VariableNode[] = [];
 
@@ -49,6 +51,18 @@ export function tsProjectToGraphData(
         startLine: 1,
         dependencies: allTopLevelItems,
       };
+
+      // Vue 파일이면 template 추출
+      if (isVueFile(fileAnalysis.filePath)) {
+        const fullContent = files[fileAnalysis.filePath];
+        if (fullContent) {
+          const template = extractVueTemplate(fullContent, fileAnalysis.filePath);
+          if (template) {
+            fileRootNode.vueTemplate = template;
+          }
+        }
+      }
+
       nodes.push(fileRootNode);
     }
   });

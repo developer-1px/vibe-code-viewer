@@ -129,7 +129,7 @@ export function parseProject(
   updateFunctionDependencies(projectAnalysis.allFunctions);
 
   // VariableNode로 변환 및 반환
-  return tsProjectToGraphData(projectAnalysis);
+  return tsProjectToGraphData(projectAnalysis, files);
 }
 
 // Re-export types for convenience
