@@ -62,6 +62,48 @@ const GLOBAL_OBJECTS = new Set([
 ]);
 
 /**
+ * Re-export 파일에서 실제 구현 파일로 연결
+ *
+ * 예: index.ts → Sidebar.tsx (실제 파일)
+ */
+function resolveReExport(
+  filePath: string,
+  name: string,
+  files: Record<string, string>
+): string {
+  // 기본값
+  const defaultId = `${filePath}::${name}`;
+
+  // index 파일이 아니면 그대로 반환
+  if (!filePath.endsWith('/index.ts') && !filePath.endsWith('/index.tsx')) {
+    return defaultId;
+  }
+
+  // index 파일인 경우, 같은 폴더에서 동일한 이름의 파일 찾기
+  // 예: src/widgets/Sidebar/index.ts → src/widgets/Sidebar/Sidebar.tsx
+  const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
+  const folderName = dirPath.split('/').pop();
+
+  // 가능한 파일 확장자들
+  const possibleFiles = [
+    `${dirPath}/${name}.tsx`,
+    `${dirPath}/${name}.ts`,
+    `${dirPath}/${folderName}.tsx`,
+    `${dirPath}/${folderName}.ts`,
+  ];
+
+  for (const possibleFile of possibleFiles) {
+    if (files[possibleFile]) {
+      console.log(`🔄 [externalRefAnalyzer] Resolved re-export: ${filePath} → ${possibleFile}`);
+      return `${possibleFile}::${name}`;
+    }
+  }
+
+  // 찾지 못하면 기본값 반환
+  return defaultId;
+}
+
+/**
  * 최상위 statement 노드 가져오기
  * (getCodeSnippet과 동일한 로직)
  */
@@ -255,9 +297,13 @@ function getDefinedIn(
       // 상대 경로를 절대 경로로 해결
       const resolvedPath = resolvePath(fileContext.filePath, importInfo.source, fileContext.files);
       if (resolvedPath) {
-        return `${resolvedPath}::${name}`;
+        // Re-export 체크: index.ts에서 re-export하는 경우 실제 파일 찾기
+        const actualDefinedIn = resolveReExport(resolvedPath, name, fileContext.files);
+        console.log(`🔗 [externalRefAnalyzer] Import ${name} from ${importInfo.source} → ${actualDefinedIn}`);
+        return actualDefinedIn;
       }
       // 해결 실패 시 원래 source 사용
+      console.log(`⚠️ [externalRefAnalyzer] Import ${name}: path resolution failed, using source: ${importInfo.source}`);
       return `${importInfo.source}::${name}`;
     }
   }
