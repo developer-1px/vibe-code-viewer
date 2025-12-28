@@ -189,6 +189,44 @@ export function renderCodeLines(node: CanvasNode): CodeLine[] {
       const pos = sourceFile.getLineAndCharacterOfPosition(start);
       const lineIdx = pos.line;
 
+      // Hook 0: Declaration 키워드 수동 추출 (interface, type, class, enum 등)
+      // 이 키워드들은 별도의 AST 노드가 아니므로 수동으로 찾아야 함
+      if (ts.isInterfaceDeclaration(node)) {
+        const interfacePos = processedCode.indexOf('interface', start);
+        if (interfacePos !== -1 && interfacePos < end) {
+          const keywordEnd = interfacePos + 'interface'.length;
+          const keywordLineIdx = sourceFile.getLineAndCharacterOfPosition(interfacePos).line;
+          markPosition(keywordLineIdx, interfacePos, keywordEnd, 'keyword');
+        }
+      }
+
+      if (ts.isTypeAliasDeclaration(node)) {
+        const typePos = processedCode.indexOf('type', start);
+        if (typePos !== -1 && typePos < end) {
+          const keywordEnd = typePos + 'type'.length;
+          const keywordLineIdx = sourceFile.getLineAndCharacterOfPosition(typePos).line;
+          markPosition(keywordLineIdx, typePos, keywordEnd, 'keyword');
+        }
+      }
+
+      if (ts.isClassDeclaration(node)) {
+        const classPos = processedCode.indexOf('class', start);
+        if (classPos !== -1 && classPos < end) {
+          const keywordEnd = classPos + 'class'.length;
+          const keywordLineIdx = sourceFile.getLineAndCharacterOfPosition(classPos).line;
+          markPosition(keywordLineIdx, classPos, keywordEnd, 'keyword');
+        }
+      }
+
+      if (ts.isEnumDeclaration(node)) {
+        const enumPos = processedCode.indexOf('enum', start);
+        if (enumPos !== -1 && enumPos < end) {
+          const keywordEnd = enumPos + 'enum'.length;
+          const keywordLineIdx = sourceFile.getLineAndCharacterOfPosition(enumPos).line;
+          markPosition(keywordLineIdx, enumPos, keywordEnd, 'keyword');
+        }
+      }
+
       // Hook 1: Keyword, Punctuation, String 체크
       const basicKind = getSegmentKind(node);
       if (basicKind) {
