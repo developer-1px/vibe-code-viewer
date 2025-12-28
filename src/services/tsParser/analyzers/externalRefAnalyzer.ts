@@ -102,8 +102,6 @@ export function analyzeExternalReferences(
   visitTypeReferences(statementNode, (identifier) => {
     const name = identifier.text;
 
-    console.log(`🔍 [externalRefAnalyzer] Found type reference in ${funcAnalysis.name}: ${name}`);
-
     // 이미 처리됨
     if (refs.has(name)) {
       const ref = refs.get(name)!;
@@ -115,7 +113,6 @@ export function analyzeExternalReferences(
     const refType = determineRefType(name, fileContext);
 
     if (refType) {
-      console.log(`✅ [externalRefAnalyzer] Type reference ${name} in ${funcAnalysis.name}: ${refType}`);
       const ref: ExternalReference = {
         name,
         refType,
@@ -125,8 +122,6 @@ export function analyzeExternalReferences(
         isFunction: getIsFunction(name, refType, fileContext),
       };
       refs.set(name, ref);
-    } else {
-      console.log(`❌ [externalRefAnalyzer] Type reference ${name} in ${funcAnalysis.name}: not found in context`);
     }
   });
 
@@ -226,7 +221,6 @@ function getIsFunction(
   if (refType === 'file-level') {
     const variable = fileContext.fileVariables.get(name);
     if (variable) {
-      console.log(`🔍 [externalRefAnalyzer] ${name}: refType=${refType}, isFunction=${variable.isFunction}`);
       return variable.isFunction;
     }
   }
@@ -255,12 +249,9 @@ function getDefinedIn(
       // 상대 경로를 절대 경로로 해결
       const resolvedPath = resolvePath(fileContext.filePath, importInfo.source, fileContext.files);
       if (resolvedPath) {
-        const definedIn = `${resolvedPath}::${name}`;
-        console.log(`🔗 [externalRefAnalyzer] Import ${name} from ${importInfo.source} → ${definedIn}`);
-        return definedIn;
+        return `${resolvedPath}::${name}`;
       }
       // 해결 실패 시 원래 source 사용
-      console.log(`⚠️ [externalRefAnalyzer] Import ${name}: path resolution failed, using source: ${importInfo.source}`);
       return `${importInfo.source}::${name}`;
     }
   }

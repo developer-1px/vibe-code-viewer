@@ -36,8 +36,6 @@ export function extractFileVariables(
             ts.isArrowFunction(decl.initializer)
           ) ? true : false;
 
-          console.log(`🔍 [variableExtractor] ${name}: isFunction=${isFunction}, initializer=${decl.initializer?.kind}`);
-
           variables.push({
             name,
             id: `${filePath}::${name}`,
