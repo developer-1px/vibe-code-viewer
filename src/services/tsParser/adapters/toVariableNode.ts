@@ -21,6 +21,7 @@ import {
   getLocalVariables as getLocalVariablesFromAST,
 } from '../utils/astGetters';
 import { isVueFile, extractVueTemplate } from '../utils/vueExtractor';
+import { extractTemplateComponents } from '../utils/vueTemplateParser';
 
 /**
  * 프로젝트 분석 결과를 GraphData로 변환
@@ -62,7 +63,7 @@ export function tsProjectToGraphData(
         dependencies: allTopLevelItems,
       };
 
-      // Vue 파일이면 template 추출 + 컴포넌트 참조 생성
+      // Vue 파일이면 template 추출 + 컴포넌트 참조 생성 (AST 기반)
       if (isVueFile(fileAnalysis.filePath)) {
         const fullContent = files[fileAnalysis.filePath];
         if (fullContent) {
@@ -70,18 +71,9 @@ export function tsProjectToGraphData(
           if (template) {
             fileRootNode.vueTemplate = template;
 
-            // Template에서 사용된 컴포넌트 추출 (PascalCase 태그)
-            const componentRegex = /<(\w+)/g;
-            const usedComponents = new Set<string>();
-            let match;
-
-            while ((match = componentRegex.exec(template)) !== null) {
-              const name = match[1];
-              // PascalCase인지 확인
-              if (name[0] === name[0].toUpperCase()) {
-                usedComponents.add(name);
-              }
-            }
+            // AST 기반 컴포넌트 추출
+            const components = extractTemplateComponents(fullContent, fileAnalysis.filePath);
+            const usedComponents = new Set(components.map(c => c.name));
 
             // dependencies에서 해당 컴포넌트 찾아서 LocalReference 생성
             const templateRefs: any[] = [];

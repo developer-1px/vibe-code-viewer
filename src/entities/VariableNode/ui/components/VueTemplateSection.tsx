@@ -7,9 +7,10 @@
 
 import React, { useMemo } from 'react';
 import { useSetAtom } from 'jotai';
-import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom } from '../../../../store/atoms';
+import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, filesAtom } from '../../../../store/atoms';
 import { useAtomValue } from 'jotai';
 import type { CanvasNode } from '../../../CanvasNode';
+import { extractTemplateComponents, extractTemplateVariables } from '../../../../services/tsParser/utils/vueTemplateParser';
 
 interface VueTemplateSectionProps {
   template: string;
@@ -21,86 +22,89 @@ const VueTemplateSection: React.FC<VueTemplateSectionProps> = ({ template, node,
   const setVisibleNodeIds = useSetAtom(visibleNodeIdsAtom);
   const fullNodeMap = useAtomValue(fullNodeMapAtom);
   const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
+  const files = useAtomValue(filesAtom);
 
-  // Template 라인별로 분리하고 참조 토큰 추출
+  // AST 기반 template 토큰 추출
   const templateLines = useMemo(() => {
     const lines = template.split('\n');
 
+    // Vue 파일 전체 컨텐츠에서 AST 추출
+    const fullContent = files[node.filePath];
+    if (!fullContent) {
+      // Fallback: 단순 텍스트 렌더링
+      return lines.map((lineText, idx) => ({
+        lineNum: scriptEndLine + idx + 1,
+        segments: [{ text: lineText, isClickable: false }]
+      }));
+    }
+
+    // AST 기반 컴포넌트 및 변수 추출
+    const components = extractTemplateComponents(fullContent, node.filePath);
+    const variables = extractTemplateVariables(fullContent, node.filePath);
+
+    // 라인별 토큰 맵 생성
+    const tokensByLine = new Map<number, Array<{ start: number; end: number; name: string; nodeId?: string }>>();
+
+    // 컴포넌트 토큰 추가
+    components.forEach(comp => {
+      const depId = node.dependencies.find(dep => dep.endsWith(`::${comp.name}`));
+      if (depId) {
+        if (!tokensByLine.has(comp.line)) {
+          tokensByLine.set(comp.line, []);
+        }
+        tokensByLine.get(comp.line)!.push({
+          start: comp.column - 1, // column은 1-based
+          end: comp.column - 1 + comp.name.length,
+          name: comp.name,
+          nodeId: depId
+        });
+      }
+    });
+
+    // 변수 토큰 추가 (아직 dependencies 연결 안 함, 추후 확장 가능)
+    variables.forEach(variable => {
+      const depId = node.dependencies.find(dep => dep.endsWith(`::${variable.name}`));
+      if (depId) {
+        if (!tokensByLine.has(variable.line)) {
+          tokensByLine.set(variable.line, []);
+        }
+        tokensByLine.get(variable.line)!.push({
+          start: variable.column - 1,
+          end: variable.column - 1 + variable.name.length,
+          name: variable.name,
+          nodeId: depId
+        });
+      }
+    });
+
+    // 라인별 segment 생성
     return lines.map((lineText, idx) => {
       const lineNum = scriptEndLine + idx + 1;
-      const segments: Array<{ text: string; nodeId?: string; isClickable: boolean }> = [];
+      const tokens = tokensByLine.get(lineNum) || [];
 
-      // 간단한 토큰 추출: PascalCase (컴포넌트) 또는 {{ variable }}
+      // 토큰 위치순 정렬
+      tokens.sort((a, b) => a.start - b.start);
+
+      const segments: Array<{ text: string; nodeId?: string; isClickable: boolean }> = [];
       let cursor = 0;
 
-      // PascalCase 컴포넌트 찾기 (예: <UserCard>, <Sidebar>)
-      const componentRegex = /<(\w+)/g;
-      let match;
-
-      const matches: Array<{ start: number; end: number; name: string; type: 'component' | 'variable' }> = [];
-
-      // 컴포넌트 매칭
-      while ((match = componentRegex.exec(lineText)) !== null) {
-        const name = match[1];
-        // PascalCase인지 확인
-        if (name[0] === name[0].toUpperCase()) {
-          matches.push({
-            start: match.index + 1, // < 다음부터
-            end: match.index + 1 + name.length,
-            name,
-            type: 'component'
-          });
-        }
-      }
-
-      // {{ variable }} 매칭
-      const varRegex = /\{\{\s*(\w+)/g;
-      while ((match = varRegex.exec(lineText)) !== null) {
-        const name = match[1];
-        matches.push({
-          start: match.index + match[0].indexOf(name),
-          end: match.index + match[0].indexOf(name) + name.length,
-          name,
-          type: 'variable'
-        });
-      }
-
-      // v-for, v-if 등의 디렉티브에서 변수 추출
-      const directiveRegex = /v-(?:for|if|show|model|bind)="(\w+)/g;
-      while ((match = directiveRegex.exec(lineText)) !== null) {
-        const name = match[1];
-        matches.push({
-          start: match.index + match[0].indexOf(name),
-          end: match.index + match[0].indexOf(name) + name.length,
-          name,
-          type: 'variable'
-        });
-      }
-
-      // 위치순 정렬
-      matches.sort((a, b) => a.start - b.start);
-
-      // Segment 생성
-      cursor = 0;
-      matches.forEach(({ start, end, name, type }) => {
-        // 매치 이전 텍스트
-        if (start > cursor) {
+      tokens.forEach(token => {
+        // 토큰 이전 텍스트
+        if (token.start > cursor) {
           segments.push({
-            text: lineText.slice(cursor, start),
+            text: lineText.slice(cursor, token.start),
             isClickable: false
           });
         }
 
-        // 매치된 토큰 - dependency에서 찾기
-        const depId = node.dependencies.find(dep => dep.endsWith(`::${name}`));
-
+        // 토큰
         segments.push({
-          text: name,
-          nodeId: depId,
-          isClickable: !!depId
+          text: token.name,
+          nodeId: token.nodeId,
+          isClickable: !!token.nodeId
         });
 
-        cursor = end;
+        cursor = token.end;
       });
 
       // 남은 텍스트
@@ -113,7 +117,7 @@ const VueTemplateSection: React.FC<VueTemplateSectionProps> = ({ template, node,
 
       return { lineNum, segments };
     });
-  }, [template, node.dependencies, scriptEndLine]);
+  }, [template, node.dependencies, node.filePath, scriptEndLine, files]);
 
   const handleTokenClick = (nodeId: string, e: React.MouseEvent) => {
     e.stopPropagation();
