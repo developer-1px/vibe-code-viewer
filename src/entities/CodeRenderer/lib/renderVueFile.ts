@@ -22,57 +22,52 @@ interface VueSection {
 
 /**
  * Vue SFC를 파싱하여 섹션별로 분리
+ * loc.start.line과 loc.end.line을 사용하여 정확한 라인 번호 추출
  */
 function parseVueSections(vueContent: string, filePath: string): VueSection[] {
   const sections: VueSection[] = [];
-  const lines = vueContent.split('\n');
 
   try {
     const { descriptor } = parse(vueContent, { filename: filePath });
 
-    // Script 섹션 (script setup 또는 script)
-    const script = descriptor.scriptSetup || descriptor.script;
-    if (script) {
-      const scriptStartLine = vueContent.substring(0, script.loc.start.offset).split('\n').length;
-      const scriptEndLine = vueContent.substring(0, script.loc.end.offset).split('\n').length;
-
-      sections.push({
-        type: 'script',
-        content: script.content,
-        startLine: scriptStartLine,
-        endLine: scriptEndLine,
-        lang: script.lang || 'js'
-      });
-    }
-
-    // Template 섹션
+    // Template 섹션 (파일 순서대로 정렬하기 위해 먼저 처리)
     if (descriptor.template) {
       const template = descriptor.template;
-      const templateStartLine = vueContent.substring(0, template.loc.start.offset).split('\n').length;
-      const templateEndLine = vueContent.substring(0, template.loc.end.offset).split('\n').length;
 
       sections.push({
         type: 'template',
         content: template.content,
-        startLine: templateStartLine,
-        endLine: templateEndLine,
+        startLine: template.loc.start.line, // content 시작 라인
+        endLine: template.loc.end.line,     // content 끝 라인
         lang: template.lang || 'html'
+      });
+    }
+
+    // Script 섹션 (script setup 또는 script)
+    const script = descriptor.scriptSetup || descriptor.script;
+    if (script) {
+      sections.push({
+        type: 'script',
+        content: script.content,
+        startLine: script.loc.start.line,
+        endLine: script.loc.end.line,
+        lang: script.lang || 'js'
       });
     }
 
     // Style 섹션 (여러 개 가능)
     descriptor.styles.forEach(style => {
-      const styleStartLine = vueContent.substring(0, style.loc.start.offset).split('\n').length;
-      const styleEndLine = vueContent.substring(0, style.loc.end.offset).split('\n').length;
-
       sections.push({
         type: 'style',
         content: style.content,
-        startLine: styleStartLine,
-        endLine: styleEndLine,
+        startLine: style.loc.start.line,
+        endLine: style.loc.end.line,
         lang: style.lang || 'css'
       });
     });
+
+    // 파일 순서대로 정렬
+    sections.sort((a, b) => a.startLine - b.startLine);
 
   } catch (error) {
     console.error(`❌ Error parsing Vue file ${filePath}:`, error);
@@ -166,64 +161,36 @@ function renderSectionTags(vueContent: string, section: VueSection): CodeLine[] 
 
 /**
  * Vue 파일 전체 렌더링
- * 각 섹션을 개별적으로 파싱하되, 전체 파일의 라인 번호를 유지
+ * 간단한 방식: 전체를 plain text로 렌더링하되, script 부분만 TypeScript로 재렌더링
  */
 export function renderVueFile(node: CanvasNode, files: Record<string, string>): CodeLine[] {
   const vueContent = node.codeSnippet;
   const filePath = node.filePath;
   const vueLines = vueContent.split('\n');
 
+  // 먼저 전체를 plain text로 렌더링
+  const allLines: CodeLine[] = vueLines.map((lineText, idx) => ({
+    num: idx + 1,
+    segments: [{ text: lineText, kinds: ['text'] }],
+    hasInput: false
+  }));
+
   // Vue 섹션 파싱
   const sections = parseVueSections(vueContent, filePath);
 
-  if (sections.length === 0) {
-    // Fallback: plain text로 렌더링
-    return vueLines.map((lineText, idx) => ({
-      num: (node.startLine || 1) + idx,
-      segments: [{ text: lineText, kinds: ['text'] }],
-      hasInput: false
-    }));
-  }
+  // Script 섹션만 찾아서 TypeScript로 재렌더링
+  const scriptSection = sections.find(s => s.type === 'script');
 
-  const allLines: CodeLine[] = [];
-  let currentLine = 1;
+  if (scriptSection) {
+    const scriptLines = renderScriptSection(scriptSection, node, files);
 
-  sections.forEach((section) => {
-    // 섹션 시작 전의 라인들 (opening tag 전까지)
-    while (currentLine < section.startLine) {
-      const lineText = vueLines[currentLine - 1] || '';
-      allLines.push({
-        num: currentLine,
-        segments: [{ text: lineText, kinds: ['text'] }],
-        hasInput: false
-      });
-      currentLine++;
-    }
-
-    // 섹션 내용 렌더링
-    let sectionLines: CodeLine[];
-
-    if (section.type === 'script') {
-      sectionLines = renderScriptSection(section, node, files);
-    } else if (section.type === 'template') {
-      sectionLines = renderTemplateSection(section);
-    } else {
-      sectionLines = renderStyleSection(section);
-    }
-
-    allLines.push(...sectionLines);
-    currentLine = section.endLine;
-  });
-
-  // 마지막 섹션 이후의 라인들 (closing tag 등)
-  while (currentLine <= vueLines.length) {
-    const lineText = vueLines[currentLine - 1] || '';
-    allLines.push({
-      num: currentLine,
-      segments: [{ text: lineText, kinds: ['text'] }],
-      hasInput: false
+    // Script 섹션의 라인들만 교체
+    scriptLines.forEach(line => {
+      const lineIdx = line.num - 1;
+      if (lineIdx >= 0 && lineIdx < allLines.length) {
+        allLines[lineIdx] = line;
+      }
     });
-    currentLine++;
   }
 
   return allLines;
