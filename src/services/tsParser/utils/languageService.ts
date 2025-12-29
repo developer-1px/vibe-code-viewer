@@ -42,7 +42,9 @@ export function createLanguageServiceHost(
       allowJs: true,
       esModuleInterop: true,
       skipLibCheck: true,
-      noLib: true, // 브라우저에서 lib 파일 없이 작동
+      noLib: true,
+      noResolve: true, // ✅ 모듈 해석 비활성화 (브라우저 환경)
+      isolatedModules: true, // ✅ 각 파일을 독립적으로 처리
     }),
 
     getDefaultLibFileName: () => 'lib.d.ts', // 브라우저 환경에서는 더미 값 반환
@@ -66,7 +68,8 @@ export function createLanguageServiceHost(
           if (files[`${resolved}/index.tsx`]) return { resolvedFileName: `${resolved}/index.tsx` };
         }
 
-        return { resolvedFileName: '' };
+        // ✅ 해결 실패 시 undefined 반환 (빈 문자열은 에러 발생)
+        return undefined as any;
       });
     },
   };

@@ -37,23 +37,30 @@ export const useCanvasLayout = (
 
     const fullNodeMap = useMemo(() => {
         if (!initialData) return new Map<string, VariableNode>();
-        return new Map<string, VariableNode>(initialData.nodes.map(n => [n.id, n]));
+        const map = new Map<string, VariableNode>(initialData.nodes.map(n => [n.id, n]));
+        console.log(`📊 Full node map has ${map.size} nodes`);
+        console.log(`🔑 Node IDs:`, Array.from(map.keys()).slice(0, 10));
+        return map;
     }, [initialData]);
 
-    // Template Root ID (or FILE_ROOT for non-Vue files)
+    // Template Root ID (파일 자체를 Root로 사용)
     const templateRootId = useMemo(() => {
-        // Try TEMPLATE_ROOT first (Vue files)
-        const templateId = `${entryFile}::TEMPLATE_ROOT`;
-        if (fullNodeMap.has(templateId)) return templateId;
+        console.log(`🎯 Looking for entry file: ${entryFile}`);
+        console.log(`🔍 Has entry file in map?`, fullNodeMap.has(entryFile));
 
-        // Try JSX_ROOT (TSX files)
-        const jsxId = `${entryFile}::JSX_ROOT`;
-        if (fullNodeMap.has(jsxId)) return jsxId;
+        // 파일 경로를 직접 사용
+        if (fullNodeMap.has(entryFile)) return entryFile;
 
-        // Try FILE_ROOT (non-Vue/TSX files: .ts, .js)
-        const fileRootId = `${entryFile}::FILE_ROOT`;
-        if (fullNodeMap.has(fileRootId)) return fileRootId;
+        // Entry file의 App 컴포넌트 찾기
+        const appNode = Array.from(fullNodeMap.values()).find(n =>
+            n.filePath === entryFile && n.label === 'App'
+        );
+        if (appNode) {
+            console.log(`✅ Found App component:`, appNode.id);
+            return appNode.id;
+        }
 
+        console.log(`❌ No template root found`);
         return null;
     }, [initialData, entryFile, fullNodeMap]);
 
@@ -91,14 +98,6 @@ export const useCanvasLayout = (
         // Helper to determine sort weight
         // Order: Imports (non-component) -> Local Logic -> Functions -> Components/Templates
         const getNodeWeight = (node: VariableNode) => {
-            const isPascalCase = /^[A-Z]/.test(node.label);
-
-            if (node.type === 'module') {
-                // If it's an import, check if it looks like a Component (PascalCase)
-                // Components go to bottom (25), Utilities/Hooks go to top (0)
-                return isPascalCase ? 25 : 0;
-            }
-
             switch (node.type) {
                 case 'ref': return 1;
                 case 'computed': return 2;

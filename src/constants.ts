@@ -6,15 +6,4 @@ export const DEFAULT_FILES = loadExampleFiles();
 
 // Automatically detect the most appropriate entry file
 // Priority: App.vue > App.tsx > main.vue > main.tsx > index.vue > index.tsx
-// export const DEFAULT_ENTRY_FILE = findEntryFile(DEFAULT_FILES);
-// export const DEFAULT_ENTRY_FILE = "src/widgets/PipelineCanvas/useCanvasLayout.ts"
-// export const DEFAULT_ENTRY_FILE = "src/services/tsParser/index.ts"
-// export const DEFAULT_ENTRY_FILE = "examples/typescript/callGraph.ts"
-// export const DEFAULT_ENTRY_FILE = "examples/typescript/debugTest.ts"
-// export const DEFAULT_ENTRY_FILE = "examples/typescript/debugTest.tsx"
-// export const DEFAULT_ENTRY_FILE = "examples/react/App.tsx"
-export const DEFAULT_ENTRY_FILE = "examples/typescript/functionVariableTest.ts"
-
-
-
-
+export const DEFAULT_ENTRY_FILE = findEntryFile(DEFAULT_FILES);

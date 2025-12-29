@@ -2,13 +2,7 @@
  * TypeScript Language Service wrapper for Go to Definition
  */
 import * as ts from 'typescript';
-
-export interface DefinitionLocation {
-  filePath: string;
-  line: number;
-  character: number;
-  fileName: string;
-}
+import type { DefinitionLocation } from '../model/types';
 
 /**
  * TypeScript Language Service를 사용하여 identifier의 정의 위치를 찾습니다
@@ -47,7 +41,7 @@ export function findDefinitionLocation(
         allowJs: true,
         strict: false,
       }),
-      getDefaultLibFileName: (options) => ts.getDefaultLibFilePath(options),
+      getDefaultLibFileName: () => 'lib.d.ts', // Browser-safe: return dummy lib file name
       fileExists: () => true,
       readFile: () => undefined,
       readDirectory: () => [],
@@ -124,7 +118,7 @@ export function getQuickInfoAtPosition(
         allowJs: true,
         strict: false,
       }),
-      getDefaultLibFileName: (options) => ts.getDefaultLibFilePath(options),
+      getDefaultLibFileName: () => 'lib.d.ts', // Browser-safe: return dummy lib file name
       fileExists: () => true,
       readFile: () => undefined,
       readDirectory: () => [],

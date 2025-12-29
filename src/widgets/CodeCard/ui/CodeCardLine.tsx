@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useAtomValue } from 'jotai';
 import { CanvasNode } from '../../../entities/CanvasNode';
-import { CodeLine } from '../../../entities/VariableNode/lib/renderCodeLines';
+import type { CodeLine } from '../../../entities/CodeRenderer/model/types';
 import CodeCardSlot from './CodeCardSlot';
 import CodeCardLineSegment from './CodeCardLineSegment';
 import FoldButton from '../../../features/CodeFold/ui/FoldButton';
@@ -24,7 +24,6 @@ const CodeCardLine = ({line, node }: {
   // Calculate definition line status
   const isDefinitionLine = line.num === node.startLine;
   const isTemplate = node.type === 'template';
-  const isModule = node.type === 'module';
   const hasDeclarationKeyword = line.hasDeclarationKeyword || false;
 
   // Check if this line is the target for Go to Definition
@@ -47,11 +46,11 @@ const CodeCardLine = ({line, node }: {
   let returnEndIdx = -1;
 
   if (line.hasTopLevelReturn) {
-    returnStartIdx = line.segments.findIndex(seg => seg.kind === 'keyword' && seg.text === 'return');
+    returnStartIdx = line.segments.findIndex(seg => seg.kinds.includes('keyword') && seg.text === 'return');
     if (returnStartIdx !== -1) {
       // return 이후 세미콜론 찾기
       returnEndIdx = line.segments.findIndex((seg, idx) =>
-        idx > returnStartIdx && seg.kind === 'punctuation' && seg.text === ';'
+        idx > returnStartIdx && seg.kinds.includes('punctuation') && seg.text === ';'
       );
       // 세미콜론이 없으면 라인 끝까지
       if (returnEndIdx === -1) {
@@ -65,7 +64,7 @@ const CodeCardLine = ({line, node }: {
       ref={lineRef}
       className={`
         flex w-full group/line relative transition-colors
-        ${isDefinitionLine && !isTemplate && !isModule ? 'bg-vibe-accent/5' : ''}
+        ${isDefinitionLine && !isTemplate ? 'bg-vibe-accent/5' : ''}
         ${isTargetLine ? 'bg-yellow-400/20 ring-2 ring-yellow-400/50' : ''}
       `}
       data-line-num={line.num}

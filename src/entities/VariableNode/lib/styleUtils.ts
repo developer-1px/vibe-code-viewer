@@ -22,7 +22,6 @@ export const getNodeBorderColor = (type: VariableNode['type']): string => {
         case 'function': return 'border-amber-500/50 shadow-amber-900/20'; // 일반 함수
         case 'template': return 'border-fuchsia-500/50 shadow-fuchsia-900/20'; // 템플릿/컴포넌트
         case 'call': return 'border-yellow-500/50 shadow-yellow-900/20'; // 함수 호출
-        case 'module': return 'border-indigo-500/50 shadow-indigo-900/20'; // 모듈
 
         default: return 'border-vibe-border shadow-black/20';
     }
@@ -74,8 +73,6 @@ export const getSlotColor = (type: VariableNode['type']): string => {
             return 'bg-fuchsia-500/60 border-fuchsia-400/80 shadow-fuchsia-500/30 group-hover/line:border-fuchsia-300';
         case 'call':
             return 'bg-yellow-500/60 border-yellow-400/80 shadow-yellow-500/30 group-hover/line:border-yellow-300';
-        case 'module':
-            return 'bg-indigo-500/60 border-indigo-400/80 shadow-indigo-500/30 group-hover/line:border-indigo-300';
 
         default:
             return 'bg-slate-500/60 border-slate-400/80 shadow-slate-500/30 group-hover/line:border-slate-300';
@@ -103,7 +100,6 @@ export const getEdgeColor = (type: VariableNode['type']): string => {
         case 'function': return '#f59e0b'; // amber-500
         case 'template': return '#d946ef'; // fuchsia-500
         case 'call': return '#eab308'; // yellow-500
-        case 'module': return '#6366f1'; // indigo-500
         case 'store': return '#14b8a6'; // teal-500
 
         default: return '#38bdf8'; // sky-400 (default blue)

@@ -5,14 +5,11 @@
  * 목표: 외부 참조 중심 함수 호출 그래프
  */
 
+import * as ts from 'typescript';
 import { GraphData } from '../../entities/VariableNode';
-import { TSProjectAnalysis } from './types';
-import { analyzeFile } from './core/fileAnalyzer';
-import { buildCallGraph, updateFunctionDependencies } from './core/callGraphBuilder';
-import { tsProjectToGraphData } from './adapters/toVariableNode';
 import { resolvePath } from './utils/pathResolver';
-import { createLanguageService } from './utils/languageService';
 import { extractVueScript, isVueFile } from './utils/vueExtractor';
+import { createLanguageService } from './utils/languageService';
 
 /**
  * 프로젝트 파싱 메인 함수
@@ -21,140 +18,159 @@ export function parseProject(
   files: Record<string, string>,
   entryFile: string
 ): GraphData {
-  // Language Service 생성 (변수 및 참조 분석용)
-  console.log('🔧 Creating Language Service...');
-  const languageService = createLanguageService(files);
+  console.log('📦 File-based parsing with identifier tracking...');
+  console.log(`🎯 Entry: ${entryFile}`);
 
-  const projectAnalysis: TSProjectAnalysis = {
-    files: new Map(),
-    allFunctions: new Map(),
-    globalCallGraph: { nodes: new Map(), edges: [] },
-    entryFile,
-    languageService, // Language Service 추가
-  };
-
+  const nodes: any[] = [];
   const processedFiles = new Set<string>();
 
-  /**
-   * 재귀적 파일 처리
-   */
+  // ✅ Language Service 생성 (identifier 정의 위치 파악용)
+  const languageService = createLanguageService(files);
+  const program = languageService.getProgram();
+
+  if (!program) {
+    console.error('❌ Language Service program not available');
+    return { nodes: [] };
+  }
+
+  // ✅ 간단한 파일 처리: 각 파일 = 1개 노드
   function processFile(filePath: string): void {
-    // 이미 처리한 파일은 스킵
-    if (processedFiles.has(filePath)) {
-      return;
-    }
+    if (processedFiles.has(filePath)) return;
 
     const content = files[filePath];
-    if (!content) {
-      return;
-    }
+    if (!content) return;
 
-    // Vue 파일 처리
-    if (isVueFile(filePath)) {
-      processedFiles.add(filePath);
-
-      // <script> 부분 추출
-      const scriptContent = extractVueScript(content, filePath);
-
-      if (!scriptContent) {
-        // Script 없이 template만 있는 경우 - 빈 파일 분석 생성
-        console.warn(`⚠️ Vue file has no script, creating empty analysis: ${filePath}`);
-
-        const emptySourceFile = ts.createSourceFile(
-          filePath,
-          '', // 빈 스크립트
-          ts.ScriptTarget.Latest,
-          true
-        );
-
-        const emptyAnalysis = {
-          filePath,
-          imports: [],
-          exports: [],
-          fileVariables: [],
-          functions: [],
-          sourceFile: emptySourceFile,
-        };
-
-        projectAnalysis.files.set(filePath, emptyAnalysis);
-        return;
-      }
-
-      try {
-        // Script 부분을 TypeScript로 분석
-        const fileAnalysis = analyzeFile(filePath, scriptContent, files);
-        projectAnalysis.files.set(filePath, fileAnalysis);
-
-        // 함수들을 글로벌 맵에 추가
-        fileAnalysis.functions.forEach((func) => {
-          projectAnalysis.allFunctions.set(func.id, func);
-        });
-
-        // Import된 파일들 재귀 처리
-        fileAnalysis.imports.forEach((imp) => {
-          if (imp.importType !== 'side-effect' && !imp.isTypeOnly) {
-            const resolvedPath = resolvePath(filePath, imp.source, files);
-            if (resolvedPath) {
-              processFile(resolvedPath);
-            }
-          }
-        });
-      } catch (error) {
-        console.error(`❌ Error analyzing Vue file ${filePath}:`, error);
-      }
-      return;
-    }
-
-    // TypeScript/TSX 파일만 처리 (.ts, .tsx, .d.ts 제외)
-    const isTsFile = filePath.endsWith('.ts') || filePath.endsWith('.tsx');
-    const isDtsFile = filePath.endsWith('.d.ts');
-
-    if (!isTsFile || isDtsFile) {
-      return;
-    }
+    // .d.ts 제외
+    if (filePath.endsWith('.d.ts')) return;
 
     processedFiles.add(filePath);
 
+    // ✅ 파일을 하나의 노드로 생성
+    const fileName = filePath.split('/').pop() || filePath;
+    const fileNameWithoutExt = fileName.replace(/\.(tsx?|jsx?|vue)$/, '');
+
+    const node: any = {
+      id: filePath,
+      label: fileNameWithoutExt,
+      filePath,
+      type: 'template',
+      codeSnippet: content,
+      startLine: 1,
+      dependencies: [],
+      // ✅ 새로운 필드: identifier별 정의 파일 맵
+      identifierSources: new Map<string, string>() // identifier name -> source file path
+    };
+
+    nodes.push(node);
+
+    // ✅ TypeScript로 import 및 identifier 추출
     try {
-      // 파일 분석
-      const fileAnalysis = analyzeFile(filePath, content, files);
-      projectAnalysis.files.set(filePath, fileAnalysis);
+      const scriptKind = filePath.endsWith('.tsx') ? ts.ScriptKind.TSX :
+                        filePath.endsWith('.jsx') ? ts.ScriptKind.JSX :
+                        filePath.endsWith('.vue') ? ts.ScriptKind.TS :
+                        ts.ScriptKind.TS;
 
-      // 함수들을 글로벌 맵에 추가
-      fileAnalysis.functions.forEach((func) => {
-        projectAnalysis.allFunctions.set(func.id, func);
-      });
+      let parseContent = content;
 
-      // Import된 파일들 재귀 처리
-      fileAnalysis.imports.forEach((imp) => {
-        if (imp.importType !== 'side-effect' && !imp.isTypeOnly) {
-          const resolvedPath = resolvePath(filePath, imp.source, files);
+      // Vue 파일이면 script 부분만 추출
+      if (isVueFile(filePath)) {
+        parseContent = extractVueScript(content, filePath) || '';
+      }
+
+      const sourceFile = ts.createSourceFile(
+        filePath,
+        parseContent,
+        ts.ScriptTarget.Latest,
+        true,
+        scriptKind
+      );
+
+      // Import 추출 및 재귀 처리
+      sourceFile.statements.forEach((statement) => {
+        if (ts.isImportDeclaration(statement) && statement.moduleSpecifier && ts.isStringLiteral(statement.moduleSpecifier)) {
+          const source = statement.moduleSpecifier.text;
+          const resolvedPath = resolvePath(filePath, source, files);
+          const clause = statement.importClause;
+
+          // Type-only import는 스킵
+          if (statement.importClause?.isTypeOnly) {
+            return;
+          }
+
           if (resolvedPath) {
+            // Local file import
+            // Dependency 추가
+            if (!node.dependencies.includes(resolvedPath)) {
+              node.dependencies.push(resolvedPath);
+            }
+
+            // Import된 identifier 추출 (local file)
+            if (clause) {
+              // Default import
+              if (clause.name) {
+                node.identifierSources.set(clause.name.text, resolvedPath);
+              }
+              // Named imports
+              if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
+                clause.namedBindings.elements.forEach(element => {
+                  node.identifierSources.set(element.name.text, resolvedPath);
+                });
+              }
+              // Namespace import
+              if (clause.namedBindings && ts.isNamespaceImport(clause.namedBindings)) {
+                node.identifierSources.set(clause.namedBindings.name.text, resolvedPath);
+              }
+            }
+
+            // 재귀 처리
             processFile(resolvedPath);
+          } else {
+            // npm module import (resolvedPath가 없음)
+            // npm module의 경우 source를 "npm:" prefix로 저장
+            if (clause) {
+              const npmModuleName = `npm:${source}`;
+
+              // Default import
+              if (clause.name) {
+                node.identifierSources.set(clause.name.text, npmModuleName);
+              }
+              // Named imports
+              if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
+                clause.namedBindings.elements.forEach(element => {
+                  node.identifierSources.set(element.name.text, npmModuleName);
+                });
+              }
+              // Namespace import
+              if (clause.namedBindings && ts.isNamespaceImport(clause.namedBindings)) {
+                node.identifierSources.set(clause.namedBindings.name.text, npmModuleName);
+              }
+            }
           }
         }
       });
+
+      // ✅ import된 identifier만 추적 (충분함)
+
     } catch (error) {
-      console.error(`❌ Error analyzing ${filePath}:`, error);
+      console.error(`❌ Error parsing ${filePath}:`, error);
     }
   }
 
   // Entry file부터 시작
   processFile(entryFile);
 
-  // 전역 함수 호출 그래프 생성
-  projectAnalysis.globalCallGraph = buildCallGraph(projectAnalysis.allFunctions);
+  // ✅ identifierSources Map을 일반 객체로 변환 (JSON 직렬화 가능)
+  nodes.forEach(node => {
+    if (node.identifierSources) {
+      node.identifierSources = Object.fromEntries(node.identifierSources);
+    }
+  });
 
-  // 함수 간 의존성 업데이트
-  updateFunctionDependencies(projectAnalysis.allFunctions);
-
-  // VariableNode로 변환 및 반환
-  return tsProjectToGraphData(projectAnalysis, files);
+  console.log(`✅ Created ${nodes.length} file nodes with identifier tracking`);
+  return { nodes };
 }
 
-// Re-export types for convenience
-export * from './types';
-export { getExternalRefTokenRanges } from './adapters/toVariableNode';
-
-// Re-export AST getter functions
-export * from './utils/astGetters';
+// Re-export utilities
+export { resolvePath } from './utils/pathResolver';
+export { extractVueScript, extractVueTemplate, isVueFile } from './utils/vueExtractor';
+export { createLanguageService } from './utils/languageService';

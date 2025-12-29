@@ -129,8 +129,6 @@ export function collectFoldMetadata(
             };
           }
         }
-
-        console.log(`📁 [collectFoldMetadata] Found foldable ${blockType} at lines ${actualStartLineNum}-${actualEndLineNum} (ts: ${tsStartLine}-${tsEndLine})${tagName ? ` <${tagName}>` : ''}`);
       }
     }
     // JSX Element/Fragment는 customStart/customEnd 사용
@@ -166,8 +164,6 @@ export function collectFoldMetadata(
             };
           }
         }
-
-        console.log(`📁 [collectFoldMetadata] Found foldable ${blockType} at lines ${actualStartLineNum}-${actualEndLineNum} (ts: ${tsStartLine}-${tsEndLine})${tagName ? ` <${tagName}>` : ''}`);
       }
     }
 

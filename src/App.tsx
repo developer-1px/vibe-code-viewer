@@ -4,6 +4,7 @@ import { useAtom } from 'jotai';
 import { Sidebar } from './widgets/Sidebar';
 import Header from './widgets/MainContent/Header.tsx';
 import PipelineCanvas from './widgets/PipelineCanvas.tsx';
+import JotaiDevTools from './widgets/JotaiDevTools/JotaiDevTools';
 import { isSidebarOpenAtom } from './store/atoms';
 import { useGraphDataInit } from './hooks/useGraphData';
 
@@ -48,6 +49,9 @@ const App: React.FC = () => {
           <PipelineCanvas />
         </div>
       </div>
+
+      {/* Jotai DevTools */}
+      <JotaiDevTools />
     </div>
   );
 };

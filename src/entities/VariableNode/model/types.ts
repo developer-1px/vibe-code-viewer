@@ -34,8 +34,7 @@ export interface VariableNode {
     | 'prop'              // 컴포넌트 프롭
     | 'store'             // 상태 스토어
     | 'template'          // 템플릿/컴포넌트
-    | 'call'              // 함수 호출 표현식
-    | 'module';           // 모듈/파일 엔트
+    | 'call';             // 함수 호출 표현식
   codeSnippet: string;
   startLine: number;
   dependencies: string[]; // List of IDs

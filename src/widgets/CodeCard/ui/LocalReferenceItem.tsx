@@ -31,25 +31,7 @@ const LocalReferenceItem = ({reference }: {
     });
 
     if (!isLinkable) {
-      // Try FILE_ROOT fallback
-      const filePath = reference.nodeId.split('::')[0];
-      const fileRootId = `${filePath}::FILE_ROOT`;
-
-      if (reference.name === 'Sidebar' || reference.name === 'Header') {
-        console.log(`🔄 [LocalReferenceItem] ${reference.name} trying FILE_ROOT fallback:`, {
-          fileRootId,
-          hasFileRoot: fullNodeMap.has(fileRootId),
-        });
-      }
-
-      if (fullNodeMap.has(fileRootId)) {
-        setVisibleNodeIds((prev: Set<string>) => {
-          const next = new Set(prev);
-          next.add(fileRootId);
-          return next;
-        });
-        setLastExpandedId(fileRootId);
-      }
+      // 노드가 없으면 아무것도 하지 않음
       return;
     }
 
@@ -108,9 +90,9 @@ const LocalReferenceItem = ({reference }: {
       if (targetNode && targetNode.startLine !== undefined) {
         const targetLineNum = targetNode.startLine;
 
-        // 부모 노드(현재 CodeCard를 렌더링하는 노드)의 fold 찾기
+        // 부모 노드(파일 노드)의 fold 찾기
         // reference.nodeId는 "filePath::name" 형태
-        const parentNodeId = reference.nodeId.split('::')[0] + '::FILE_ROOT';
+        const parentNodeId = reference.nodeId.split('::')[0]; // 파일 경로 직접 사용
 
         console.log('🔓 [LocalReferenceItem] Parent node:', {
           parentNodeId,

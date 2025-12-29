@@ -1,9 +1,10 @@
-import React, { useMemo, useEffect } from 'react';
-import { useAtomValue, useSetAtom } from 'jotai';
+import React, { useMemo } from 'react';
+import { useAtomValue } from 'jotai';
 import { CanvasNode } from '../../entities/CanvasNode';
 
 // Lib - Pure Utilities
-import { renderCodeLines, CodeLine } from '../../entities/VariableNode/lib/renderCodeLines';
+import { renderCodeLines } from '../../entities/CodeRenderer/lib/renderCodeLines';
+import type { CodeLine } from '../../entities/CodeRenderer/model/types';
 import { getNodeBorderColor } from '../../entities/VariableNode/lib/styleUtils';
 
 // UI Components
@@ -23,38 +24,7 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
   }, [node]);
 
   const foldedLinesMap = useAtomValue(foldedLinesAtom);
-  const setFoldedLinesMap = useSetAtom(foldedLinesAtom);
-
   const foldedLines = foldedLinesMap.get(node.id) || new Set<number>();
-
-  // Module 노드면 자동으로 모든 함수 접기 (초기화)
-  useEffect(() => {
-    const isModule = node.id.endsWith('::FILE_ROOT');
-
-    if (isModule && !foldedLinesMap.has(node.id)) {
-      const initialFolds = new Set<number>();
-
-      console.log(`📁 [CodeCard] Node: ${node.id}, isModule: ${isModule}, processedLines: ${processedLines.length}`);
-
-      // 모든 foldable 라인 찾기 (디버깅)
-      const foldableLines = processedLines.filter(line => line.foldInfo?.isFoldable);
-      console.log(`📁 [CodeCard] Foldable lines found:`, foldableLines.map(l => `Line ${l.num} (${l.foldInfo?.foldStart}-${l.foldInfo?.foldEnd})`));
-
-      processedLines.forEach(line => {
-        if (line.foldInfo?.isFoldable) {
-          initialFolds.add(line.num);
-        }
-      });
-
-      console.log(`📁 [CodeCard] Module node ${node.id}: auto-folding ${initialFolds.size} lines`, Array.from(initialFolds));
-
-      setFoldedLinesMap(prev => {
-        const next = new Map(prev);
-        next.set(node.id, initialFolds);
-        return next;
-      });
-    }
-  }, [node.id, processedLines, foldedLinesMap, setFoldedLinesMap]);
 
   // 렌더링할 라인 계산 (모든 라인을 포함하되, fold 상태를 마킹)
   const displayLines = useMemo(() => {
@@ -135,8 +105,8 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
         </div>
       )}
 
-      {/* Vue Template Section (Module 노드이면서 vueTemplate이 있을 때만) */}
-      {node.type === 'module' && node.vueTemplate && (
+      {/* Vue Template Section (파일 노드이면서 vueTemplate이 있을 때만) */}
+      {node.vueTemplate && (
         <div className="flex flex-col bg-[#0b1221] py-2">
           <VueTemplateSection template={node.vueTemplate} node={node} scriptEndLine={scriptEndLine} />
         </div>
