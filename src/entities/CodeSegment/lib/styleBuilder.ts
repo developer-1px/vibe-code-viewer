@@ -138,12 +138,26 @@ export function buildSegmentStyle(
     };
   }
 
-  // Local Variable (클릭 가능한 토큰)
+  // Local Variable (토글 가능한 하이라이트)
   if (primaryKind === 'local-variable') {
+    const isActive = options.isActive;
+
+    // Active 상태: 강조 하이라이트
+    if (isActive) {
+      return {
+        className: 'inline-block px-1 py-0.5 rounded bg-cyan-500/20 text-cyan-200 font-semibold border border-cyan-400/40 hover:bg-cyan-500/30 hover:border-cyan-300/60 transition-all cursor-pointer select-text',
+        clickable: true,
+        clickType: 'local-variable',
+        title: 'Click to deactivate highlight'
+      };
+    }
+
+    // Inactive 상태: 기본 스타일 (하이라이트 없음, 클릭 가능)
     return {
-      className: 'inline-block px-1 py-0.5 rounded bg-cyan-500/15 text-cyan-300 font-semibold border border-cyan-500/30 hover:bg-cyan-500/25 hover:border-cyan-400/50 transition-all cursor-default select-text',
-      clickable: false,
-      title: 'Local Variable'
+      className: 'inline-block px-0.5 rounded text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-300 transition-all cursor-pointer select-text',
+      clickable: true,
+      clickType: 'local-variable',
+      title: 'Click to activate highlight'
     };
   }
 

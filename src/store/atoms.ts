@@ -40,3 +40,7 @@ export const foldedLinesAtom = atom(new Map<string, Set<number>>());
 
 // Card Position atoms - Map<nodeId, {x: number, y: number}>
 export const cardPositionsAtom = atom(new Map<string, {x: number, y: number}>());
+
+// Active Local Variables - Map<nodeId, Set<variableName>>
+// 각 노드에서 현재 하이라이트할 로컬 변수들을 추적
+export const activeLocalVariablesAtom = atom(new Map<string, Set<string>>());

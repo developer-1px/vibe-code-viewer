@@ -46,7 +46,7 @@ export interface SegmentStyle {
   className: string;
   title?: string;
   clickable: boolean;
-  clickType?: 'close' | 'expand' | 'external' | 'definition';
+  clickType?: 'close' | 'expand' | 'external' | 'definition' | 'local-variable';
   hoverTooltip?: boolean;
   onClick?: (e: React.MouseEvent) => void;
   onMouseEnter?: (e: React.MouseEvent) => void;
