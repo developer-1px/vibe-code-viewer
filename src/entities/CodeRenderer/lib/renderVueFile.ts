@@ -1,6 +1,6 @@
 /**
  * Vue SFC 파일 렌더링
- * <script>, <template>, <style> 섹션을 각각 다르게 처리
+ * @vue/compiler-sfc의 AST를 직접 사용
  */
 
 import * as ts from 'typescript';
@@ -10,320 +10,409 @@ import { parse, compileTemplate } from '@vue/compiler-sfc';
 import { renderCodeLines } from './renderCodeLines';
 
 /**
- * Vue 파일의 섹션 정보
+ * AST 노드 순회하여 토큰 추출
  */
-interface VueSection {
-  type: 'script' | 'template' | 'style';
-  content: string;
-  startLine: number;
-  endLine: number;
-  lang?: string;
+interface Token {
+  start: number;
+  end: number;
+  text: string;
+  kind: string;
 }
 
-/**
- * Vue SFC를 파싱하여 섹션별로 분리
- * loc.start.line과 loc.end.line을 사용하여 정확한 라인 번호 추출
- */
-function parseVueSections(vueContent: string, filePath: string): VueSection[] {
-  const sections: VueSection[] = [];
+function extractTokensFromAST(node: any, source: string, tokens: Token[] = []): Token[] {
+  if (!node || !node.loc) return tokens;
 
-  try {
-    const { descriptor } = parse(vueContent, { filename: filePath });
+  // Node type에 따라 토큰 추출
+  switch (node.type) {
+    case 1: // ELEMENT
+      // 태그 이름 추출 (opening tag)
+      if (node.tag) {
+        const isPascalCase = /^[A-Z]/.test(node.tag);
 
-    // Template 섹션 (파일 순서대로 정렬하기 위해 먼저 처리)
-    if (descriptor.template) {
-      const template = descriptor.template;
+        // Opening tag의 '<' 다음에 태그 이름이 있음
+        const tagPattern = `<${node.tag}`;
+        const tagIdx = source.indexOf(tagPattern, node.loc.start.offset);
 
-      sections.push({
-        type: 'template',
-        content: template.content,
-        startLine: template.loc.start.line, // content 시작 라인
-        endLine: template.loc.end.line,     // content 끝 라인
-        lang: template.lang || 'html'
-      });
-    }
+        if (tagIdx !== -1) {
+          const tagStart = tagIdx + 1; // '<' 다음부터
+          tokens.push({
+            start: tagStart,
+            end: tagStart + node.tag.length,
+            text: node.tag,
+            kind: isPascalCase ? 'component' : 'element'
+          });
+        }
 
-    // Script 섹션 (script setup 또는 script)
-    const script = descriptor.scriptSetup || descriptor.script;
-    if (script) {
-      sections.push({
-        type: 'script',
-        content: script.content,
-        startLine: script.loc.start.line,
-        endLine: script.loc.end.line,
-        lang: script.lang || 'js'
-      });
-    }
+        // Closing tag도 추출 (self-closing이 아니면)
+        if (!node.isSelfClosing) {
+          const closingPattern = `</${node.tag}>`;
+          const closingIdx = source.indexOf(closingPattern, node.loc.start.offset);
 
-    // Style 섹션 (여러 개 가능)
-    descriptor.styles.forEach(style => {
-      sections.push({
-        type: 'style',
-        content: style.content,
-        startLine: style.loc.start.line,
-        endLine: style.loc.end.line,
-        lang: style.lang || 'css'
-      });
-    });
+          if (closingIdx !== -1) {
+            const closingTagStart = closingIdx + 2; // '</' 다음부터
+            tokens.push({
+              start: closingTagStart,
+              end: closingTagStart + node.tag.length,
+              text: node.tag,
+              kind: isPascalCase ? 'component' : 'element'
+            });
+          }
+        }
+      }
 
-    // 파일 순서대로 정렬
-    sections.sort((a, b) => a.startLine - b.startLine);
+      // Props (attributes)
+      if (node.props) {
+        node.props.forEach((prop: any) => {
+          if (prop.type === 6) { // ATTRIBUTE
+            // Attribute name
+            if (prop.name) {
+              const attrNameStart = prop.loc.start.offset;
+              tokens.push({
+                start: attrNameStart,
+                end: attrNameStart + prop.name.length,
+                text: prop.name,
+                kind: 'attribute'
+              });
+            }
 
-  } catch (error) {
-    console.error(`❌ Error parsing Vue file ${filePath}:`, error);
+            // Attribute value (content만, 따옴표 제외)
+            if (prop.value && prop.value.content) {
+              const valueContent = prop.value.content;
+              // value.loc.start.offset은 따옴표 시작 위치, +1 하면 내용 시작
+              const valueStart = prop.value.loc.start.offset + 1;
+
+              tokens.push({
+                start: valueStart,
+                end: valueStart + valueContent.length,
+                text: valueContent,
+                kind: 'string'
+              });
+            }
+          }
+        });
+      }
+
+      // Children
+      if (node.children) {
+        node.children.forEach((child: any) => extractTokensFromAST(child, source, tokens));
+      }
+      break;
+
+    case 5: // INTERPOLATION {{ }}
+      if (node.content && node.content.loc) {
+        // {{ }} 내부의 expression (SIMPLE_EXPRESSION)
+        const exprText = node.content.loc.source.trim();
+        const exprOffset = node.content.loc.start.offset;
+
+        tokens.push({
+          start: exprOffset,
+          end: exprOffset + exprText.length,
+          text: exprText,
+          kind: 'interpolation'
+        });
+      }
+      break;
+
+    case 0: // ROOT
+      if (node.children) {
+        node.children.forEach((child: any) => extractTokensFromAST(child, source, tokens));
+      }
+      break;
   }
 
-  return sections;
+  return tokens;
 }
 
 /**
- * Script 섹션 렌더링 (TypeScript AST 사용)
+ * 토큰을 라인별 segments로 변환
  */
-function renderScriptSection(
-  section: VueSection,
-  node: CanvasNode,
-  files: Record<string, string>
-): CodeLine[] {
-  // Script 내용으로 임시 SourceFile 생성
-  const scriptSource = ts.createSourceFile(
-    node.filePath + '.ts',
-    section.content,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS
-  );
-
-  // CanvasNode를 Script 내용으로 임시 수정하여 renderCodeLines 호출
-  const tempNode: CanvasNode = {
-    ...node,
-    codeSnippet: section.content,
-    startLine: section.startLine,
-    sourceFile: scriptSource
-  };
-
-  return renderCodeLines(tempNode, files);
-}
-
-/**
- * Template 섹션 렌더링 (Vue template AST 기반 segment 생성)
- */
-function renderTemplateSection(section: VueSection, vueContent: string, filePath: string): CodeLine[] {
-  const lines = section.content.split('\n');
-
-  try {
-    // Vue template AST 파싱
-    const { descriptor } = parse(vueContent, { filename: filePath });
-
-    if (!descriptor.template) {
-      return lines.map((lineText, idx) => ({
-        num: section.startLine + idx,
-        segments: [{ text: lineText, kinds: ['text'] }],
-        hasInput: false
-      }));
-    }
-
-    // Template AST를 사용하여 segment 생성
-    const result: CodeLine[] = lines.map((lineText, idx) => ({
-      num: section.startLine + idx,
-      segments: parseTemplateLine(lineText),
-      hasInput: false
-    }));
-
-    return result;
-
-  } catch (error) {
-    console.error('❌ Error parsing template:', error);
-    // Fallback: plain text
-    return lines.map((lineText, idx) => ({
-      num: section.startLine + idx,
-      segments: [{ text: lineText, kinds: ['text'] }],
-      hasInput: false
-    }));
-  }
-}
-
-/**
- * Template 라인을 segment로 파싱
- * 간단한 정규식 기반 파싱 (태그, 속성, mustache 표현식)
- */
-function parseTemplateLine(lineText: string): CodeSegment[] {
-  const segments: CodeSegment[] = [];
-  let currentPos = 0;
-
-  // 정규식 패턴들
-  const tagOpenPattern = /<(\w+)/g;  // Opening tag
-  const tagClosePattern = /<\/(\w+)>/g;  // Closing tag
-  const attrPattern = /(\w+)="([^"]*)"/g;  // Attributes
-  const mustachePattern = /\{\{([^}]+)\}\}/g;  // {{ expression }}
-
-  // 간단한 파싱: 전체 라인을 텍스트로 처리하되, 특정 패턴만 하이라이트
-  // 더 정교한 파싱을 위해서는 Vue template compiler의 AST를 순회해야 함
-
-  // 일단 전체를 text로 반환 (향후 개선 예정)
-  if (lineText.trim() === '') {
-    segments.push({ text: lineText, kinds: ['text'] });
-  } else {
-    segments.push({ text: lineText, kinds: ['text'] });
-  }
-
-  return segments;
-}
-
-/**
- * Style 섹션 렌더링 (plain text로 출력)
- */
-function renderStyleSection(section: VueSection): CodeLine[] {
-  const lines = section.content.split('\n');
-
-  return lines.map((lineText, idx) => ({
-    num: section.startLine + idx,
-    segments: [{
-      text: lineText,
-      kinds: ['text']
-    }],
-    hasInput: false
-  }));
-}
-
-/**
- * 섹션 태그 라인 렌더링 (예: <script setup lang="ts">, </script>)
- */
-function renderSectionTags(vueContent: string, section: VueSection): CodeLine[] {
-  const lines = vueContent.split('\n');
+function tokensToLines(templateContent: string, tokens: Token[], startLine: number): CodeLine[] {
+  const lines = templateContent.split('\n');
   const result: CodeLine[] = [];
 
-  // Opening tag line
-  const openingLine = lines[section.startLine - 2]; // -2 because startLine is 1-indexed and points to content
-  if (openingLine) {
-    result.push({
-      num: section.startLine - 1,
-      segments: [{
-        text: openingLine,
-        kinds: ['text']
-      }],
-      hasInput: false
-    });
-  }
+  let lineOffset = 0; // 현재까지의 누적 offset
+
+  lines.forEach((lineText, lineIdx) => {
+    const lineNum = startLine + lineIdx;
+    const lineStart = lineOffset;
+    const lineEnd = lineOffset + lineText.length;
+
+    // 첫 번째와 마지막 빈 라인은 스킵 (Vue SFC descriptor가 앞뒤 빈 줄을 포함하므로)
+    const isFirstEmptyLine = lineIdx === 0 && lineText === '';
+    const isLastEmptyLine = lineIdx === lines.length - 1 && lineText === '';
+
+    if (isFirstEmptyLine || isLastEmptyLine) {
+      lineOffset += lineText.length + 1;
+      return; // skip
+    }
+
+    // 이 라인에 해당하는 토큰들 찾기
+    const lineTokens = tokens.filter(t => t.start >= lineStart && t.start < lineEnd);
+
+    if (lineTokens.length === 0) {
+      // 토큰이 없으면 plain text
+      result.push({
+        num: lineNum,
+        segments: [{ text: lineText, kinds: ['text'] }],
+        hasInput: false
+      });
+    } else {
+      // 토큰이 있으면 segment로 분할
+      const segments: CodeSegment[] = [];
+      let pos = lineStart;
+
+      // 라인 내 토큰들을 offset 순서로 정렬
+      lineTokens.sort((a, b) => a.start - b.start);
+
+      lineTokens.forEach(token => {
+        // 토큰 이전의 텍스트 (plain text)
+        if (token.start > pos) {
+          const beforeText = templateContent.substring(pos, token.start);
+          segments.push({ text: beforeText, kinds: ['text'] });
+        }
+
+        // 토큰 자체
+        const tokenText = templateContent.substring(token.start, token.end);
+        const kinds = getKindsFromTokenType(token.kind);
+        segments.push({ text: tokenText, kinds });
+
+        pos = token.end;
+      });
+
+      // 마지막 토큰 이후의 텍스트
+      if (pos < lineEnd) {
+        const afterText = templateContent.substring(pos, lineEnd);
+        segments.push({ text: afterText, kinds: ['text'] });
+      }
+
+      result.push({
+        num: lineNum,
+        segments,
+        hasInput: false
+      });
+    }
+
+    // 다음 라인을 위해 offset 업데이트 (+1은 \n)
+    lineOffset += lineText.length + 1;
+  });
 
   return result;
 }
 
 /**
- * Vue 파일 전체 렌더링
- * 섹션별로 다른 파서 사용 + 태그 라인 하이라이팅
+ * 토큰 타입을 SegmentKind로 변환
+ */
+function getKindsFromTokenType(tokenKind: string): CodeSegment['kinds'] {
+  switch (tokenKind) {
+    case 'string':
+      return ['string'];
+    case 'component':
+      return ['identifier'];
+    case 'external-component':
+      return ['identifier', 'external-import']; // Import된 컴포넌트
+    case 'element':
+      return ['keyword'];
+    case 'attribute':
+      return ['identifier'];
+    case 'interpolation':
+      return ['identifier'];
+    default:
+      return ['text'];
+  }
+}
+
+/**
+ * Template AST로 렌더링
+ */
+function renderTemplateWithAST(
+  templateContent: string,
+  startLine: number,
+  importedComponents: Set<string>
+): CodeLine[] {
+  try {
+    const { ast } = compileTemplate({
+      source: templateContent,
+      filename: 'template.vue',
+      id: 'template'
+    });
+
+    console.log('🎨 Template AST:', ast);
+
+    // AST에서 토큰 추출
+    const tokens = extractTokensFromAST(ast, templateContent);
+    console.log('🎨 Extracted tokens:', tokens);
+
+    // 컴포넌트 토큰에 external-import 마킹
+    tokens.forEach(token => {
+      if (token.kind === 'component' && importedComponents.has(token.text)) {
+        token.kind = 'external-component';
+      }
+    });
+
+    // 토큰을 라인별 segments로 변환
+    return tokensToLines(templateContent, tokens, startLine);
+
+  } catch (error) {
+    console.error('❌ Template AST error:', error);
+    const lines = templateContent.split('\n');
+    return lines.map((text, idx) => ({
+      num: startLine + idx,
+      segments: [{ text, kinds: ['text'] }] as CodeSegment[],
+      hasInput: false
+    }));
+  }
+}
+
+/**
+ * 원본 소스에서 태그가 있는 라인 번호 찾기
+ */
+function findTagLine(source: string, tagPattern: string, startFromLine: number = 1): number {
+  const lines = source.split('\n');
+  for (let i = startFromLine - 1; i < lines.length; i++) {
+    if (lines[i].includes(tagPattern)) {
+      return i + 1; // 1-based line number
+    }
+  }
+  return startFromLine;
+}
+
+/**
+ * Script에서 import된 컴포넌트 추출
+ */
+function extractImportedComponents(scriptContent: string): Set<string> {
+  const importedComponents = new Set<string>();
+
+  // TypeScript AST로 import 문 파싱
+  const sourceFile = ts.createSourceFile(
+    'temp.ts',
+    scriptContent,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  );
+
+  ts.forEachChild(sourceFile, node => {
+    if (ts.isImportDeclaration(node) && node.importClause) {
+      // Default import (import Foo from './Foo.vue')
+      if (node.importClause.name) {
+        const componentName = node.importClause.name.text;
+        if (/^[A-Z]/.test(componentName)) { // PascalCase = Component
+          importedComponents.add(componentName);
+        }
+      }
+
+      // Named imports (import { Bar } from './Bar.vue')
+      if (node.importClause.namedBindings && ts.isNamedImports(node.importClause.namedBindings)) {
+        node.importClause.namedBindings.elements.forEach(element => {
+          const componentName = element.name.text;
+          if (/^[A-Z]/.test(componentName)) {
+            importedComponents.add(componentName);
+          }
+        });
+      }
+    }
+  });
+
+  return importedComponents;
+}
+
+/**
+ * Vue SFC 전체 렌더링
+ * - Script: TypeScript AST로 렌더링
+ * - Template: Vue template AST로 렌더링
  */
 export function renderVueFile(node: CanvasNode, files: Record<string, string>): CodeLine[] {
   const vueContent = node.codeSnippet;
   const filePath = node.filePath;
-  const vueLines = vueContent.split('\n');
+  const sourceLines = vueContent.split('\n');
 
-  // 먼저 전체를 plain text로 렌더링
-  const allLines: CodeLine[] = vueLines.map((lineText, idx) => ({
-    num: idx + 1,
-    segments: [{ text: lineText, kinds: ['text'] }],
-    hasInput: false
-  }));
+  try {
+    const { descriptor } = parse(vueContent, { filename: filePath });
 
-  // Vue 섹션 파싱
-  const sections = parseVueSections(vueContent, filePath);
+    const allLines: CodeLine[] = [];
 
-  // 각 섹션 처리
-  sections.forEach(section => {
-    // 섹션 opening tag 찾기 (content 시작 라인 이전)
-    const openingTagLineNum = section.startLine - 1;
-    if (openingTagLineNum > 0 && openingTagLineNum <= vueLines.length) {
-      const openingTagText = vueLines[openingTagLineNum - 1];
+    // Script에서 import된 컴포넌트 추출
+    const script = descriptor.scriptSetup || descriptor.script;
+    const importedComponents = script ? extractImportedComponents(script.content) : new Set<string>();
+    console.log('🎨 Imported components:', Array.from(importedComponents));
 
-      // Opening tag를 keyword로 하이라이팅
-      allLines[openingTagLineNum - 1] = {
-        num: openingTagLineNum,
-        segments: renderSectionTag(openingTagText, section.type),
+    // <template> 태그 (plain)
+    if (descriptor.template) {
+      const templateOpenLine = findTagLine(vueContent, '<template>');
+      allLines.push({
+        num: templateOpenLine,
+        segments: [{ text: sourceLines[templateOpenLine - 1], kinds: ['text'] }],
         hasInput: false
-      };
-    }
-
-    // 섹션 closing tag 찾기 (content 끝 라인 이후)
-    const closingTagLineNum = section.endLine + 1;
-    if (closingTagLineNum > 0 && closingTagLineNum <= vueLines.length) {
-      const closingTagText = vueLines[closingTagLineNum - 1];
-
-      // Closing tag를 keyword로 하이라이팅
-      allLines[closingTagLineNum - 1] = {
-        num: closingTagLineNum,
-        segments: renderSectionTag(closingTagText, section.type),
-        hasInput: false
-      };
-    }
-
-    // 섹션 내용 렌더링
-    if (section.type === 'script') {
-      const scriptLines = renderScriptSection(section, node, files);
-
-      // Script 섹션의 라인들만 교체
-      scriptLines.forEach(line => {
-        const lineIdx = line.num - 1;
-        if (lineIdx >= 0 && lineIdx < allLines.length) {
-          allLines[lineIdx] = line;
-        }
       });
-    } else if (section.type === 'template') {
-      const templateLines = renderTemplateSection(section, vueContent, filePath);
 
-      // Template 섹션의 라인들만 교체
-      templateLines.forEach(line => {
-        const lineIdx = line.num - 1;
-        if (lineIdx >= 0 && lineIdx < allLines.length) {
-          allLines[lineIdx] = line;
-        }
+      const templateLines = renderTemplateWithAST(
+        descriptor.template.content,
+        descriptor.template.loc.start.line,
+        importedComponents
+      );
+      allLines.push(...templateLines);
+
+      const templateCloseLine = findTagLine(vueContent, '</template>', descriptor.template.loc.end.line);
+      allLines.push({
+        num: templateCloseLine,
+        segments: [{ text: sourceLines[templateCloseLine - 1], kinds: ['text'] }],
+        hasInput: false
       });
     }
-  });
 
-  return allLines;
-}
-
-/**
- * 섹션 태그 렌더링 (<template>, <script>, <style> 태그 하이라이팅)
- */
-function renderSectionTag(tagText: string, sectionType: 'script' | 'template' | 'style'): CodeSegment[] {
-  // 간단한 파싱: < > 사이의 내용을 keyword로 표시
-  const segments: CodeSegment[] = [];
-
-  // 공백 처리
-  const leadingSpaceMatch = tagText.match(/^(\s*)/);
-  if (leadingSpaceMatch && leadingSpaceMatch[1].length > 0) {
-    segments.push({ text: leadingSpaceMatch[1], kinds: ['text'] });
-  }
-
-  const trimmed = tagText.trim();
-
-  if (trimmed.startsWith('</')) {
-    // Closing tag: </template>, </script>, </style>
-    segments.push({ text: '</', kinds: ['punctuation'] });
-    segments.push({ text: sectionType, kinds: ['keyword'] });
-    segments.push({ text: '>', kinds: ['punctuation'] });
-  } else if (trimmed.startsWith('<')) {
-    // Opening tag: <template>, <script setup lang="ts">, etc.
-    segments.push({ text: '<', kinds: ['punctuation'] });
-
-    // Tag name
-    const tagMatch = trimmed.match(/<(\w+)(.*)>$/);
-    if (tagMatch) {
-      segments.push({ text: tagMatch[1], kinds: ['keyword'] });
-
-      // Attributes
-      if (tagMatch[2].trim()) {
-        segments.push({ text: tagMatch[2], kinds: ['text'] });
-      }
-
-      segments.push({ text: '>', kinds: ['punctuation'] });
-    } else {
-      // Fallback
-      segments.push({ text: trimmed.substring(1), kinds: ['text'] });
+    // 빈 라인 18 (template과 script 사이)
+    const emptyLine18 = 18;
+    if (sourceLines[emptyLine18 - 1] === '') {
+      allLines.push({
+        num: emptyLine18,
+        segments: [{ text: '', kinds: ['text'] }],
+        hasInput: false
+      });
     }
-  } else {
-    segments.push({ text: tagText, kinds: ['text'] });
-  }
 
-  return segments;
+    // <script> 태그 (plain)
+    if (script) {
+      const scriptOpenLine = findTagLine(vueContent, '<script', script.loc.start.line - 5);
+
+      allLines.push({
+        num: scriptOpenLine,
+        segments: [{ text: sourceLines[scriptOpenLine - 1], kinds: ['text'] }],
+        hasInput: false
+      });
+
+      // script.content도 앞뒤 빈 줄을 포함할 수 있으므로 trim
+      const scriptContent = script.content.replace(/^\n/, '').replace(/\n$/, '');
+
+      const scriptSource = ts.createSourceFile(
+        filePath + '.ts',
+        scriptContent,
+        ts.ScriptTarget.Latest,
+        true,
+        ts.ScriptKind.TS
+      );
+
+      const tempNode: CanvasNode = {
+        ...node,
+        codeSnippet: scriptContent,
+        startLine: script.loc.start.line,
+        sourceFile: scriptSource
+      };
+
+      const scriptLines = renderCodeLines(tempNode, files);
+      allLines.push(...scriptLines);
+
+      const scriptCloseLine = findTagLine(vueContent, '</script>', script.loc.end.line);
+      allLines.push({
+        num: scriptCloseLine,
+        segments: [{ text: sourceLines[scriptCloseLine - 1], kinds: ['text'] }],
+        hasInput: false
+      });
+    }
+
+    return allLines;
+
+  } catch (error) {
+    console.error('❌ Error rendering Vue file:', error);
+    return [];
+  }
 }
