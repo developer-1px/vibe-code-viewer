@@ -40,6 +40,7 @@ export interface CodeLine {
   segments: CodeSegment[];
   hasInput: boolean;
   hasTopLevelReturn?: boolean;
+  hasDeclarationKeyword?: boolean; // interface, type, class, enum 등의 선언 키워드가 있는 라인
 }
 
 /**
@@ -197,6 +198,7 @@ export function renderCodeLines(node: CanvasNode): CodeLine[] {
           const keywordEnd = interfacePos + 'interface'.length;
           const keywordLineIdx = sourceFile.getLineAndCharacterOfPosition(interfacePos).line;
           markPosition(keywordLineIdx, interfacePos, keywordEnd, 'keyword');
+          result[keywordLineIdx].hasDeclarationKeyword = true; // ⭐ Output Port 표시용
         }
       }
 
@@ -206,6 +208,7 @@ export function renderCodeLines(node: CanvasNode): CodeLine[] {
           const keywordEnd = typePos + 'type'.length;
           const keywordLineIdx = sourceFile.getLineAndCharacterOfPosition(typePos).line;
           markPosition(keywordLineIdx, typePos, keywordEnd, 'keyword');
+          result[keywordLineIdx].hasDeclarationKeyword = true; // ⭐ Output Port 표시용
         }
       }
 
@@ -215,6 +218,7 @@ export function renderCodeLines(node: CanvasNode): CodeLine[] {
           const keywordEnd = classPos + 'class'.length;
           const keywordLineIdx = sourceFile.getLineAndCharacterOfPosition(classPos).line;
           markPosition(keywordLineIdx, classPos, keywordEnd, 'keyword');
+          result[keywordLineIdx].hasDeclarationKeyword = true; // ⭐ Output Port 표시용
         }
       }
 
@@ -224,6 +228,7 @@ export function renderCodeLines(node: CanvasNode): CodeLine[] {
           const keywordEnd = enumPos + 'enum'.length;
           const keywordLineIdx = sourceFile.getLineAndCharacterOfPosition(enumPos).line;
           markPosition(keywordLineIdx, enumPos, keywordEnd, 'keyword');
+          result[keywordLineIdx].hasDeclarationKeyword = true; // ⭐ Output Port 표시용
         }
       }
 

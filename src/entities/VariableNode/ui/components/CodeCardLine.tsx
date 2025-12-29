@@ -19,6 +19,7 @@ const CodeCardLine: React.FC<CodeCardLineProps> = ({ line, node }) => {
   const isDefinitionLine = line.num === node.startLine;
   const isTemplate = node.type === 'template';
   const isModule = node.type === 'module';
+  const hasDeclarationKeyword = line.hasDeclarationKeyword || false;
 
   // 최상위 return 문의 범위 찾기 (return 키워드 인덱스부터 세미콜론까지)
   let returnStartIdx = -1;
@@ -87,8 +88,8 @@ const CodeCardLine: React.FC<CodeCardLineProps> = ({ line, node }) => {
         })}
       </div>
 
-      {/* Output Port (Definition Line): Only show for nodes with actual definitions */}
-      {isDefinitionLine && !isTemplate && !isModule && (
+      {/* Output Port: Show for definition lines OR declaration keyword lines */}
+      {(isDefinitionLine || hasDeclarationKeyword) && !isTemplate && !isModule && (
         <div
           className="absolute right-0 top-3 -translate-y-1/2 w-2 h-2 rounded-full bg-slate-500 translate-x-[50%] ring-2 ring-vibe-panel"
           data-output-port={node.id}
