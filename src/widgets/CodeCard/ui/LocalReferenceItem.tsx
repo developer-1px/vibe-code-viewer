@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { LocalReference } from '../../../entities/VariableNode/model/types';
-import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, entryFileAtom, templateRootIdAtom } from '../../../store/atoms';
+import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, entryFileAtom, templateRootIdAtom, foldedLinesAtom } from '../../../store/atoms';
 import { pruneDetachedNodes } from '../../PipelineCanvas/utils';
 import { getNodeBorderColor } from '../../../entities/VariableNode/lib/styleUtils';
 
@@ -14,6 +14,7 @@ const LocalReferenceItem = ({reference }: {
   const entryFile = useAtomValue(entryFileAtom);
   const templateRootId = useAtomValue(templateRootIdAtom);
   const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
+  const setFoldedLinesMap = useSetAtom(foldedLinesAtom);
 
   const isActive = visibleNodeIds.has(reference.nodeId);
   const isLinkable = fullNodeMap.has(reference.nodeId);
@@ -21,15 +22,13 @@ const LocalReferenceItem = ({reference }: {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    // Debug: Sidebar vs Header 비교
-    if (reference.name === 'Sidebar' || reference.name === 'Header') {
-      console.log(`🎯 [LocalReferenceItem] ${reference.name} clicked:`, {
-        nodeId: reference.nodeId,
-        isLinkable,
-        hasInFullNodeMap: fullNodeMap.has(reference.nodeId),
-        allMatchingKeys: Array.from(fullNodeMap.keys()).filter(k => k.includes(reference.name)),
-      });
-    }
+    console.log(`🎯 [LocalReferenceItem] ${reference.name} clicked:`, {
+      nodeId: reference.nodeId,
+      isActive,
+      isLinkable,
+      forceExpand: e.metaKey || e.ctrlKey,
+      hasInFullNodeMap: fullNodeMap.has(reference.nodeId),
+    });
 
     if (!isLinkable) {
       // Try FILE_ROOT fallback
@@ -94,8 +93,51 @@ const LocalReferenceItem = ({reference }: {
       return next;
     });
 
-    // Center camera if expanding
+    // Unfold the target node when expanding (Module 노드의 경우 접혀있을 수 있음)
     if (isExpanding || forceExpand) {
+      // 해당 노드가 접힌 범위 내부에 있는지 확인하고, 관련된 fold만 해제
+      const targetNode = fullNodeMap.get(reference.nodeId);
+
+      console.log('🔓 [LocalReferenceItem] Unfolding:', {
+        referenceNodeId: reference.nodeId,
+        referenceName: reference.name,
+        targetNode: targetNode ? 'found' : 'NOT FOUND',
+        targetStartLine: targetNode?.startLine
+      });
+
+      if (targetNode && targetNode.startLine !== undefined) {
+        const targetLineNum = targetNode.startLine;
+
+        // 부모 노드(현재 CodeCard를 렌더링하는 노드)의 fold 찾기
+        // reference.nodeId는 "filePath::name" 형태
+        const parentNodeId = reference.nodeId.split('::')[0] + '::FILE_ROOT';
+
+        console.log('🔓 [LocalReferenceItem] Parent node:', {
+          parentNodeId,
+          targetLineNum
+        });
+
+        setFoldedLinesMap((prev) => {
+          const next = new Map(prev);
+          const parentFolds = next.get(parentNodeId);
+
+          console.log('🔓 [LocalReferenceItem] Current folds:', {
+            parentNodeId,
+            hasFolds: !!parentFolds,
+            foldCount: parentFolds?.size,
+            folds: parentFolds ? Array.from(parentFolds) : []
+          });
+
+          if (parentFolds) {
+            // 모든 fold 제거
+            next.delete(parentNodeId);
+            console.log('🔓 [LocalReferenceItem] Removed all folds for', parentNodeId);
+          }
+
+          return next;
+        });
+      }
+
       setLastExpandedId(reference.nodeId);
     }
   };

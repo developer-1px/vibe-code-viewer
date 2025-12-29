@@ -55,6 +55,7 @@ export interface CodeLine {
   foldInfo?: FoldInfo;        // 🆕 Fold 관련 메타데이터
   isFolded?: boolean;          // 🆕 현재 접혀있는 상태인가? (UI에서 설정)
   foldedCount?: number;        // 🆕 접힌 라인 수 (UI에서 설정)
+  isInsideFold?: boolean;      // 🆕 접힌 범위 내부 라인인가? (숨김 처리용, UI에서 설정)
 }
 
 /**

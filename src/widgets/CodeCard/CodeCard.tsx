@@ -56,36 +56,49 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
     }
   }, [node.id, processedLines, foldedLinesMap, setFoldedLinesMap]);
 
-  // 렌더링할 라인 계산 (접힌 경우 마지막 닫는 중괄호만 inline으로 추가)
+  // 렌더링할 라인 계산 (모든 라인을 포함하되, fold 상태를 마킹)
   const displayLines = useMemo(() => {
-    const result: CodeLine[] = [];
-    let i = 0;
-
-    while (i < processedLines.length) {
-      const line = processedLines[i];
+    return processedLines.map(line => {
       const foldInfo = line.foldInfo;
+
+      // 먼저 접힌 범위 내부인지 확인 (우선 체크)
+      let isInsideFold = false;
+
+      // 현재 라인이 어떤 fold 범위 내부에 있는지 확인
+      for (const foldedLineNum of foldedLines) {
+        const foldedLine = processedLines.find(l => l.num === foldedLineNum);
+        if (foldedLine?.foldInfo?.isFoldable) {
+          const { foldStart, foldEnd } = foldedLine.foldInfo;
+          // 현재 라인이 접힌 범위 내부에 있으면 (fold 시작 라인 제외)
+          if (line.num > foldStart && line.num <= foldEnd) {
+            isInsideFold = true;
+            break;
+          }
+        }
+      }
+
+      // 접힌 범위 내부 라인이면 바로 반환
+      if (isInsideFold) {
+        return {
+          ...line,
+          isInsideFold: true
+        };
+      }
 
       // 접을 수 있는 라인이고 현재 접혀있으면
       if (foldInfo?.isFoldable && foldedLines.has(line.num)) {
-        // 1. 접기 시작 라인에 fold 정보 추가 (CodeCardLine에서 { ... } 렌더링)
-        result.push({
+        return {
           ...line,
-          isFolded: true, // 🆕 fold 상태 추가
+          isFolded: true, // 접기 시작 라인
           foldedCount: foldInfo.foldEnd - foldInfo.foldStart
-        });
-
-        // 2. 접힌 범위 스킵 (foldEnd 라인 다음부터 계속)
-        while (i < processedLines.length && processedLines[i].num <= foldInfo.foldEnd) {
-          i++;
-        }
-      } else {
-        // 일반 라인
-        result.push(line);
-        i++;
+        };
       }
-    }
 
-    return result;
+      return {
+        ...line,
+        isInsideFold: false
+      };
+    });
   }, [processedLines, foldedLines]);
 
   // Script 영역의 마지막 라인 번호 계산

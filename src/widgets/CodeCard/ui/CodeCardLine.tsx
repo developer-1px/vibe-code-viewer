@@ -19,6 +19,7 @@ const CodeCardLine = ({line, node }: {
 
   const foldInfo = line.foldInfo;
   const isFolded = line.isFolded || false; // 🆕 line 자체에 fold 상태 저장됨
+  const isInsideFold = line.isInsideFold || false; // 🆕 접힌 범위 내부 라인
 
   // Calculate definition line status
   const isDefinitionLine = line.num === node.startLine;
@@ -35,6 +36,11 @@ const CodeCardLine = ({line, node }: {
       lineRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [isTargetLine]);
+
+  // 접힌 범위 내부 라인은 숨김 처리 (Hook 호출 이후에 체크)
+  if (isInsideFold) {
+    return null;
+  }
 
   // 최상위 return 문의 범위 찾기 (return 키워드 인덱스부터 세미콜론까지)
   let returnStartIdx = -1;
@@ -87,8 +93,11 @@ const CodeCardLine = ({line, node }: {
             .filter(Boolean)}
 
           <span className={
-            // 선언 라인에 색상 (템플릿 정의 라인은 제외)
-            (hasDeclarationKeyword && !(isDefinitionLine && isTemplate)) || (isDefinitionLine && !isTemplate)
+            // 하이라이트 조건: 선언 라인 || 접힌 라인 || foldable 라인
+            (hasDeclarationKeyword && !(isDefinitionLine && isTemplate)) ||
+            (isDefinitionLine && !isTemplate) ||
+            isFolded ||
+            foldInfo?.isFoldable
               ? 'text-vibe-accent font-bold'
               : ''
           }>
@@ -108,9 +117,15 @@ const CodeCardLine = ({line, node }: {
       {/* Code Content Column: leading-5 (20px) + py-0.5 (2px) = 24px total height per line */}
       <div className="flex-1 px-3 py-0.5 font-mono text-xs leading-5 overflow-x-auto whitespace-pre-wrap break-words">
         {line.segments.map((segment, segIdx) => {
-          // 🆕 접힌 라인의 마지막 { 제거 (배지에 포함시키기 위해)
-          if (isFolded && segIdx === line.segments.length - 1 && segment.text.trim() === '{') {
-            return null;
+          if (isFolded && segIdx === line.segments.length - 1) {
+            // Statement block의 경우 마지막 { 제거
+            if (segment.text.trim() === '{') {
+              return null;
+            }
+            // JSX의 경우 마지막 > 제거
+            if (segment.text.trim() === '>' && (foldInfo?.foldType === 'jsx-children' || foldInfo?.foldType === 'jsx-fragment')) {
+              return null;
+            }
           }
 
           const isInReturnStatement = returnStartIdx !== -1 && segIdx >= returnStartIdx && segIdx <= returnEndIdx;
@@ -131,6 +146,7 @@ const CodeCardLine = ({line, node }: {
           lineNum={line.num}
           isFolded={isFolded}
           foldedCount={line.foldedCount}
+          foldInfo={foldInfo}
         />
       </div>
 

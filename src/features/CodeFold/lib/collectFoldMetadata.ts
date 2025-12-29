@@ -18,7 +18,10 @@ export function collectFoldMetadata(
 ): void {
   function visit(node: ts.Node) {
     let block: ts.Block | undefined;
-    let blockType: 'statement-block' | 'jsx-children' | undefined;
+    let blockType: 'statement-block' | 'jsx-children' | 'jsx-fragment' | undefined;
+    let tagName: string | undefined;
+    let customStart: number | undefined;
+    let customEnd: number | undefined;
 
     // ===== Statement Block 감지 =====
     if (ts.isFunctionDeclaration(node) && node.body) {
@@ -53,6 +56,38 @@ export function collectFoldMetadata(
       block = node.tryBlock;
       blockType = 'statement-block';
     }
+    // ===== JSX Element 감지 =====
+    else if (ts.isJsxElement(node)) {
+      // <div>children</div> 형태
+      const openingElement = node.openingElement;
+      const closingElement = node.closingElement;
+
+      // Tag name 추출
+      tagName = openingElement.tagName.getText(sourceFile);
+
+      // Opening tag의 끝 (>) 위치
+      customStart = openingElement.getEnd();
+      // Closing tag의 끝 (>) 위치 - closing tag도 접혀야 함
+      customEnd = closingElement.getEnd() - 1;
+
+      blockType = 'jsx-children';
+    }
+    // ===== JSX Fragment 감지 =====
+    else if (ts.isJsxFragment(node)) {
+      // <>children</> 형태
+      const openingFragment = node.openingFragment;
+      const closingFragment = node.closingFragment;
+
+      // Fragment는 tag name 없음
+      tagName = undefined;
+
+      // Opening fragment의 끝 (>) 위치
+      customStart = openingFragment.getEnd();
+      // Closing fragment의 끝 (>) 위치 - closing fragment도 접혀야 함
+      customEnd = closingFragment.getEnd() - 1;
+
+      blockType = 'jsx-fragment';
+    }
 
     // Block이 있고, 비어있지 않으면 fold 가능
     if (block && block.statements.length > 0) {
@@ -76,7 +111,8 @@ export function collectFoldMetadata(
           foldStart: actualStartLineNum,
           foldEnd: actualEndLineNum,
           isInsideFold: false,
-          foldType: blockType
+          foldType: blockType,
+          tagName
         };
 
         // 중간 라인들에 "접힌 범위 내부" 표시
@@ -88,12 +124,50 @@ export function collectFoldMetadata(
               foldEnd: actualEndLineNum,
               isInsideFold: true,
               parentFoldLine: actualStartLineNum,
-              foldType: blockType
+              foldType: blockType,
+              tagName
             };
           }
         }
 
-        console.log(`📁 [collectFoldMetadata] Found foldable block at lines ${actualStartLineNum}-${actualEndLineNum} (ts: ${tsStartLine}-${tsEndLine})`);
+        console.log(`📁 [collectFoldMetadata] Found foldable ${blockType} at lines ${actualStartLineNum}-${actualEndLineNum} (ts: ${tsStartLine}-${tsEndLine})${tagName ? ` <${tagName}>` : ''}`);
+      }
+    }
+    // JSX Element/Fragment는 customStart/customEnd 사용
+    else if (customStart !== undefined && customEnd !== undefined && blockType) {
+      const tsStartLine = sourceFile.getLineAndCharacterOfPosition(customStart).line;
+      const tsEndLine = sourceFile.getLineAndCharacterOfPosition(customEnd).line;
+
+      // 한 줄짜리는 접을 필요 없음
+      if (tsEndLine > tsStartLine && tsStartLine >= 0 && tsStartLine < lines.length) {
+        const actualStartLineNum = lines[tsStartLine].num;
+        const actualEndLineNum = lines[tsEndLine].num;
+
+        lines[tsStartLine].foldInfo = {
+          isFoldable: true,
+          foldStart: actualStartLineNum,
+          foldEnd: actualEndLineNum,
+          isInsideFold: false,
+          foldType: blockType,
+          tagName
+        };
+
+        // 중간 라인들에 "접힌 범위 내부" 표시
+        for (let i = tsStartLine + 1; i < tsEndLine; i++) {
+          if (i >= 0 && i < lines.length) {
+            lines[i].foldInfo = {
+              isFoldable: false,
+              foldStart: actualStartLineNum,
+              foldEnd: actualEndLineNum,
+              isInsideFold: true,
+              parentFoldLine: actualStartLineNum,
+              foldType: blockType,
+              tagName
+            };
+          }
+        }
+
+        console.log(`📁 [collectFoldMetadata] Found foldable ${blockType} at lines ${actualStartLineNum}-${actualEndLineNum} (ts: ${tsStartLine}-${tsEndLine})${tagName ? ` <${tagName}>` : ''}`);
       }
     }
 
