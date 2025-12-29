@@ -64,6 +64,7 @@ const FileItem: React.FC<FileItemProps> = ({ fileName, index }) => {
 
   return (
     <li
+      data-file-index={index}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       className={`

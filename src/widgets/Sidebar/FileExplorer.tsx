@@ -1,9 +1,9 @@
 import React, { useMemo, useRef, useEffect } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
-import { FolderOpen, Search, X } from 'lucide-react';
+import { FolderOpen, Search, X, ChevronDown, ChevronRight, Folder } from 'lucide-react';
 import { FileItem, fuzzyMatch } from '../../entities/File';
 import UploadFolderButton from '../../features/UploadFolderButton';
-import { lastExpandedIdAtom, fileSearchQueryAtom, focusedFileIndexAtom } from '../../store/atoms';
+import { lastExpandedIdAtom, fileSearchQueryAtom, focusedFileIndexAtom, collapsedFoldersAtom } from '../../store/atoms';
 
 interface FileExplorerProps {
   files: Record<string, string>;
@@ -12,55 +12,84 @@ interface FileExplorerProps {
 const FileExplorer: React.FC<FileExplorerProps> = ({ files }) => {
   const [searchQuery, setSearchQuery] = useAtom(fileSearchQueryAtom);
   const [focusedIndex, setFocusedIndex] = useAtom(focusedFileIndexAtom);
+  const [collapsedFolders, setCollapsedFolders] = useAtom(collapsedFoldersAtom);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const lastShiftPressRef = useRef<number>(0);
-  const fileListRef = useRef<HTMLUListElement>(null);
+  const fileListRef = useRef<HTMLDivElement>(null);
 
   // Canvas navigation atom
   const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
 
-  // 검색어로 필터링된 파일 목록 (Fuzzy Search)
-  const filteredFiles = useMemo(() => {
+  // 폴더별로 파일 그룹화
+  const filesByFolder = useMemo(() => {
     const sortedFiles = Object.keys(files).sort();
+    const grouped = new Map<string, string[]>();
 
+    sortedFiles.forEach(filePath => {
+      const lastSlashIndex = filePath.lastIndexOf('/');
+      const folder = lastSlashIndex > 0 ? filePath.substring(0, lastSlashIndex) : '/';
+
+      if (!grouped.has(folder)) {
+        grouped.set(folder, []);
+      }
+      grouped.get(folder)!.push(filePath);
+    });
+
+    return Array.from(grouped.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [files]);
+
+  // 검색어로 필터링 (검색 시에는 flat list)
+  const filteredFiles = useMemo(() => {
     if (!searchQuery.trim()) {
-      return sortedFiles;
+      return null; // 검색 없으면 그룹화된 뷰 사용
     }
 
     const query = searchQuery.trim();
-    return sortedFiles.filter(fileName =>
-      fuzzyMatch(fileName, query)
-    );
+    const allFiles = Object.keys(files).sort();
+    return allFiles.filter(fileName => fuzzyMatch(fileName, query));
   }, [files, searchQuery]);
+
+  // Flat file list (for keyboard navigation)
+  const flatFileList = useMemo(() => {
+    if (filteredFiles) return filteredFiles;
+
+    const result: string[] = [];
+    filesByFolder.forEach(([folder, folderFiles]) => {
+      if (!collapsedFolders.has(folder)) {
+        result.push(...folderFiles);
+      }
+    });
+    return result;
+  }, [filesByFolder, collapsedFolders, filteredFiles]);
 
   // 필터링된 파일이 변경되면 focusedIndex 리셋
   useEffect(() => {
     setFocusedIndex(0);
-  }, [filteredFiles, setFocusedIndex]);
+  }, [flatFileList, setFocusedIndex]);
 
   // Focused 파일이 변경되면 카메라 이동
   useEffect(() => {
-    if (filteredFiles.length > 0 && focusedIndex >= 0 && focusedIndex < filteredFiles.length) {
-      const focusedFile = filteredFiles[focusedIndex];
+    if (flatFileList.length > 0 && focusedIndex >= 0 && focusedIndex < flatFileList.length) {
+      const focusedFile = flatFileList[focusedIndex];
       const fileRootId = `${focusedFile}::FILE_ROOT`;
       setLastExpandedId(fileRootId);
     }
-  }, [focusedIndex, filteredFiles, setLastExpandedId]);
+  }, [focusedIndex, flatFileList, setLastExpandedId]);
 
   // 검색 필드에서 키보드 네비게이션
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (filteredFiles.length === 0) return;
+    if (flatFileList.length === 0) return;
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setFocusedIndex(Math.min(focusedIndex + 1, filteredFiles.length - 1));
+      setFocusedIndex(Math.min(focusedIndex + 1, flatFileList.length - 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setFocusedIndex(Math.max(focusedIndex - 1, 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
       // FileItem의 handleClick will be triggered by clicking
-      const focusedElement = fileListRef.current?.children[focusedIndex] as HTMLElement;
+      const focusedElement = fileListRef.current?.querySelector(`[data-file-index="${focusedIndex}"]`) as HTMLElement;
       focusedElement?.click();
     } else if (e.key === 'Escape') {
       e.preventDefault();
@@ -95,13 +124,26 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ files }) => {
 
   // Focused 파일을 화면에 표시 (스크롤)
   useEffect(() => {
-    if (fileListRef.current && filteredFiles.length > 0) {
-      const focusedElement = fileListRef.current.children[focusedIndex] as HTMLElement;
+    if (fileListRef.current && flatFileList.length > 0) {
+      const focusedElement = fileListRef.current.querySelector(`[data-file-index="${focusedIndex}"]`) as HTMLElement;
       if (focusedElement) {
         focusedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
     }
-  }, [focusedIndex, filteredFiles.length]);
+  }, [focusedIndex, flatFileList.length]);
+
+  // 폴더 토글 핸들러
+  const toggleFolder = (folder: string) => {
+    setCollapsedFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(folder)) {
+        next.delete(folder);
+      } else {
+        next.add(folder);
+      }
+      return next;
+    });
+  };
 
   return (
     <div className="flex-1 bg-[#0f172a] border-b border-vibe-border overflow-y-auto flex flex-col">
@@ -137,7 +179,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ files }) => {
             </button>
           )}
         </div>
-        {searchQuery && (
+        {searchQuery && filteredFiles && (
           <div className="mt-1 text-[9px] text-slate-500">
             {filteredFiles.length} file{filteredFiles.length !== 1 ? 's' : ''} found
           </div>
@@ -145,21 +187,69 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ files }) => {
       </div>
 
       {/* File List */}
-      <ul ref={fileListRef} className="flex-1 overflow-y-auto">
-        {filteredFiles.length > 0 ? (
-          filteredFiles.map((fileName, index) => (
-            <FileItem
-              key={fileName}
-              fileName={fileName}
-              index={index}
-            />
-          ))
+      <div ref={fileListRef} className="flex-1 overflow-y-auto">
+        {filteredFiles ? (
+          // 검색 모드: flat list
+          <ul>
+            {filteredFiles.length > 0 ? (
+              filteredFiles.map((fileName, index) => (
+                <FileItem
+                  key={fileName}
+                  fileName={fileName}
+                  index={index}
+                />
+              ))
+            ) : (
+              <div className="px-3 py-6 text-[11px] text-slate-500 text-center">
+                No files found matching "{searchQuery}"
+              </div>
+            )}
+          </ul>
         ) : (
-          <div className="px-3 py-6 text-[11px] text-slate-500 text-center">
-            No files found matching "{searchQuery}"
+          // 일반 모드: 폴더별 그룹
+          <div>
+            {filesByFolder.map(([folder, folderFiles]) => {
+              const isCollapsed = collapsedFolders.has(folder);
+              const folderName = folder === '/' ? 'Root' : folder.split('/').pop() || folder;
+
+              return (
+                <div key={folder}>
+                  {/* Folder Header */}
+                  <div
+                    onClick={() => toggleFolder(folder)}
+                    className="sticky top-0 z-10 px-2 py-1 text-[10px] font-semibold text-slate-400 bg-[#0f172a]/95 backdrop-blur-sm border-b border-vibe-border/30 flex items-center gap-1.5 cursor-pointer hover:bg-white/5 transition-colors"
+                  >
+                    {isCollapsed ? (
+                      <ChevronRight className="w-2.5 h-2.5 flex-shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-2.5 h-2.5 flex-shrink-0" />
+                    )}
+                    <Folder className="w-2.5 h-2.5 flex-shrink-0" />
+                    <span className="truncate">{folderName}</span>
+                    <span className="text-slate-600 ml-auto">({folderFiles.length})</span>
+                  </div>
+
+                  {/* Folder Files */}
+                  {!isCollapsed && (
+                    <ul>
+                      {folderFiles.map((fileName) => {
+                        const fileIndex = flatFileList.indexOf(fileName);
+                        return (
+                          <FileItem
+                            key={fileName}
+                            fileName={fileName}
+                            index={fileIndex}
+                          />
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
-      </ul>
+      </div>
     </div>
   );
 };

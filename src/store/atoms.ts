@@ -30,3 +30,4 @@ export const lastExpandedIdAtom = atom(null as string | null);
 // File Explorer atoms
 export const fileSearchQueryAtom = atom('');
 export const focusedFileIndexAtom = atom(0);
+export const collapsedFoldersAtom = atom(new Set<string>()); // 접힌 폴더들
