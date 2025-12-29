@@ -9,11 +9,16 @@ import type { CodeSegment, SegmentStyle } from '../../../../entities/CodeSegment
 interface StaticSegmentProps {
   segment: CodeSegment;
   style: SegmentStyle;
+  isFocused?: boolean;
 }
 
-export const StaticSegment: React.FC<StaticSegmentProps> = ({ segment, style }) => {
+export const StaticSegment: React.FC<StaticSegmentProps> = ({ segment, style, isFocused }) => {
+  const className = isFocused
+    ? `${style.className} bg-cyan-500/30 rounded`
+    : style.className;
+
   return (
-    <span className={style.className} title={style.title}>
+    <span className={className} title={style.title}>
       {segment.text}
     </span>
   );

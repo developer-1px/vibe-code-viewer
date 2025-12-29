@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAtomValue } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { Box as IconBox, FileCode as IconFileCode } from 'lucide-react';
-import { filesAtom } from '../../store/atoms';
+import { filesAtom, isSidebarOpenAtom } from '../../store/atoms';
 import ResetFilesButton from '../../features/ResetFilesButton';
 import FileExplorer from './FileExplorer';
 
-const Sidebar: React.FC = () => {
+export const Sidebar: React.FC = () => {
   const files = useAtomValue(filesAtom);
-  const [width, setWidth] = useState(400);
+  const [isSidebarOpen] = useAtom(isSidebarOpenAtom);
+  const [width, setWidth] = useState(300);
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -38,10 +39,14 @@ const Sidebar: React.FC = () => {
 
   return (
     <div
-      ref={sidebarRef}
-      style={{ width: `${width}px` }}
-      className="bg-vibe-panel border-r border-vibe-border flex flex-col h-full select-none shadow-xl z-20 relative"
+      className={`transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 relative z-50 ${isSidebarOpen ? `w-[${width}px]` : 'w-0'}`}
+      style={{ width: isSidebarOpen ? `${width}px` : '0px' }}
     >
+      <div
+        ref={sidebarRef}
+        style={{ width: `${width}px` }}
+        className="bg-vibe-panel border-r border-vibe-border flex flex-col h-full select-none shadow-xl z-20 relative"
+      >
       {/* Header */}
       <div className="p-4 border-b border-vibe-border bg-[#162032] flex-shrink-0">
         <h1 className="font-bold text-slate-100 flex items-center gap-2 mb-1">
@@ -68,6 +73,7 @@ const Sidebar: React.FC = () => {
         onMouseDown={() => setIsResizing(true)}
         className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-vibe-accent/50 transition-colors ${isResizing ? 'bg-vibe-accent' : ''}`}
       />
+      </div>
     </div>
   );
 };

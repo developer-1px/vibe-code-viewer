@@ -12,15 +12,22 @@ interface DependencyTokenSegmentProps {
   segment: CodeSegment;
   node: CanvasNode;
   style: SegmentStyle;
+  lineHasFocusedVariable?: boolean;
+  isFocused?: boolean;
 }
 
-export const DependencyTokenSegment: React.FC<DependencyTokenSegmentProps> = ({ segment, node, style }) => {
+export const DependencyTokenSegment: React.FC<DependencyTokenSegmentProps> = ({ segment, node, style, lineHasFocusedVariable, isFocused }) => {
+  const className = isFocused
+    ? `${style.className} bg-cyan-500/30 rounded`
+    : style.className;
+
   return (
-    <span className={style.className}>
+    <span className={className}>
       <CodeCardToken
         text={segment.text}
         tokenId={segment.nodeId!}
         nodeId={node.id}
+        lineHasFocusedVariable={lineHasFocusedVariable}
       />
     </span>
   );

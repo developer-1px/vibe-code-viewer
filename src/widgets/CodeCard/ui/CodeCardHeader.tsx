@@ -3,11 +3,15 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   Terminal as IconTerminal, Box as IconBox, FunctionSquare as IconFunctionSquare, LayoutTemplate as IconLayoutTemplate, Database as IconDatabase, Link2 as IconLink2,
   PlayCircle as IconPlayCircle, BoxSelect as IconBoxSelect, ChevronsDown as IconChevronsDown, ChevronsUp as IconChevronsUp,
-  Calculator as IconCalculator, Shield as IconShield, Zap as IconZap, RefreshCw as IconRefreshCw, AlertCircle as IconAlertCircle, GripVertical as IconGripVertical
+  Calculator as IconCalculator, Shield as IconShield, Zap as IconZap, RefreshCw as IconRefreshCw, AlertCircle as IconAlertCircle, GripVertical as IconGripVertical,
+  X as IconX
 } from 'lucide-react';
 import { CanvasNode } from '../../../entities/CanvasNode';
-import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, cardPositionsAtom, transformAtom, activeFileAtom } from '../../../store/atoms';
+import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, cardPositionsAtom, transformAtom, activeFileAtom, activeLocalVariablesAtom, filesAtom, entryFileAtom, templateRootIdAtom } from '../../../store/atoms';
 import { checkAllDepsExpanded, expandDependenciesRecursive, collapseDependencies, getFirstDependency } from '../../../entities/SourceFileNode/model/nodeVisibility';
+import { renderCodeLines } from '../../../entities/CodeRenderer/lib/renderCodeLines';
+import { renderVueFile } from '../../../entities/CodeRenderer/lib/renderVueFile';
+import { pruneDetachedNodes } from '../../PipelineCanvas/utils';
 
 const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
   const [visibleNodeIds, setVisibleNodeIds] = useAtom(visibleNodeIdsAtom);
@@ -15,6 +19,11 @@ const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
   const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
   const setCardPositions = useSetAtom(cardPositionsAtom);
   const transform = useAtomValue(transformAtom);
+  const setActiveLocalVariables = useSetAtom(activeLocalVariablesAtom);
+  const activeLocalVariables = useAtomValue(activeLocalVariablesAtom);
+  const files = useAtomValue(filesAtom);
+  const entryFile = useAtomValue(entryFileAtom);
+  const templateRootId = useAtomValue(templateRootIdAtom);
 
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number; startOffset: { x: number; y: number } } | null>(null);
@@ -23,6 +32,90 @@ const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
   const allDepsExpanded = useMemo(() => {
     return checkAllDepsExpanded(node.dependencies, visibleNodeIds);
   }, [node.dependencies, visibleNodeIds]);
+
+  // Focused identifiers for this node
+  const focusedVariables = activeLocalVariables.get(node.id);
+
+  // Process code lines to extract metadata
+  const processedLines = useMemo(() => {
+    if (node.filePath.endsWith('.vue')) {
+      return renderVueFile(node, files);
+    }
+    return renderCodeLines(node, files);
+  }, [node, files]);
+
+  // Extract metadata for each focused identifier
+  const identifiersWithMetadata = useMemo(() => {
+    if (!focusedVariables || focusedVariables.size === 0) {
+      return [];
+    }
+
+    const metadata: Array<{ name: string; hoverInfo?: string; definedIn?: string }> = [];
+
+    focusedVariables.forEach((identifier) => {
+      // Find first occurrence of this identifier in segments
+      for (const line of processedLines) {
+        const segment = line.segments.find(seg => seg.text === identifier);
+        if (segment) {
+          metadata.push({
+            name: identifier,
+            hoverInfo: segment.hoverInfo,
+            definedIn: segment.definedIn
+          });
+          return; // Found, move to next identifier
+        }
+      }
+
+      // If not found in segments, add without metadata
+      metadata.push({
+        name: identifier
+      });
+    });
+
+    return metadata;
+  }, [focusedVariables, processedLines]);
+
+  // Handle removing a focused identifier
+  const handleRemoveIdentifier = (identifierName: string, definedIn?: string) => {
+    const isExternal = !!definedIn;
+    const isActive = definedIn && (visibleNodeIds.has(definedIn) || visibleNodeIds.has(definedIn.split('::')[0]));
+
+    // Remove from focus
+    setActiveLocalVariables((prev: Map<string, Set<string>>) => {
+      const next = new Map(prev);
+      const nodeVars = new Set(next.get(node.id) || new Set());
+
+      nodeVars.delete(identifierName);
+
+      if (nodeVars.size > 0) {
+        next.set(node.id, nodeVars);
+      } else {
+        next.delete(node.id);
+      }
+
+      return next;
+    });
+
+    // Close node if external and active
+    if (isExternal && isActive && definedIn) {
+      setVisibleNodeIds((prev: Set<string>) => {
+        const next = new Set(prev);
+
+        // 함수/변수 노드가 열려있으면 제거
+        if (fullNodeMap.has(definedIn) && next.has(definedIn)) {
+          next.delete(definedIn);
+        }
+
+        // 파일 노드가 열려있으면 제거
+        const filePath = definedIn.split('::')[0];
+        if (fullNodeMap.has(filePath) && next.has(filePath)) {
+          next.delete(filePath);
+        }
+
+        return pruneDetachedNodes(next, fullNodeMap, entryFile, templateRootId);
+      });
+    }
+  };
 
   const showToggleButton = node.dependencies.length > 0;
 

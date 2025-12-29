@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
-import { useAtom } from 'jotai';
-import { Sidebar } from './widgets/Sidebar';
+import { useSetAtom } from 'jotai';
+import Sidebar from './widgets/Sidebar/Sidebar';
 import Header from './widgets/MainContent/Header.tsx';
 import PipelineCanvas from './widgets/PipelineCanvas.tsx';
 import JotaiDevTools from './widgets/JotaiDevTools/JotaiDevTools';
@@ -9,7 +9,7 @@ import { isSidebarOpenAtom } from './store/atoms';
 import { useGraphDataInit } from './hooks/useGraphData';
 
 const App: React.FC = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useAtom(isSidebarOpenAtom);
+  const setIsSidebarOpen = useSetAtom(isSidebarOpenAtom);
 
   // Initialize and parse graph data (stores in atoms)
   useGraphDataInit();
@@ -30,13 +30,7 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-vibe-dark text-slate-200 font-sans">
       {/* Left Sidebar - Code Input */}
-      <div
-        className={`transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 relative z-50 ${isSidebarOpen ? 'w-[400px]' : 'w-0'}`}
-      >
-        <div className="w-[400px] h-full">
-          <Sidebar />
-        </div>
-      </div>
+      <Sidebar />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 bg-[#0f172a]">

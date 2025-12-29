@@ -2,21 +2,27 @@
 import React from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { getTokenStyle } from '../../../entities/SourceFileNode/lib/styleUtils';
-import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, entryFileAtom, templateRootIdAtom } from '../../../store/atoms';
+import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, entryFileAtom, templateRootIdAtom, activeLocalVariablesAtom } from '../../../store/atoms';
 import { pruneDetachedNodes } from '../../PipelineCanvas/utils';
 
-const CodeCardToken = ({text, tokenId, nodeId }: {
+const CodeCardToken = ({text, tokenId, nodeId, lineHasFocusedVariable }: {
   text: string;
   tokenId: string;
   nodeId: string;
+  lineHasFocusedVariable?: boolean;
 }) => {
   const [visibleNodeIds, setVisibleNodeIds] = useAtom(visibleNodeIdsAtom);
   const fullNodeMap = useAtomValue(fullNodeMapAtom);
   const entryFile = useAtomValue(entryFileAtom);
   const templateRootId = useAtomValue(templateRootIdAtom);
   const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
+  const activeLocalVariables = useAtomValue(activeLocalVariablesAtom);
 
   const isActive = visibleNodeIds.has(tokenId);
+
+  // Focus mode check (line이 focused면 무시)
+  const focusedVariables = activeLocalVariables.get(nodeId);
+  const hasFocusMode = !lineHasFocusedVariable && focusedVariables && focusedVariables.size > 0;
   
   // Check if this token refers to a Component
   const targetNode = fullNodeMap.get(tokenId);
@@ -64,9 +70,11 @@ const CodeCardToken = ({text, tokenId, nodeId }: {
       className={`
         inline-block px-0.5 rounded transition-all duration-200 select-text
         ${isLinkable ? 'cursor-pointer border' : 'cursor-default'}
-        ${isLinkable
-          ? getTokenStyle(isActive, isComponent)
-          : (isComponent ? 'text-emerald-300' : 'text-blue-300') // Fallback style for broken/missing links
+        ${hasFocusMode
+          ? 'text-slate-600' // Focus mode: grayscale
+          : isLinkable
+            ? getTokenStyle(isActive, isComponent)
+            : (isComponent ? 'text-emerald-300' : 'text-blue-300') // Fallback style for broken/missing links
         }
       `}
       onClick={isLinkable ? handleTokenClick : undefined}

@@ -13,6 +13,7 @@ export interface SegmentData {
   definedIn?: string;
   isDeclarationName?: boolean;
   position?: number;
+  tsNode?: any; // ts.Node reference
 }
 
 /**
@@ -103,7 +104,8 @@ export function buildLineSegments(
       nodeId: seg.nodeId,
       definedIn: seg.definedIn,
       isDeclarationName: seg.isDeclarationName,
-      position: seg.position
+      position: seg.position,
+      tsNode: seg.tsNode
     });
     cursor = segOffset + text.length;
   });

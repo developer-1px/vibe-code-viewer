@@ -11,7 +11,8 @@ export type AddKindFunction = (
   end: number,
   kind: SegmentKind,
   nodeId?: string,
-  isDeclarationNameOrDefinedIn?: boolean | string
+  isDeclarationNameOrDefinedIn?: boolean | string,
+  tsNode?: ts.Node
 ) => void;
 
 /**
@@ -68,7 +69,7 @@ export function processDeclarationNode(
       forEachBindingIdentifier(declaration.name, sourceFile, id => {
         const nameStart = id.getStart(sourceFile);
         const nameEnd = id.getEnd();
-        addKind(nameStart, nameEnd, 'self', undefined, true); // isDeclarationName = true
+        addKind(nameStart, nameEnd, 'self', undefined, true, id); // isDeclarationName = true
         localIdentifiers.add(id.text);
       });
     });
@@ -78,7 +79,7 @@ export function processDeclarationNode(
     if (declarationName) {
       const nameStart = declarationName.getStart(sourceFile);
       const nameEnd = declarationName.getEnd();
-      addKind(nameStart, nameEnd, 'self', undefined, true); // isDeclarationName = true
+      addKind(nameStart, nameEnd, 'self', undefined, true, declarationName); // isDeclarationName = true
       localIdentifiers.add(declarationName.text);
     }
   }
@@ -156,22 +157,22 @@ export function processIdentifier(
   const end = node.getEnd();
   const name = node.text;
 
-  // Self reference
+  // Self reference (사용처)
   if (name === nodeShortId) {
-    addKind(start, end, 'self', nodeId);
-    addKind(start, end, 'identifier');
+    addKind(start, end, 'local-variable', nodeId, undefined, node); // 사용처는 local-variable로
+    addKind(start, end, 'identifier', undefined, undefined, node);
   }
 
   // Parameter
   if (parameters.has(name)) {
-    addKind(start, end, 'parameter');
-    addKind(start, end, 'identifier');
+    addKind(start, end, 'parameter', undefined, undefined, node);
+    addKind(start, end, 'identifier', undefined, undefined, node);
   }
 
-  // Local variable
+  // Local variable (다른 local variable 사용처)
   if (localVars.has(name)) {
-    addKind(start, end, 'local-variable');
-    addKind(start, end, 'identifier');
+    addKind(start, end, 'local-variable', undefined, undefined, node);
+    addKind(start, end, 'identifier', undefined, undefined, node);
   }
 
   // External reference 처리 (getter 함수 사용)
@@ -185,14 +186,14 @@ export function processIdentifier(
   if (importSource) {
     const isNpm = importSource.startsWith('npm:');
     const kind: SegmentKind = isNpm ? 'identifier' : 'external-import';
-    addKind(start, end, kind, undefined, importSource);
-    addKind(start, end, 'identifier', importSource);
+    addKind(start, end, kind, undefined, importSource, node);
+    addKind(start, end, 'identifier', importSource, undefined, node);
   } else if (dependencyMap.has(name)) {
     // Fallback: dependency 기반
     const depId = dependencyMap.get(name)!;
-    addKind(start, end, 'external-import', undefined, depId);
-    addKind(start, end, 'identifier', depId);
+    addKind(start, end, 'external-import', undefined, depId, node);
+    addKind(start, end, 'identifier', depId, undefined, node);
   } else if (localIdentifiers.has(name)) {
-    addKind(start, end, 'identifier');
+    addKind(start, end, 'identifier', undefined, undefined, node);
   }
 }

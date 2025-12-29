@@ -165,7 +165,8 @@ export function renderCodeLines(node: CanvasNode, files: Record<string, string>)
       end: number,
       kind: SegmentKind,
       nodeId?: string,
-      isDeclarationNameOrDefinedIn?: boolean | string
+      isDeclarationNameOrDefinedIn?: boolean | string,
+      tsNode?: ts.Node
     ) {
       const key = getSegmentKey(start, end);
       const existing = segmentMap.get(key);
@@ -179,6 +180,7 @@ export function renderCodeLines(node: CanvasNode, files: Record<string, string>)
         } else if (isDeclarationNameOrDefinedIn === true) {
           existing.isDeclarationName = true;
         }
+        if (tsNode) existing.tsNode = tsNode;
       } else {
         // 새로 생성
         segmentMap.set(key, {
@@ -188,7 +190,8 @@ export function renderCodeLines(node: CanvasNode, files: Record<string, string>)
           nodeId,
           definedIn: typeof isDeclarationNameOrDefinedIn === 'string' ? isDeclarationNameOrDefinedIn : undefined,
           isDeclarationName: isDeclarationNameOrDefinedIn === true,
-          position: start
+          position: start,
+          tsNode
         });
       }
     }

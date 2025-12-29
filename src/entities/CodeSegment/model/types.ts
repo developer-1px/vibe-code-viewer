@@ -37,6 +37,7 @@ export interface CodeSegment {
     line: number;
     character: number;
   };
+  tsNode?: any; // ts.Node reference for type queries (avoid circular dependency)
 }
 
 /**

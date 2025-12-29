@@ -3,9 +3,9 @@
  */
 
 export { StaticSegment } from './StaticSegment';
-export { CloseSegment } from './CloseSegment';
 export { ExpandSegment } from './ExpandSegment';
 export { ExternalSegment } from './ExternalSegment';
-export { DefinitionSegment } from './DefinitionSegment';
-export { LocalVariableSegment } from './LocalVariableSegment';
 export { DependencyTokenSegment } from './DependencyTokenSegment';
+
+// Focus Mode feature에서 re-export
+export { LocalVariableSegment } from '../../../../features/FocusMode/ui/LocalVariableSegment';

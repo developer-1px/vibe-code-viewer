@@ -115,20 +115,6 @@ const FileItem: React.FC<FileItemProps> = ({ fileName, index }) => {
         ))}
       </span>
 
-      {/* Folder path (오른쪽) */}
-      {folder && (
-        <span className="ml-auto text-[10px] text-slate-500 truncate">
-          {highlightedFolder.map((part, i) => (
-            part.isHighlight ? (
-              <mark key={i} className="bg-yellow-400/30 text-yellow-200">
-                {part.text}
-              </mark>
-            ) : (
-              <span key={i}>{part.text}</span>
-            )
-          ))}
-        </span>
-      )}
     </li>
   );
 };

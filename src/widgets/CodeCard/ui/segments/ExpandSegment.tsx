@@ -12,9 +12,10 @@ interface ExpandSegmentProps {
   segment: CodeSegment;
   node: CanvasNode;
   style: SegmentStyle;
+  isFocused?: boolean;
 }
 
-export const ExpandSegment: React.FC<ExpandSegmentProps> = ({ segment, node, style }) => {
+export const ExpandSegment: React.FC<ExpandSegmentProps> = ({ segment, node, style, isFocused }) => {
   const setVisibleNodeIds = useSetAtom(visibleNodeIdsAtom);
 
   const handleClick = (e: React.MouseEvent) => {
@@ -28,8 +29,12 @@ export const ExpandSegment: React.FC<ExpandSegmentProps> = ({ segment, node, sty
     });
   };
 
+  const className = isFocused
+    ? `${style.className} bg-cyan-500/30 rounded`
+    : style.className;
+
   return (
-    <span onClick={handleClick} className={style.className} title={style.title}>
+    <span onClick={handleClick} className={className} title={style.title}>
       {segment.text}
     </span>
   );

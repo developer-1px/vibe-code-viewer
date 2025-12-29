@@ -18,71 +18,90 @@ export function buildSegmentStyle(
     hasHoverInfo?: boolean;
     isInReturn?: boolean;
     isActive?: boolean; // external-import 토글 상태
+    focusedVariables?: Set<string>; // Focus mode용 활성화된 변수들
+    segmentText?: string; // 현재 segment의 텍스트 (focus 확인용)
   }
 ): SegmentStyle {
   const primaryKind = getPrimaryKind(kinds);
   const returnBg = options.isInReturn ? 'bg-green-500/10 px-0.5 rounded' : '';
 
+  // Focus mode: 활성화된 변수가 있고, 현재 segment가 focus 대상이 아니면 grayscale
+  const hasFocusMode = options.focusedVariables && options.focusedVariables.size > 0;
+  const isFocused = hasFocusMode && options.segmentText && options.focusedVariables?.has(options.segmentText);
+
   // 기본 텍스트
   if (primaryKind === 'text') {
+    const textColor = hasFocusMode && !isFocused ? 'text-slate-600' : 'text-slate-300';
     return {
-      className: `text-slate-300 select-text ${returnBg}`,
+      className: `${textColor} select-text ${returnBg}`,
       clickable: false
     };
   }
 
   // 키워드
   if (primaryKind === 'keyword') {
+    const textColor = hasFocusMode && !isFocused ? 'text-slate-600' : 'text-purple-400';
     return {
-      className: `text-purple-400 font-semibold select-text ${returnBg}`,
+      className: `${textColor} font-semibold select-text ${returnBg}`,
       clickable: false
     };
   }
 
   // 구두점
   if (primaryKind === 'punctuation') {
+    const textColor = hasFocusMode && !isFocused ? 'text-slate-600' : 'text-slate-400';
     return {
-      className: `text-slate-400 select-text ${returnBg}`,
+      className: `${textColor} select-text ${returnBg}`,
       clickable: false
     };
   }
 
   // 문자열
   if (primaryKind === 'string') {
+    const textColor = hasFocusMode && !isFocused ? 'text-slate-600' : 'text-orange-300';
     return {
-      className: `text-orange-300 select-text ${returnBg}`,
+      className: `${textColor} select-text ${returnBg}`,
       clickable: false
     };
   }
 
   // 주석
   if (primaryKind === 'comment') {
+    const textColor = hasFocusMode && !isFocused ? 'text-slate-600' : 'text-slate-500';
     return {
-      className: 'text-slate-500 italic opacity-80 select-text',
+      className: `${textColor} italic opacity-80 select-text`,
       clickable: false
     };
   }
 
-  // Self reference
+  // Self reference (Declaration name)
   if (primaryKind === 'self') {
-    const glowClass = options.isDeclarationName
-      ? 'shadow-[0_0_6px_rgba(139,92,246,0.4)] bg-vibe-accent/15'
-      : 'bg-vibe-accent/10';
+    // Focus mode && Focused: 최대 강조
+    if (hasFocusMode && isFocused) {
+      return {
+        className: 'inline-block px-0.5 rounded bg-vibe-accent/30 text-vibe-accent font-bold cursor-pointer hover:bg-vibe-accent/40 transition-colors select-text',
+        clickable: true,
+        clickType: 'definition',
+        title: 'Definition (Focused)'
+      };
+    }
 
-    const hasDefinitionNode = options.isDeclarationName && options.hasNodeId;
-    const hoverClass = hasDefinitionNode
-      ? 'hover:bg-vibe-accent/25 hover:text-vibe-accent'
-      : 'hover:bg-red-500/20 hover:text-red-400 hover:line-through';
+    // Focus mode && Not focused: grayscale
+    if (hasFocusMode && !isFocused) {
+      return {
+        className: 'inline-block px-0.5 rounded text-slate-600 cursor-pointer hover:bg-vibe-accent/10 hover:text-vibe-accent/60 transition-colors select-text',
+        clickable: true,
+        clickType: 'definition',
+        title: 'Definition'
+      };
+    }
 
+    // Normal mode
     return {
-      className: `inline-block px-0.5 rounded ${glowClass} text-vibe-accent font-bold cursor-pointer ${hoverClass} transition-colors select-text`,
+      className: `inline-block px-0.5 rounded bg-vibe-accent/10 text-vibe-accent font-bold cursor-pointer hover:bg-vibe-accent/25 hover:text-vibe-accent transition-colors select-text`,
       clickable: true,
-      clickType: hasDefinitionNode ? 'expand' : 'close',
-      title: hasDefinitionNode
-        ? 'Click to show definition'
-        : options.isDeclarationName
-        ? 'Declaration name (click to close)'
-        : 'Click to close this card'
+      clickType: 'definition',
+      title: 'Definition'
     };
   }
 
@@ -90,13 +109,33 @@ export function buildSegmentStyle(
   if (primaryKind === 'external-import') {
     const isActive = options.isActive;
 
+    // Focus mode && Focused: 최대 강조
+    if (hasFocusMode && isFocused) {
+      return {
+        className: `inline-block px-1 rounded bg-emerald-400/30 text-emerald-100 font-bold border border-emerald-300/60 shadow-[0_0_12px_rgba(16,185,129,0.6)] hover:bg-emerald-400/40 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
+        clickable: true,
+        clickType: 'external',
+        title: 'Click to deactivate highlight (Focus mode)'
+      };
+    }
+
+    // Focus mode && Not focused: grayscale
+    if (hasFocusMode && !isFocused) {
+      return {
+        className: `inline-block px-1 rounded text-slate-600 border border-slate-700 hover:bg-emerald-500/10 hover:text-emerald-400 transition-all select-text cursor-pointer`,
+        clickable: true,
+        clickType: 'external',
+        title: 'Click to activate highlight'
+      };
+    }
+
     // Active 상태: 강조 스타일
     if (isActive) {
       return {
         className: `inline-block px-1 rounded bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/30 hover:bg-emerald-500/25 hover:border-emerald-400/50 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
         clickable: !!options.hasDefinedIn,
         clickType: 'external',
-        title: options.hasDefinedIn ? 'Click to close' : 'External Import (Active)'
+        title: options.hasDefinedIn ? 'Cmd+Click to close' : 'External Import (Active)'
       };
     }
 
@@ -105,32 +144,81 @@ export function buildSegmentStyle(
       className: `inline-block px-1 rounded bg-emerald-500/12 text-emerald-300/90 border border-emerald-500/25 hover:bg-emerald-500/15 hover:text-emerald-300 hover:border-emerald-500/30 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
       clickable: !!options.hasDefinedIn,
       clickType: 'external',
-      title: options.hasDefinedIn ? 'Click to show import source' : 'External Import'
+      title: options.hasDefinedIn ? 'Cmd+Click to show import source' : 'External Import'
     };
   }
 
   // External Closure (강조된 토큰 스타일)
   if (primaryKind === 'external-closure') {
+    // Focus mode && Focused: 최대 강조
+    if (hasFocusMode && isFocused) {
+      return {
+        className: `inline-block px-1 py-0.5 rounded bg-amber-400/30 text-amber-100 font-bold border border-amber-300/60 shadow-[0_0_12px_rgba(245,158,11,0.6)] hover:bg-amber-400/40 transition-all select-text cursor-pointer`,
+        clickable: true,
+        clickType: 'external',
+        title: 'Click to deactivate highlight (Focus mode)'
+      };
+    }
+
+    // Focus mode && Not focused: grayscale
+    if (hasFocusMode && !isFocused) {
+      return {
+        className: `inline-block px-1 py-0.5 rounded text-slate-600 border border-slate-700 hover:bg-amber-500/10 hover:text-amber-400 transition-all select-text cursor-pointer`,
+        clickable: true,
+        clickType: 'external',
+        title: 'Click to activate highlight'
+      };
+    }
+
     return {
       className: `inline-block px-1 py-0.5 rounded bg-amber-500/15 text-amber-300 font-semibold border border-amber-500/30 hover:bg-amber-500/25 hover:border-amber-400/50 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
       clickable: !!options.hasDefinedIn,
       clickType: 'external',
-      title: options.hasDefinedIn ? 'Click to show closure variable' : 'Closure Variable'
+      title: options.hasDefinedIn ? 'Cmd+Click to show closure variable' : 'Closure Variable'
     };
   }
 
   // External Function (강조된 토큰 스타일)
   if (primaryKind === 'external-function') {
+    // Focus mode && Focused: 최대 강조
+    if (hasFocusMode && isFocused) {
+      return {
+        className: `inline-block px-1 py-0.5 rounded bg-purple-400/30 text-purple-100 font-bold border border-purple-300/60 shadow-[0_0_12px_rgba(168,85,247,0.6)] hover:bg-purple-400/40 transition-all select-text cursor-pointer`,
+        clickable: true,
+        clickType: 'external',
+        title: 'Click to deactivate highlight (Focus mode)'
+      };
+    }
+
+    // Focus mode && Not focused: grayscale
+    if (hasFocusMode && !isFocused) {
+      return {
+        className: `inline-block px-1 py-0.5 rounded text-slate-600 border border-slate-700 hover:bg-purple-500/10 hover:text-purple-400 transition-all select-text cursor-pointer`,
+        clickable: true,
+        clickType: 'external',
+        title: 'Click to activate highlight'
+      };
+    }
+
     return {
       className: `inline-block px-1 py-0.5 rounded bg-purple-500/15 text-purple-300 font-semibold border border-purple-500/30 hover:bg-purple-500/25 hover:border-purple-400/50 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
       clickable: !!options.hasDefinedIn,
       clickType: 'external',
-      title: options.hasDefinedIn ? 'Click to show function' : 'Function Variable'
+      title: options.hasDefinedIn ? 'Cmd+Click to show function' : 'Function Variable'
     };
   }
 
   // Parameter (클릭 가능한 토큰)
   if (primaryKind === 'parameter') {
+    // Focus mode: grayscale
+    if (hasFocusMode) {
+      return {
+        className: 'inline-block px-1 py-0.5 rounded text-slate-600 border border-slate-700 transition-all cursor-default select-text',
+        clickable: false,
+        title: 'Parameter'
+      };
+    }
+
     return {
       className: 'inline-block px-1 py-0.5 rounded bg-violet-500/15 text-violet-300 font-semibold border border-violet-500/30 hover:bg-violet-500/25 hover:border-violet-400/50 transition-all cursor-default select-text',
       clickable: false,
@@ -142,6 +230,16 @@ export function buildSegmentStyle(
   if (primaryKind === 'local-variable') {
     const isActive = options.isActive;
 
+    // Active 상태 && Focus mode: 최대 강조
+    if (isActive && isFocused) {
+      return {
+        className: 'inline-block px-1 py-0.5 rounded bg-cyan-400/30 text-cyan-100 font-bold border border-cyan-300/60 shadow-[0_0_12px_rgba(34,211,238,0.6)] hover:bg-cyan-400/40 transition-all cursor-pointer select-text',
+        clickable: true,
+        clickType: 'local-variable',
+        title: 'Click to deactivate highlight (Focus mode)'
+      };
+    }
+
     // Active 상태: 강조 하이라이트
     if (isActive) {
       return {
@@ -149,6 +247,16 @@ export function buildSegmentStyle(
         clickable: true,
         clickType: 'local-variable',
         title: 'Click to deactivate highlight'
+      };
+    }
+
+    // Inactive 상태 + Focus mode: grayscale
+    if (hasFocusMode && !isFocused) {
+      return {
+        className: 'inline-block px-0.5 rounded text-slate-600 hover:bg-cyan-500/10 hover:text-cyan-400 transition-all cursor-pointer select-text',
+        clickable: true,
+        clickType: 'local-variable',
+        title: 'Click to activate highlight'
       };
     }
 
@@ -163,8 +271,9 @@ export function buildSegmentStyle(
 
   // Identifier with nodeId (dependency slot)
   if (primaryKind === 'identifier' && options.hasNodeId) {
+    const textColor = hasFocusMode && !isFocused ? 'text-slate-600' : '';
     return {
-      className: `select-text ${returnBg}`,
+      className: `${textColor} select-text ${returnBg}`,
       clickable: true,
       clickType: 'expand' // CodeCardToken에서 처리
     };
@@ -172,12 +281,12 @@ export function buildSegmentStyle(
 
   // Identifier with Language Service
   if (primaryKind === 'identifier' && (options.hasHoverInfo || options.hasDefinition)) {
+    const baseColor = hasFocusMode && !isFocused ? 'text-slate-600' : options.hasDefinition ? 'text-sky-300' : 'text-slate-300';
+    const decoration = options.hasDefinition && !(hasFocusMode && !isFocused) ? 'underline decoration-dotted decoration-sky-300/40' : '';
+    const hover = options.hasDefinition && !(hasFocusMode && !isFocused) ? 'cursor-pointer hover:bg-sky-400/15' : '';
+
     return {
-      className: `relative inline-block px-0.5 rounded transition-colors select-text ${
-        options.hasDefinition
-          ? 'text-sky-300 underline decoration-dotted decoration-sky-300/40 cursor-pointer hover:bg-sky-400/15'
-          : 'text-slate-300'
-      } ${returnBg}`,
+      className: `relative inline-block px-0.5 rounded transition-colors select-text ${baseColor} ${decoration} ${hover} ${returnBg}`,
       clickable: !!options.hasDefinition,
       clickType: 'definition',
       hoverTooltip: !!options.hasHoverInfo
@@ -185,8 +294,9 @@ export function buildSegmentStyle(
   }
 
   // Fallback
+  const textColor = hasFocusMode && !isFocused ? 'text-slate-600' : 'text-slate-300';
   return {
-    className: `text-slate-300 select-text ${returnBg}`,
+    className: `${textColor} select-text ${returnBg}`,
     clickable: false
   };
 }

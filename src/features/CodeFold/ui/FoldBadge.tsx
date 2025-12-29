@@ -6,22 +6,21 @@
 import React from 'react';
 import { useSetAtom } from 'jotai';
 import { foldedLinesAtom } from '../../../store/atoms';
-import type { FoldInfo } from '../lib/types';
+import type { CodeLine } from '../../../entities/CodeRenderer/model/types';
+import type { CanvasNode } from '../../../entities/CanvasNode';
 
-const FoldBadge = ({
-  nodeId,
-  lineNum,
-  isFolded,
-  foldedCount,
-  foldInfo
-}: {
-  nodeId: string;
-  lineNum: number;
+interface FoldBadgeProps {
+  line: CodeLine;
+  node: CanvasNode;
   isFolded: boolean;
   foldedCount?: number;
-  foldInfo?: FoldInfo;
-}) => {
+}
+
+const FoldBadge: React.FC<FoldBadgeProps> = ({ line, node, isFolded, foldedCount }) => {
   const setFoldedLinesMap = useSetAtom(foldedLinesAtom);
+
+  const { foldInfo, num: lineNum } = line;
+  const nodeId = node.id;
 
   if (!isFolded || foldedCount === undefined) {
     return null;
