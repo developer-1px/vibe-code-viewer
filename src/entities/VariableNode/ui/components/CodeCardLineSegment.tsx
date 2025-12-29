@@ -89,12 +89,45 @@ const CodeCardLineSegment: React.FC<CodeCardLineSegmentProps> = ({
 
   // Self reference (node definition)
   if (segment.kind === 'self') {
+    // Declaration name에 약한 glow 효과 (vibe-accent 색상 사용)
+    const glowClass = segment.isDeclarationName
+      ? 'shadow-[0_0_6px_rgba(139,92,246,0.4)] bg-vibe-accent/15'
+      : 'bg-vibe-accent/10';
+
+    // 접혀있는 코드(모듈)에서 선언 이름을 클릭하면 해당 정의로 이동
+    const hasDefinitionNode = segment.isDeclarationName && segment.nodeId && fullNodeMap.has(segment.nodeId);
+
+    const handleClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (hasDefinitionNode && segment.nodeId) {
+        // 접힌 코드의 선언 이름 → 정의 노드 열기
+        setVisibleNodeIds((prev: Set<string>) => {
+          const next = new Set(prev);
+          next.add(segment.nodeId!);
+          return next;
+        });
+      } else {
+        // 일반 self reference → 카드 닫기
+        handleSelfClick(e);
+      }
+    };
+
+    const hoverClass = hasDefinitionNode
+      ? 'hover:bg-vibe-accent/25 hover:text-vibe-accent'
+      : 'hover:bg-red-500/20 hover:text-red-400 hover:line-through';
+
     return (
       <span
         key={segIdx}
-        onClick={handleSelfClick}
-        title="Click to close this card"
-        className="inline-block px-0.5 rounded bg-vibe-accent/10 text-vibe-accent font-bold cursor-pointer hover:bg-red-500/20 hover:text-red-400 hover:line-through transition-colors select-text"
+        onClick={handleClick}
+        title={
+          hasDefinitionNode
+            ? `Click to show definition: ${segment.nodeId}`
+            : segment.isDeclarationName
+            ? "Declaration name (click to close)"
+            : "Click to close this card"
+        }
+        className={`inline-block px-0.5 rounded ${glowClass} text-vibe-accent font-bold cursor-pointer ${hoverClass} transition-colors select-text`}
       >
         {segment.text}
       </span>

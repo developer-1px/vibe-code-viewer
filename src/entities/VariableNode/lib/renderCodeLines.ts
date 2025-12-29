@@ -13,6 +13,7 @@ export interface CodeSegment {
   nodeId?: string;
   definedIn?: string;
   offset?: number; // Position in line for accurate sorting
+  isDeclarationName?: boolean; // 선언되는 변수/함수/타입 이름인지 여부
 }
 
 // AST에서 segment kind를 결정하는 Hook
@@ -35,59 +36,133 @@ function getSegmentKind(node: ts.Node): CodeSegment['kind'] | null {
   return null;
 }
 
+export interface FoldInfo {
+  isFoldable: boolean;        // 접을 수 있는 라인인가? (블록 시작)
+  foldStart: number;           // 접기 시작 라인 번호
+  foldEnd: number;             // 접기 끝 라인 번호
+  isInsideFold: boolean;       // 접힌 범위 내부에 있는가?
+  parentFoldLine?: number;     // 부모 fold 라인 번호 (중첩 지원)
+  foldType?: 'statement-block' | 'jsx-children' | 'jsx-fragment';
+  tagName?: string;            // JSX인 경우 태그 이름
+}
+
 export interface CodeLine {
   num: number;
   segments: CodeSegment[];
   hasInput: boolean;
   hasTopLevelReturn?: boolean;
   hasDeclarationKeyword?: boolean; // interface, type, class, enum 등의 선언 키워드가 있는 라인
+  foldInfo?: FoldInfo;        // 🆕 Fold 관련 메타데이터
+  isFolded?: boolean;          // 🆕 현재 접혀있는 상태인가? (UI에서 설정)
+  foldedCount?: number;        // 🆕 접힌 라인 수 (UI에서 설정)
+}
+
+export interface FoldPlaceholder {
+  type: 'fold-placeholder';
+  parentLine: number;
+  foldStart: number;
+  foldEnd: number;
+  foldedCount: number;
+  foldType: 'statement-block' | 'jsx-children' | 'jsx-fragment';
+  tagName?: string;
 }
 
 /**
- * Module 노드의 함수 본문 접기
+ * Statement Block의 fold 메타데이터 수집
+ * 각 라인에 fold 정보를 추가
  */
-function foldFunctionBodies(code: string, isTsx: boolean): string {
-  try {
-    const sourceFile = ts.createSourceFile(
-      isTsx ? 'temp.tsx' : 'temp.ts',
-      code,
-      ts.ScriptTarget.Latest,
-      true,
-      isTsx ? ts.ScriptKind.TSX : ts.ScriptKind.TS
-    );
+function collectFoldMetadata(
+  sourceFile: ts.SourceFile,
+  lines: CodeLine[]
+): void {
+  function visit(node: ts.Node) {
+    let block: ts.Block | undefined;
+    let blockType: 'statement-block' | 'jsx-children' | undefined;
 
-    // 함수들의 본문 위치 수집
-    const folds: Array<{ start: number; end: number }> = [];
-
-    function visit(node: ts.Node) {
-      // Function declarations and arrow functions
-      if (ts.isFunctionDeclaration(node) || ts.isArrowFunction(node) || ts.isFunctionExpression(node)) {
-        if (node.body && ts.isBlock(node.body)) {
-          const openBrace = code.indexOf('{', node.body.getStart(sourceFile));
-          const closeBrace = code.lastIndexOf('}', node.body.getEnd());
-
-          if (openBrace !== -1 && closeBrace !== -1 && closeBrace > openBrace) {
-            folds.push({ start: openBrace + 1, end: closeBrace });
-          }
-        }
-      }
-
-      ts.forEachChild(node, visit);
+    // ===== Statement Block 감지 =====
+    if (ts.isFunctionDeclaration(node) && node.body) {
+      block = node.body;
+      blockType = 'statement-block';
+    }
+    else if (ts.isArrowFunction(node) && ts.isBlock(node.body)) {
+      block = node.body;
+      blockType = 'statement-block';
+    }
+    else if (ts.isFunctionExpression(node) && node.body) {
+      block = node.body;
+      blockType = 'statement-block';
+    }
+    else if (ts.isMethodDeclaration(node) && node.body) {
+      block = node.body;
+      blockType = 'statement-block';
+    }
+    else if (ts.isIfStatement(node) && ts.isBlock(node.thenStatement)) {
+      block = node.thenStatement;
+      blockType = 'statement-block';
+    }
+    else if (ts.isForStatement(node) && ts.isBlock(node.statement)) {
+      block = node.statement;
+      blockType = 'statement-block';
+    }
+    else if (ts.isWhileStatement(node) && ts.isBlock(node.statement)) {
+      block = node.statement;
+      blockType = 'statement-block';
+    }
+    else if (ts.isTryStatement(node)) {
+      block = node.tryBlock;
+      blockType = 'statement-block';
     }
 
+    // Block이 있고, 비어있지 않으면 fold 가능
+    if (block && block.statements.length > 0) {
+      const openBrace = block.getStart(sourceFile);
+      const closeBrace = block.getEnd() - 1;
+
+      // TypeScript는 0-based line numbers를 반환
+      const tsStartLine = sourceFile.getLineAndCharacterOfPosition(openBrace).line;
+      const tsEndLine = sourceFile.getLineAndCharacterOfPosition(closeBrace).line;
+
+      // lines 배열은 0-based 인덱스
+      // CodeLine.num은 startLineNum + idx (실제 파일 라인 번호)
+      // 한 줄짜리는 접을 필요 없음
+      if (tsEndLine > tsStartLine && tsStartLine >= 0 && tsStartLine < lines.length) {
+        // 시작 라인에 fold 메타데이터 추가
+        const actualStartLineNum = lines[tsStartLine].num;
+        const actualEndLineNum = lines[tsEndLine].num;
+
+        lines[tsStartLine].foldInfo = {
+          isFoldable: true,
+          foldStart: actualStartLineNum,
+          foldEnd: actualEndLineNum,
+          isInsideFold: false,
+          foldType: blockType
+        };
+
+        // 중간 라인들에 "접힌 범위 내부" 표시
+        for (let i = tsStartLine + 1; i < tsEndLine; i++) {
+          if (i >= 0 && i < lines.length) {
+            lines[i].foldInfo = {
+              isFoldable: false,
+              foldStart: actualStartLineNum,
+              foldEnd: actualEndLineNum,
+              isInsideFold: true,
+              parentFoldLine: actualStartLineNum,
+              foldType: blockType
+            };
+          }
+        }
+
+        console.log(`📁 [collectFoldMetadata] Found foldable block at lines ${actualStartLineNum}-${actualEndLineNum} (ts: ${tsStartLine}-${tsEndLine})`);
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  try {
     visit(sourceFile);
-
-    // 뒤에서부터 교체 (인덱스 변경 방지)
-    folds.sort((a, b) => b.start - a.start);
-    let result = code;
-
-    folds.forEach(({ start, end }) => {
-      result = result.slice(0, start) + ' ... ' + result.slice(end);
-    });
-
-    return result;
-  } catch {
-    return code;
+  } catch (err) {
+    console.error('❌ [collectFoldMetadata] Error:', err);
   }
 }
 
@@ -104,12 +179,17 @@ export function renderCodeLines(node: CanvasNode): CodeLine[] {
   const filePath = node.filePath;
 
   const isTsx = filePath?.endsWith('.tsx') || filePath?.endsWith('.jsx') || false;
-  const isModule = nodeId.endsWith('::FILE_ROOT');
-
-  // Module이면 함수 본문 접기
-  const processedCode = isModule ? foldFunctionBodies(codeSnippet, isTsx) : codeSnippet;
+  const processedCode = codeSnippet;
   const lines = processedCode.split('\n');
   const nodeShortId = nodeId.split('::').pop() || '';
+  const isModule = nodeId.endsWith('::FILE_ROOT');
+
+  // 🐛 디버깅: Module 노드의 codeSnippet 확인
+  if (isModule) {
+    console.log(`🔍 [renderCodeLines] Module node: ${nodeId}`);
+    console.log(`🔍 [renderCodeLines] codeSnippet (first 300 chars):`, codeSnippet.substring(0, 300));
+    console.log(`🔍 [renderCodeLines] Line 10:`, lines[9]); // 0-based index
+  }
 
   // 참조 맵 생성
   const localVars = new Set(localVariableNames || []);
@@ -201,8 +281,44 @@ export function renderCodeLines(node: CanvasNode): CodeLine[] {
         ts.isEnumDeclaration(node) ||
         ts.isModuleDeclaration(node);
 
-      if (isDeclaration) {
+      if (isDeclaration && lineIdx >= 0 && lineIdx < result.length) {
         result[lineIdx].hasDeclarationKeyword = true; // ⭐ Output Port 표시용
+
+        // 선언 이름 추출 및 glow 표시
+        let declarationName: ts.Identifier | undefined;
+
+        if (ts.isVariableStatement(node)) {
+          // const/let/var name = ...
+          const declaration = node.declarationList.declarations[0];
+          if (declaration && ts.isIdentifier(declaration.name)) {
+            declarationName = declaration.name;
+          }
+        } else if (ts.isFunctionDeclaration(node) && node.name) {
+          declarationName = node.name;
+        } else if (ts.isInterfaceDeclaration(node)) {
+          declarationName = node.name;
+        } else if (ts.isTypeAliasDeclaration(node)) {
+          declarationName = node.name;
+        } else if (ts.isClassDeclaration(node) && node.name) {
+          declarationName = node.name;
+        } else if (ts.isEnumDeclaration(node)) {
+          declarationName = node.name;
+        } else if (ts.isModuleDeclaration(node)) {
+          declarationName = node.name as ts.Identifier;
+        }
+
+        // 선언 이름에 glow 표시
+        if (declarationName) {
+          const nameStart = declarationName.getStart(sourceFile);
+          const nameEnd = declarationName.getEnd();
+          const nameLineIdx = sourceFile.getLineAndCharacterOfPosition(nameStart).line;
+
+          // 접혀있는 코드(모듈)에서는 선언 이름을 클릭하면 해당 정의로 이동할 수 있도록 nodeId 설정
+          const declarationNameText = declarationName.text;
+          const targetNodeId = isModule ? `${filePath}::${declarationNameText}` : undefined;
+
+          markPosition(nameLineIdx, nameStart, nameEnd, 'self', targetNodeId, true); // isDeclarationName = true
+        }
       }
 
       // Declaration 키워드 수동 추출 (syntax highlighting용)
@@ -318,8 +434,6 @@ export function renderCodeLines(node: CanvasNode): CodeLine[] {
             kind = 'external-closure';
           }
 
-          console.log(`🔍 [renderCodeLines] ${name}: ref.type=${ref.type}, ref.isFunction=${ref.isFunction}, kind=${kind}`);
-
           markPosition(lineIdx, start, end, kind, undefined, ref.definedIn);
           return;
         }
@@ -336,8 +450,11 @@ export function renderCodeLines(node: CanvasNode): CodeLine[] {
       end: number,
       kind: CodeSegment['kind'],
       nodeId?: string,
-      definedIn?: string
+      isDeclarationNameOrDefinedIn?: boolean | string // true면 isDeclarationName, string이면 definedIn
     ) {
+      const isDeclarationName = isDeclarationNameOrDefinedIn === true;
+      const definedIn = typeof isDeclarationNameOrDefinedIn === 'string' ? isDeclarationNameOrDefinedIn : undefined;
+
       // 우선순위 체크
       if (!canMark(start, end, kind)) return;
 
@@ -350,7 +467,7 @@ export function renderCodeLines(node: CanvasNode): CodeLine[] {
           const line = result[lineIdx];
           const text = processedCode.slice(start, end);
           const offset = startPos.character; // Character position in line
-          line.segments.push({ text, kind, nodeId, definedIn, offset });
+          line.segments.push({ text, kind, nodeId, definedIn, offset, isDeclarationName });
           if (kind !== 'local-variable' && kind !== 'parameter') {
             line.hasInput = true;
           }
@@ -376,7 +493,7 @@ export function renderCodeLines(node: CanvasNode): CodeLine[] {
           const text = processedCode.slice(segStart, segEnd);
           const segPos = sourceFile.getLineAndCharacterOfPosition(segStart);
           const offset = segPos.character; // Character position in line
-          line.segments.push({ text, kind, nodeId, definedIn, offset });
+          line.segments.push({ text, kind, nodeId, definedIn, offset, isDeclarationName });
           if (kind !== 'local-variable' && kind !== 'parameter') {
             line.hasInput = true;
           }
@@ -470,6 +587,15 @@ export function renderCodeLines(node: CanvasNode): CodeLine[] {
         line.segments = newSegments;
       }
     });
+
+    // 🆕 Fold 메타데이터 수집
+    collectFoldMetadata(sourceFile, result);
+
+    // 디버깅: fold 정보 확인
+    const foldableLines = result.filter(line => line.foldInfo?.isFoldable);
+    if (foldableLines.length > 0) {
+      console.log(`📁 [renderCodeLines] Found ${foldableLines.length} foldable lines:`, foldableLines.map(l => `Line ${l.num}`));
+    }
 
     return result;
 
