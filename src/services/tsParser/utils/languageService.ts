@@ -206,6 +206,37 @@ export function getSymbolAtPosition(
 }
 
 /**
+ * 특정 위치에서 정의로 이동 (Go to Definition)
+ * @returns {filePath, line} 또는 undefined
+ */
+export function getDefinitionAtPosition(
+  languageService: ts.LanguageService,
+  fileName: string,
+  position: number
+): { filePath: string; line: number } | undefined {
+  const definitions = languageService.getDefinitionAtPosition(fileName, position);
+
+  if (!definitions || definitions.length === 0) {
+    return undefined;
+  }
+
+  // 첫 번째 정의 사용
+  const def = definitions[0];
+  const program = languageService.getProgram();
+  if (!program) return undefined;
+
+  const sourceFile = program.getSourceFile(def.fileName);
+  if (!sourceFile) return undefined;
+
+  const lineAndChar = sourceFile.getLineAndCharacterOfPosition(def.textSpan.start);
+
+  return {
+    filePath: def.fileName,
+    line: lineAndChar.line + 1 // 0-based → 1-based
+  };
+}
+
+/**
  * 변수 이름 추출 헬퍼 (destructuring 지원)
  */
 function extractVariableNames(

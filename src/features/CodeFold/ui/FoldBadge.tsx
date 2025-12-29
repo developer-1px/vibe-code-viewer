@@ -39,9 +39,16 @@ const FoldBadge = ({
     });
   };
 
-  // JSX element/fragment의 경우 "... />" 형태로 표시
+  // Fold type에 따라 다른 텍스트 표시
   const isJsx = foldInfo?.foldType === 'jsx-children' || foldInfo?.foldType === 'jsx-fragment';
-  const badgeText = isJsx ? '... />' : '{...}';
+  const isImport = foldInfo?.foldType === 'import-block';
+
+  let badgeText = '{...}';
+  if (isImport) {
+    badgeText = '...';
+  } else if (isJsx) {
+    badgeText = '... />';
+  }
 
   return (
     <span

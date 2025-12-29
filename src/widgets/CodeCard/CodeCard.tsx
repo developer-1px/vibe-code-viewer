@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
-import { useAtomValue } from 'jotai';
+import React, { useMemo, useEffect } from 'react';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { CanvasNode } from '../../entities/CanvasNode';
 
 // Lib - Pure Utilities
 import { renderCodeLines } from '../../entities/CodeRenderer/lib/renderCodeLines';
 import type { CodeLine } from '../../entities/CodeRenderer/model/types';
-import { getNodeBorderColor } from '../../entities/VariableNode/lib/styleUtils';
+import { getNodeBorderColor } from '../../entities/SourceFileNode/lib/styleUtils';
 
 // UI Components
 import CodeCardHeader from './ui/CodeCardHeader';
@@ -15,16 +15,36 @@ import CodeCardReferences from './ui/CodeCardReferences';
 import VueTemplateSection from './ui/VueTemplateSection';
 
 // Atoms
-import { foldedLinesAtom } from '../../store/atoms';
+import { foldedLinesAtom, cardPositionsAtom, filesAtom } from '../../store/atoms';
 
 const CodeCard = ({ node }: { node: CanvasNode }) => {
+  const files = useAtomValue(filesAtom);
+
   // Render code lines with syntax highlighting
   const processedLines = useMemo(() => {
-    return renderCodeLines(node);
-  }, [node]);
+    return renderCodeLines(node, files);
+  }, [node, files]);
 
   const foldedLinesMap = useAtomValue(foldedLinesAtom);
+  const setFoldedLinesMap = useSetAtom(foldedLinesAtom);
   const foldedLines = foldedLinesMap.get(node.id) || new Set<number>();
+
+  // Import 블록 자동 접기 (초기 렌더링 시 한 번만)
+  useEffect(() => {
+    const importFoldLines = processedLines
+      .filter(line => line.foldInfo?.isFoldable && line.foldInfo.foldType === 'import-block')
+      .map(line => line.num);
+
+    if (importFoldLines.length > 0) {
+      setFoldedLinesMap(prev => {
+        const next = new Map(prev);
+        const nodeFolds = new Set(next.get(node.id) || new Set());
+        importFoldLines.forEach(lineNum => nodeFolds.add(lineNum));
+        next.set(node.id, nodeFolds);
+        return next;
+      });
+    }
+  }, [node.id, processedLines, setFoldedLinesMap]);
 
   // 렌더링할 라인 계산 (모든 라인을 포함하되, fold 상태를 마킹)
   const displayLines = useMemo(() => {
@@ -88,9 +108,6 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
     >
       {/* Header */}
       <CodeCardHeader node={node} />
-
-      {/* Variables Section: Show external references from functionAnalysis OR localReferences for other types */}
-      <CodeCardReferences node={node} />
 
       {/* Code Lines (script가 있을 때만) */}
       {displayLines.length > 0 && (

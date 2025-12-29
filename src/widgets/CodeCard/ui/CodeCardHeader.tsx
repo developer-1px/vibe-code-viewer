@@ -1,18 +1,23 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   Terminal as IconTerminal, Box as IconBox, FunctionSquare as IconFunctionSquare, LayoutTemplate as IconLayoutTemplate, Database as IconDatabase, Link2 as IconLink2,
   PlayCircle as IconPlayCircle, BoxSelect as IconBoxSelect, ChevronsDown as IconChevronsDown, ChevronsUp as IconChevronsUp,
-  Calculator as IconCalculator, Shield as IconShield, Zap as IconZap, RefreshCw as IconRefreshCw, AlertCircle as IconAlertCircle
+  Calculator as IconCalculator, Shield as IconShield, Zap as IconZap, RefreshCw as IconRefreshCw, AlertCircle as IconAlertCircle, GripVertical as IconGripVertical
 } from 'lucide-react';
 import { CanvasNode } from '../../../entities/CanvasNode';
-import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom } from '../../../store/atoms';
-import { checkAllDepsExpanded, expandDependenciesRecursive, collapseDependencies, getFirstDependency } from '../../../entities/VariableNode/model/nodeVisibility';
+import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, cardPositionsAtom, transformAtom, activeFileAtom } from '../../../store/atoms';
+import { checkAllDepsExpanded, expandDependenciesRecursive, collapseDependencies, getFirstDependency } from '../../../entities/SourceFileNode/model/nodeVisibility';
 
 const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
   const [visibleNodeIds, setVisibleNodeIds] = useAtom(visibleNodeIdsAtom);
   const fullNodeMap = useAtomValue(fullNodeMapAtom);
   const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
+  const setCardPositions = useSetAtom(cardPositionsAtom);
+  const transform = useAtomValue(transformAtom);
+
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{ x: number; y: number; startOffset: { x: number; y: number } } | null>(null);
 
   // Check if all dependencies are expanded
   const allDepsExpanded = useMemo(() => {
@@ -43,6 +48,58 @@ const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
       }
     });
   };
+
+  // Drag handlers
+  const handleDragStart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setIsDragging(true);
+
+    // Get current card position offset
+    setCardPositions(prev => {
+      const currentOffset = prev.get(node.id) || { x: 0, y: 0 };
+      dragStartRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        startOffset: currentOffset
+      };
+      return prev;
+    });
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragStartRef.current) return;
+
+      const dx = (e.clientX - dragStartRef.current.x) / transform.k;
+      const dy = (e.clientY - dragStartRef.current.y) / transform.k;
+
+      setCardPositions(prev => {
+        const newMap = new Map(prev);
+        newMap.set(node.id, {
+          x: dragStartRef.current!.startOffset.x + dx,
+          y: dragStartRef.current!.startOffset.y + dy
+        });
+        return newMap;
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      dragStartRef.current = null;
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, node.id, setCardPositions, transform.k]);
+
   const getIcon = () => {
     switch (node.type) {
       // === CALCULATIONS (불변, 청록/파랑 계열) ===
@@ -73,6 +130,16 @@ const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
   return (
     <div className="px-3 py-1.5 border-b border-white/5 flex justify-between items-center bg-black/20">
       <div className="flex items-center gap-2 overflow-hidden">
+        {/* Drag Handle */}
+        <div
+          onMouseDown={handleDragStart}
+          className={`p-1 rounded hover:bg-white/10 transition-colors ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} card-drag-handle`}
+          data-drag-handle="true"
+          title="Drag to move card"
+        >
+          <IconGripVertical className="w-3.5 h-3.5 text-slate-400 hover:text-slate-200" />
+        </div>
+
         {/* Toggle All Dependencies Button */}
         {showToggleButton && (
           <button

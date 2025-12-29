@@ -20,9 +20,11 @@ export const useD3Zoom = (containerRef: RefObject<HTMLDivElement>) => {
             const zoom = d3.zoom<HTMLDivElement, unknown>()
                 .scaleExtent([0.1, 2])
                 .filter((event: any) => {
-                   if (event.type === 'mousedown' || event.type === 'touchstart') return !event.ctrlKey && !event.button;
+                   if (event.type === 'mousedown' || event.type === 'touchstart') {
+                     return !event.ctrlKey && !event.button;
+                   }
                    if (event.type === 'wheel') return event.ctrlKey || event.metaKey;
-                   return false;
+                   return true;
                 })
                 .on('zoom', (event) => {
                     setTransform(event.transform);

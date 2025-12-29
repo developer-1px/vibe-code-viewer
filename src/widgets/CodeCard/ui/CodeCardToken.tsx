@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { getTokenStyle } from '../../../entities/VariableNode/lib/styleUtils';
+import { getTokenStyle } from '../../../entities/SourceFileNode/lib/styleUtils';
 import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, entryFileAtom, templateRootIdAtom } from '../../../store/atoms';
 import { pruneDetachedNodes } from '../../PipelineCanvas/utils';
 

@@ -8,7 +8,7 @@ export interface FoldInfo {
   foldEnd: number;             // 접기 끝 라인 번호
   isInsideFold: boolean;       // 접힌 범위 내부에 있는가?
   parentFoldLine?: number;     // 부모 fold 라인 번호 (중첩 지원)
-  foldType?: 'statement-block' | 'jsx-children' | 'jsx-fragment';
+  foldType?: 'statement-block' | 'jsx-children' | 'jsx-fragment' | 'import-block';
   tagName?: string;            // JSX인 경우 태그 이름
 }
 
@@ -18,6 +18,6 @@ export interface FoldPlaceholder {
   foldStart: number;
   foldEnd: number;
   foldedCount: number;
-  foldType: 'statement-block' | 'jsx-children' | 'jsx-fragment';
+  foldType: 'statement-block' | 'jsx-children' | 'jsx-fragment' | 'import-block';
   tagName?: string;
 }

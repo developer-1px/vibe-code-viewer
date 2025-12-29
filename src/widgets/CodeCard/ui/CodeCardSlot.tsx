@@ -1,17 +1,20 @@
 
 import React from 'react';
-import { useSetAtom } from 'jotai';
-import { VariableNode } from '../../../entities/VariableNode/model/types';
-import { getSlotColor } from '../../../entities/VariableNode/lib/styleUtils';
-import { lastExpandedIdAtom } from '../../../store/atoms';
+import { useSetAtom, useAtomValue } from 'jotai';
+import { VariableNode } from '../../../entities/SourceFileNode/model/types';
+import { getSlotColor } from '../../../entities/SourceFileNode/lib/styleUtils';
+import { targetLineAtom, visibleNodeIdsAtom, lastExpandedIdAtom } from '../../../store/atoms';
 
-const CodeCardSlot = ({tokenId, lineNum, slotIdx, depNode }: {
+const CodeCardSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine }: {
   tokenId: string;
   lineNum: number;
   slotIdx: number;
   depNode?: VariableNode;
+  definitionLine?: number;
 }) => {
+  const setTargetLine = useSetAtom(targetLineAtom);
   const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
+  const visibleNodeIds = useAtomValue(visibleNodeIdsAtom);
 
   const slotColorClass = depNode
     ? getSlotColor(depNode.type)
@@ -19,8 +22,29 @@ const CodeCardSlot = ({tokenId, lineNum, slotIdx, depNode }: {
 
   const handleSlotClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Center camera on the target node
-    setLastExpandedId(tokenId);
+
+    if (!depNode) return;
+
+    // Check if target node is visible
+    const isVisible = visibleNodeIds.has(tokenId) || visibleNodeIds.has(tokenId.split('::')[0]);
+
+    if (isVisible) {
+      // Node is already visible - go to definition line
+      setTargetLine({
+        nodeId: tokenId,
+        lineNum: depNode.startLine
+      });
+    } else {
+      // Node is not visible - expand it first, then go to definition
+      setLastExpandedId(tokenId);
+      // Wait for node to be rendered, then scroll
+      setTimeout(() => {
+        setTargetLine({
+          nodeId: tokenId,
+          lineNum: depNode.startLine
+        });
+      }, 700); // Wait for expansion animation + layout
+    }
   };
 
   // Vertical Center Calculation:
@@ -39,6 +63,7 @@ const CodeCardSlot = ({tokenId, lineNum, slotIdx, depNode }: {
       style={{ top: '6px', left: `${leftPos}px` }}
       data-input-slot-for={tokenId}
       data-input-slot-line={lineNum}
+      data-input-slot-def-line={definitionLine}
       data-input-slot-unique={`${tokenId}::line${lineNum}`}
       onClick={handleSlotClick}
     />

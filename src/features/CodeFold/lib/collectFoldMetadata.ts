@@ -16,6 +16,80 @@ export function collectFoldMetadata(
   sourceFile: ts.SourceFile,
   lines: CodeLineForFold[]
 ): void {
+  // ===== Import 블록 감지 및 fold 메타데이터 추가 =====
+  const importRanges: Array<{ start: number; end: number }> = [];
+  let currentImportStart: number | null = null;
+  let lastImportEnd: number | null = null;
+
+  // import 문들을 찾아서 연속된 블록으로 묶기
+  sourceFile.statements.forEach((statement, idx) => {
+    if (ts.isImportDeclaration(statement)) {
+      const startLine = sourceFile.getLineAndCharacterOfPosition(statement.getStart(sourceFile)).line;
+      const endLine = sourceFile.getLineAndCharacterOfPosition(statement.getEnd()).line;
+
+      if (currentImportStart === null) {
+        // 첫 import 발견
+        currentImportStart = startLine;
+        lastImportEnd = endLine;
+      } else if (lastImportEnd !== null && startLine <= lastImportEnd + 2) {
+        // 연속된 import (빈 줄 1개까지 허용)
+        lastImportEnd = endLine;
+      } else {
+        // 연속이 끊김 - 이전 블록 저장
+        if (currentImportStart !== null && lastImportEnd !== null && lastImportEnd > currentImportStart) {
+          importRanges.push({ start: currentImportStart, end: lastImportEnd });
+        }
+        // 새 블록 시작
+        currentImportStart = startLine;
+        lastImportEnd = endLine;
+      }
+    } else {
+      // import가 아닌 문장 발견 - 이전 블록 저장
+      if (currentImportStart !== null && lastImportEnd !== null && lastImportEnd > currentImportStart) {
+        importRanges.push({ start: currentImportStart, end: lastImportEnd });
+      }
+      currentImportStart = null;
+      lastImportEnd = null;
+    }
+  });
+
+  // 마지막 블록 처리
+  if (currentImportStart !== null && lastImportEnd !== null && lastImportEnd > currentImportStart) {
+    importRanges.push({ start: currentImportStart, end: lastImportEnd });
+  }
+
+  // Import 블록에 fold 메타데이터 추가
+  importRanges.forEach(range => {
+    const { start, end } = range;
+    if (start >= 0 && start < lines.length && end >= 0 && end < lines.length) {
+      const actualStartLineNum = lines[start].num;
+      const actualEndLineNum = lines[end].num;
+
+      // 시작 라인에 fold 메타데이터
+      lines[start].foldInfo = {
+        isFoldable: true,
+        foldStart: actualStartLineNum,
+        foldEnd: actualEndLineNum,
+        isInsideFold: false,
+        foldType: 'import-block'
+      };
+
+      // 중간 라인들에 "접힌 범위 내부" 표시
+      for (let i = start + 1; i <= end; i++) {
+        if (i >= 0 && i < lines.length) {
+          lines[i].foldInfo = {
+            isFoldable: false,
+            foldStart: actualStartLineNum,
+            foldEnd: actualEndLineNum,
+            isInsideFold: true,
+            parentFoldLine: actualStartLineNum,
+            foldType: 'import-block'
+          };
+        }
+      }
+    }
+  });
+
   function visit(node: ts.Node) {
     let block: ts.Block | undefined;
     let blockType: 'statement-block' | 'jsx-children' | 'jsx-fragment' | undefined;

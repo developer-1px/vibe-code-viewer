@@ -1,5 +1,5 @@
 
-import type { VariableNode } from '../../VariableNode';
+import type { VariableNode } from '../../SourceFileNode';
 
 export interface TemplateTokenRange {
   startOffset: number;  // Absolute position in template content

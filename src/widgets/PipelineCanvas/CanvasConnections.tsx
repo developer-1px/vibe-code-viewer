@@ -1,8 +1,44 @@
 
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useAtomValue } from 'jotai';
-import { getEdgeColor } from '../../entities/VariableNode/lib/styleUtils.ts';
-import { layoutLinksAtom, layoutNodesAtom, transformAtom } from '../../store/atoms';
+import { getEdgeColor } from '../../entities/SourceFileNode/lib/styleUtils.ts';
+import { layoutLinksAtom, layoutNodesAtom, transformAtom, cardPositionsAtom } from '../../store/atoms';
+
+/**
+ * Convert absolute rect to relative coordinates based on container and zoom
+ */
+const getRelativePoint = (
+  rect: DOMRect,
+  containerRect: DOMRect,
+  zoomScale: number
+) => {
+  return {
+    x: (rect.left - containerRect.left) / zoomScale,
+    y: (rect.top - containerRect.top) / zoomScale,
+    w: rect.width / zoomScale,
+    h: rect.height / zoomScale
+  };
+};
+
+/**
+ * Find output port matching the definition line
+ */
+const findOutputPort = (
+  depEl: HTMLElement,
+  nodeId: string,
+  defLine?: number
+): Element | null => {
+  // Try to find port matching definition line
+  if (defLine) {
+    const matchingPort = depEl.querySelector(
+      `[data-output-port="${nodeId}"][data-output-port-line="${defLine}"]`
+    );
+    if (matchingPort) return matchingPort;
+  }
+
+  // Fallback to any output port
+  return depEl.querySelector(`[data-output-port="${nodeId}"]`);
+};
 
 const CanvasConnections: React.FC = () => {
     const [paths, setPaths] = useState<React.ReactElement[]>([]);
@@ -12,6 +48,7 @@ const CanvasConnections: React.FC = () => {
     const layoutLinks = useAtomValue(layoutLinksAtom);
     const layoutNodes = useAtomValue(layoutNodesAtom);
     const transform = useAtomValue(transformAtom);
+    const cardPositions = useAtomValue(cardPositionsAtom);
 
     const drawConnections = useCallback(() => {
         // Find the content container (parent of this SVG)
@@ -23,17 +60,6 @@ const CanvasConnections: React.FC = () => {
 
         const contentRect = contentElement.getBoundingClientRect();
         const newPaths: React.ReactElement[] = [];
-    
-        const getRelativePoint = (rect: DOMRect) => {
-          return {
-            x: (rect.left - contentRect.left) / transform.k,
-            y: (rect.top - contentRect.top) / transform.k,
-            w: rect.width / transform.k,
-            h: rect.height / transform.k
-          };
-        };
-    
-        // No highlight effects needed
     
         layoutLinks.forEach((link) => {
           // link.source = Dependency (Left Node)
@@ -47,44 +73,25 @@ const CanvasConnections: React.FC = () => {
           const consEl = document.getElementById(`node-${consumerNode.visualId}`);
           
           if (!depEl || !consEl) return;
-    
-          // 1. Start Point (Source/Left Node - Output)
-          const outputPort = depEl.querySelector(`[data-output-port="${dependencyNode.id}"]`);
-          let startX, startY;
-    
-          if (outputPort) {
-              const portRect = outputPort.getBoundingClientRect();
-              const portRel = getRelativePoint(portRect);
-              startX = portRel.x + portRel.w;
-              startY = portRel.y + (portRel.h / 2);
-          } else {
-              const defLine = depEl.querySelector(`[data-line-num="${dependencyNode.startLine}"]`);
-              if (defLine) {
-                  const rect = defLine.getBoundingClientRect();
-                  const rel = getRelativePoint(rect);
-                  startX = rel.x + rel.w;
-                  startY = rel.y + (rel.h / 2);
-              } else {
-                  const rect = depEl.getBoundingClientRect();
-                  const rel = getRelativePoint(rect);
-                  startX = rel.x + rel.w;
-                  startY = rel.y + 60;
-              }
-          }
-    
-          // 2. End Point (Target/Right Node - Input Slots)
+
+          // End Point (Target/Right Node - Input Slots)
           // Find ALL slots for this dependency (may be used in multiple lines)
           const inputSlots = consEl.querySelectorAll(`[data-input-slot-for="${dependencyNode.id}"]`);
 
-          const endPoints: Array<{x: number, y: number}> = [];
+          const endPoints: Array<{x: number, y: number, defLine?: number}> = [];
 
           if (inputSlots.length > 0) {
               inputSlots.forEach(inputSlot => {
                   const slotRect = inputSlot.getBoundingClientRect();
-                  const slotRel = getRelativePoint(slotRect);
+                  const slotRel = getRelativePoint(slotRect, contentRect, transform.k);
+
+                  // Get definition line from slot data attribute
+                  const defLine = (inputSlot as HTMLElement).dataset.inputSlotDefLine;
+
                   endPoints.push({
                       x: slotRel.x + (slotRel.w / 2),
-                      y: slotRel.y + (slotRel.h / 2)
+                      y: slotRel.y + (slotRel.h / 2),
+                      defLine: defLine ? parseInt(defLine) : undefined
                   });
               });
           } else {
@@ -92,12 +99,12 @@ const CanvasConnections: React.FC = () => {
               const usageToken = consEl.querySelector(`[data-token="${dependencyNode.id}"]`);
               if (usageToken) {
                   const tokenRect = usageToken.getBoundingClientRect();
-                  const tokenRel = getRelativePoint(tokenRect);
+                  const tokenRel = getRelativePoint(tokenRect, contentRect, transform.k);
                   endPoints.push({
                       x: tokenRel.x,
                       y: tokenRel.y + (tokenRel.h / 2)
                   });
-              } 
+              }
               // Removed generic fallback to top of node to prevent incorrect visual connections
           }
     
@@ -105,9 +112,40 @@ const CanvasConnections: React.FC = () => {
           const isCrossFile = consumerNode.filePath !== dependencyNode.filePath;
           const edgeColor = getEdgeColor(dependencyNode.type);
 
-          endPoints.forEach((endPoint, idx) => {
+          endPoints.forEach((endPoint) => {
               const endX = endPoint.x;
               const endY = endPoint.y;
+
+              console.log('🔍 [Connection Debug]', {
+                  dependency: dependencyNode.id,
+                  consumer: consumerNode.id,
+                  endPoint,
+                  defLine: endPoint.defLine
+              });
+
+              // Find matching output port by definition line
+              const outputPort = findOutputPort(depEl, dependencyNode.id, endPoint.defLine);
+
+              console.log('📍 [Output Port Found]', {
+                  found: !!outputPort,
+                  defLine: endPoint.defLine,
+                  portLine: outputPort ? (outputPort as HTMLElement).dataset.outputPortLine : null
+              });
+
+              // Calculate start point
+              let startX: number, startY: number;
+              if (outputPort) {
+                  const portRect = outputPort.getBoundingClientRect();
+                  const portRel = getRelativePoint(portRect, contentRect, transform.k);
+                  startX = portRel.x + portRel.w;
+                  startY = portRel.y + (portRel.h / 2);
+              } else {
+                  // Fallback to node center-right
+                  const rect = depEl.getBoundingClientRect();
+                  const rel = getRelativePoint(rect, contentRect, transform.k);
+                  startX = rel.x + rel.w;
+                  startY = rel.y + (rel.h / 2);
+              }
 
               const isHorizontal = Math.abs(startY - endY) < 40;
               const curveStrength = isHorizontal ? 0.15 : 0.4;
@@ -133,8 +171,8 @@ const CanvasConnections: React.FC = () => {
         });
     
         setPaths(newPaths);
-    
-    }, [layoutLinks, transform.k, layoutNodes]);
+
+    }, [layoutLinks, transform.k, layoutNodes, cardPositions]);
 
     // Draw on zoom/pan transform changes (during manual pan/zoom)
     useEffect(() => {

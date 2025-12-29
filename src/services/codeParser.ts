@@ -6,7 +6,7 @@
  * ✅ 함수 호출 그래프 생성
  */
 
-import { GraphData } from '../entities/VariableNode';
+import { GraphData } from '../entities/SourceFileNode';
 import { parseProject as parseProjectTS } from './tsParser';
 
 export const parseProject = (files: Record<string, string>, entryFile: string): GraphData => {

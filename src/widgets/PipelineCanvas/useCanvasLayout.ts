@@ -1,7 +1,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useSetAtom } from 'jotai';
-import { GraphData, VariableNode } from '../../entities/VariableNode';
+import { GraphData, VariableNode } from '../../entities/SourceFileNode';
 import { CanvasNode } from '../../entities/CanvasNode';
 import { LEVEL_SPACING, VERTICAL_GAP, estimateNodeHeight, getUsageIndex, hasCycle } from './utils.ts';
 import {
@@ -73,9 +73,9 @@ export const useCanvasLayout = (
         // Determine roots
         const rootDeps: string[] = [];
         if (templateRootId) rootDeps.push(templateRootId);
-        
+
         // Add visible call nodes from entry file
-        Array.from(fullNodeMap.values()).forEach((n: VariableNode) => {
+        Array.from(fullNodeMap.values()).forEach((n) => {
             if (n.type === 'call' && n.filePath === entryFile) {
                 rootDeps.push(n.id);
             }
@@ -122,6 +122,11 @@ export const useCanvasLayout = (
             visited.add(nodeId);
 
             const raw = layoutNodeMap.get(nodeId)!;
+
+            if (level === 0 || nodeId === entryFile) {
+                console.log(`🌳 Building tree from: ${nodeId}`);
+                console.log(`   Dependencies (${raw.dependencies.length}):`, raw.dependencies);
+            }
 
             // Skip nodes with empty code snippets (virtual intermediate nodes)
             if (!raw.codeSnippet || raw.codeSnippet.trim() === '') {
@@ -285,6 +290,11 @@ export const useCanvasLayout = (
 
         setLayoutNodes([...flatNodes, ...orphanNodes]);
         setLayoutLinks([...flatLinks, ...extraLinks]);
+
+        console.log(`🔗 Generated ${flatLinks.length} tree links + ${extraLinks.length} extra links`);
+        if (flatLinks.length > 0) {
+            console.log(`📍 Sample links:`, flatLinks.slice(0, 3));
+        }
 
     }, [visibleNodeIds, fullNodeMap, templateRootId, entryFile]);
 

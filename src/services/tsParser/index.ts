@@ -6,10 +6,11 @@
  */
 
 import * as ts from 'typescript';
-import { GraphData } from '../../entities/VariableNode';
-import { resolvePath } from './utils/pathResolver';
+import type { GraphData, SourceFileNode } from '../../entities/SourceFileNode';
 import { extractVueScript, isVueFile } from './utils/vueExtractor';
 import { createLanguageService } from './utils/languageService';
+import { getDependencies } from '../../entities/SourceFileNode/lib/getters';
+import { resolvePath } from './utils/pathResolver';
 
 /**
  * 프로젝트 파싱 메인 함수
@@ -21,7 +22,7 @@ export function parseProject(
   console.log('📦 File-based parsing with identifier tracking...');
   console.log(`🎯 Entry: ${entryFile}`);
 
-  const nodes: any[] = [];
+  const nodes: SourceFileNode[] = [];
   const processedFiles = new Set<string>();
 
   // ✅ Language Service 생성 (identifier 정의 위치 파악용)
@@ -49,19 +50,7 @@ export function parseProject(
     const fileName = filePath.split('/').pop() || filePath;
     const fileNameWithoutExt = fileName.replace(/\.(tsx?|jsx?|vue)$/, '');
 
-    const node: any = {
-      id: filePath,
-      label: fileNameWithoutExt,
-      filePath,
-      type: 'template',
-      codeSnippet: content,
-      startLine: 1,
-      dependencies: [],
-      // ✅ 새로운 필드: identifier별 정의 파일 맵
-      identifierSources: new Map<string, string>() // identifier name -> source file path
-    };
-
-    nodes.push(node);
+    let node: SourceFileNode;
 
     // ✅ TypeScript로 import 및 identifier 추출
     try {
@@ -85,71 +74,24 @@ export function parseProject(
         scriptKind
       );
 
-      // Import 추출 및 재귀 처리
-      sourceFile.statements.forEach((statement) => {
-        if (ts.isImportDeclaration(statement) && statement.moduleSpecifier && ts.isStringLiteral(statement.moduleSpecifier)) {
-          const source = statement.moduleSpecifier.text;
-          const resolvedPath = resolvePath(filePath, source, files);
-          const clause = statement.importClause;
+      // SourceFileNode 생성 (sourceFile 포함)
+      const dependencies = getDependencies({ sourceFile, filePath, id: filePath } as any, files, resolvePath);
 
-          // Type-only import는 스킵
-          if (statement.importClause?.isTypeOnly) {
-            return;
-          }
+      node = {
+        id: filePath,
+        label: fileNameWithoutExt,
+        filePath,
+        type: 'module',
+        codeSnippet: content,
+        startLine: 1,
+        sourceFile,
+        dependencies  // 캐싱
+      };
 
-          if (resolvedPath) {
-            // Local file import
-            // Dependency 추가
-            if (!node.dependencies.includes(resolvedPath)) {
-              node.dependencies.push(resolvedPath);
-            }
+      nodes.push(node);
 
-            // Import된 identifier 추출 (local file)
-            if (clause) {
-              // Default import
-              if (clause.name) {
-                node.identifierSources.set(clause.name.text, resolvedPath);
-              }
-              // Named imports
-              if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
-                clause.namedBindings.elements.forEach(element => {
-                  node.identifierSources.set(element.name.text, resolvedPath);
-                });
-              }
-              // Namespace import
-              if (clause.namedBindings && ts.isNamespaceImport(clause.namedBindings)) {
-                node.identifierSources.set(clause.namedBindings.name.text, resolvedPath);
-              }
-            }
-
-            // 재귀 처리
-            processFile(resolvedPath);
-          } else {
-            // npm module import (resolvedPath가 없음)
-            // npm module의 경우 source를 "npm:" prefix로 저장
-            if (clause) {
-              const npmModuleName = `npm:${source}`;
-
-              // Default import
-              if (clause.name) {
-                node.identifierSources.set(clause.name.text, npmModuleName);
-              }
-              // Named imports
-              if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
-                clause.namedBindings.elements.forEach(element => {
-                  node.identifierSources.set(element.name.text, npmModuleName);
-                });
-              }
-              // Namespace import
-              if (clause.namedBindings && ts.isNamespaceImport(clause.namedBindings)) {
-                node.identifierSources.set(clause.namedBindings.name.text, npmModuleName);
-              }
-            }
-          }
-        }
-      });
-
-      // ✅ import된 identifier만 추적 (충분함)
+      // Import 재귀 처리
+      dependencies.forEach(dep => processFile(dep));
 
     } catch (error) {
       console.error(`❌ Error parsing ${filePath}:`, error);
@@ -159,14 +101,8 @@ export function parseProject(
   // Entry file부터 시작
   processFile(entryFile);
 
-  // ✅ identifierSources Map을 일반 객체로 변환 (JSON 직렬화 가능)
-  nodes.forEach(node => {
-    if (node.identifierSources) {
-      node.identifierSources = Object.fromEntries(node.identifierSources);
-    }
-  });
+  console.log(`✅ Created ${nodes.length} file nodes`);
 
-  console.log(`✅ Created ${nodes.length} file nodes with identifier tracking`);
   return { nodes };
 }
 

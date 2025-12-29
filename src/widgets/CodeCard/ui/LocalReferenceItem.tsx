@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { LocalReference } from '../../../entities/VariableNode/model/types';
+import { LocalReference } from '../../../entities/SourceFileNode/model/types';
 import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, entryFileAtom, templateRootIdAtom, foldedLinesAtom } from '../../../store/atoms';
 import { pruneDetachedNodes } from '../../PipelineCanvas/utils';
-import { getNodeBorderColor } from '../../../entities/VariableNode/lib/styleUtils';
+import { getNodeBorderColor } from '../../../entities/SourceFileNode/lib/styleUtils';
 
 const LocalReferenceItem = ({reference }: {
   reference: LocalReference;

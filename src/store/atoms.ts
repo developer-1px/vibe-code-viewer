@@ -1,6 +1,6 @@
 
 import { atom } from 'jotai';
-import type { VariableNode, GraphData } from '../entities/VariableNode';
+import type { VariableNode, GraphData } from '../entities/SourceFileNode';
 import type { CanvasNode } from '../entities/CanvasNode';
 import { DEFAULT_FILES, DEFAULT_ENTRY_FILE } from '../constants';
 
@@ -37,3 +37,6 @@ export const collapsedFoldersAtom = atom(new Set<string>()); // 접힌 폴더들
 
 // Code Fold atoms - Map<nodeId, Set<lineNumber>>
 export const foldedLinesAtom = atom(new Map<string, Set<number>>());
+
+// Card Position atoms - Map<nodeId, {x: number, y: number}>
+export const cardPositionsAtom = atom(new Map<string, {x: number, y: number}>());

@@ -3,15 +3,7 @@
  * 여러 kind를 조합하여 최종 스타일과 동작을 결정
  */
 
-import type { SegmentKind } from '../../../entities/CodeRenderer/model/types';
-
-export interface SegmentStyle {
-  className: string;
-  title?: string;
-  clickable: boolean;
-  clickType?: 'close' | 'expand' | 'external' | 'definition';
-  hoverTooltip?: boolean;
-}
+import type { SegmentKind, SegmentStyle } from '../model/types';
 
 /**
  * Primary kind에 따른 기본 스타일 결정
@@ -25,6 +17,7 @@ export function buildSegmentStyle(
     hasDefinition?: boolean;
     hasHoverInfo?: boolean;
     isInReturn?: boolean;
+    isActive?: boolean; // external-import 토글 상태
   }
 ): SegmentStyle {
   const primaryKind = getPrimaryKind(kinds);
@@ -93,10 +86,23 @@ export function buildSegmentStyle(
     };
   }
 
-  // External Import (강조된 토큰 스타일)
+  // External Import (active 상태에서만 강조, 크기는 동일)
   if (primaryKind === 'external-import') {
+    const isActive = options.isActive;
+
+    // Active 상태: 강조 스타일
+    if (isActive) {
+      return {
+        className: `inline-block px-1 rounded bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/30 hover:bg-emerald-500/25 hover:border-emerald-400/50 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
+        clickable: !!options.hasDefinedIn,
+        clickType: 'external',
+        title: options.hasDefinedIn ? 'Click to close' : 'External Import (Active)'
+      };
+    }
+
+    // Inactive 상태: 코드와 어울리는 적당한 강도
     return {
-      className: `inline-block px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/30 hover:bg-emerald-500/25 hover:border-emerald-400/50 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
+      className: `inline-block px-1 rounded bg-emerald-500/12 text-emerald-300/90 border border-emerald-500/25 hover:bg-emerald-500/15 hover:text-emerald-300 hover:border-emerald-500/30 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
       clickable: !!options.hasDefinedIn,
       clickType: 'external',
       title: options.hasDefinedIn ? 'Click to show import source' : 'External Import'

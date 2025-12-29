@@ -4,9 +4,9 @@
 
 import React, { useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import type { CodeSegment } from '../../../entities/CodeRenderer/model/types';
+import type { CodeSegment } from '../../../entities/CodeSegment';
 import type { CanvasNode } from '../../../entities/CanvasNode';
-import { buildSegmentStyle } from './segmentStyleBuilder';
+import { buildSegmentStyle } from '../../../entities/CodeSegment';
 import CodeCardToken from './CodeCardToken';
 import { fullNodeMapAtom, visibleNodeIdsAtom, entryFileAtom, templateRootIdAtom, lastExpandedIdAtom, targetLineAtom } from '../../../store/atoms';
 import { pruneDetachedNodes } from '../../PipelineCanvas/utils';
@@ -23,6 +23,7 @@ export const SegmentRenderer = ({
   isInReturnStatement: boolean;
 }) => {
   const fullNodeMap = useAtomValue(fullNodeMapAtom);
+  const visibleNodeIds = useAtomValue(visibleNodeIdsAtom);
   const setVisibleNodeIds = useSetAtom(visibleNodeIdsAtom);
   const entryFile = useAtomValue(entryFileAtom);
   const templateRootId = useAtomValue(templateRootIdAtom);
@@ -31,6 +32,11 @@ export const SegmentRenderer = ({
 
   const [showTooltip, setShowTooltip] = useState(false);
 
+  // external-import의 active 상태 체크 (해당 노드가 열려있는지)
+  const isExternalActive = segment.kinds.includes('external-import') &&
+    segment.definedIn &&
+    (visibleNodeIds.has(segment.definedIn) || visibleNodeIds.has(segment.definedIn.split('::')[0]));
+
   // Build style
   const style = buildSegmentStyle(segment.kinds, {
     isDeclarationName: segment.isDeclarationName,
@@ -38,7 +44,8 @@ export const SegmentRenderer = ({
     hasDefinedIn: !!segment.definedIn,
     hasDefinition: !!segment.definitionLocation,
     hasHoverInfo: !!segment.hoverInfo,
-    isInReturn: isInReturnStatement
+    isInReturn: isInReturnStatement,
+    isActive: isExternalActive
   });
 
   // Click handlers
@@ -64,8 +71,31 @@ export const SegmentRenderer = ({
 
   const handleExternalClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+
     if (!segment.definedIn) return;
 
+    // Toggle: 이미 열려있으면 닫기
+    if (isExternalActive) {
+      setVisibleNodeIds((prev: Set<string>) => {
+        const next = new Set(prev);
+
+        // 함수/변수 노드가 열려있으면 제거
+        if (fullNodeMap.has(segment.definedIn!) && next.has(segment.definedIn!)) {
+          next.delete(segment.definedIn!);
+        }
+
+        // 파일 노드가 열려있으면 제거
+        const filePath = segment.definedIn!.split('::')[0];
+        if (fullNodeMap.has(filePath) && next.has(filePath)) {
+          next.delete(filePath);
+        }
+
+        return pruneDetachedNodes(next, fullNodeMap, entryFile, templateRootId);
+      });
+      return;
+    }
+
+    // Open: 닫혀있으면 열기
     // 1. 해당 함수/변수 노드가 있으면 추가
     if (fullNodeMap.has(segment.definedIn)) {
       setVisibleNodeIds((prev: Set<string>) => {
@@ -147,8 +177,15 @@ export const SegmentRenderer = ({
       : undefined
     : undefined;
 
-  // Special case: identifier with nodeId → CodeCardToken
-  if (segment.kinds.includes('identifier') && segment.nodeId) {
+  // Special case: identifier with nodeId → CodeCardToken (INPUT slot용)
+  // 단, external-* 종류는 제외 (이들은 definedIn을 사용하고 클릭 핸들러가 별도로 있음)
+  if (
+    segment.kinds.includes('identifier') &&
+    segment.nodeId &&
+    !segment.kinds.includes('external-import') &&
+    !segment.kinds.includes('external-closure') &&
+    !segment.kinds.includes('external-function')
+  ) {
     return (
       <span key={segIdx} className={style.className}>
         <CodeCardToken
