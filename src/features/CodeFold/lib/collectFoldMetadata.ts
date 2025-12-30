@@ -10,7 +10,7 @@ import type { FoldInfo } from './types';
 interface CodeLineForFold {
   num: number;
   foldInfo?: FoldInfo;
-}
+}햣 ㅔㅕ
 
 export function collectFoldMetadata(
   sourceFile: ts.SourceFile,
@@ -22,7 +22,8 @@ export function collectFoldMetadata(
   let lastImportEnd: number | null = null;
 
   // import 문들을 찾아서 연속된 블록으로 묶기
-  sourceFile.statements.forEach((statement, idx) => {
+  // import 사이의 주석과 빈 줄도 모두 포함
+  sourceFile.statements.forEach((statement) => {
     if (ts.isImportDeclaration(statement)) {
       const startLine = sourceFile.getLineAndCharacterOfPosition(statement.getStart(sourceFile)).line;
       const endLine = sourceFile.getLineAndCharacterOfPosition(statement.getEnd()).line;
@@ -31,21 +32,14 @@ export function collectFoldMetadata(
         // 첫 import 발견
         currentImportStart = startLine;
         lastImportEnd = endLine;
-      } else if (lastImportEnd !== null && startLine <= lastImportEnd + 2) {
-        // 연속된 import (빈 줄 1개까지 허용)
-        lastImportEnd = endLine;
       } else {
-        // 연속이 끊김 - 이전 블록 저장
-        if (currentImportStart !== null && lastImportEnd !== null && lastImportEnd > currentImportStart) {
-          importRanges.push({ start: currentImportStart, end: lastImportEnd });
-        }
-        // 새 블록 시작
-        currentImportStart = startLine;
+        // 연속된 import - 주석과 빈 줄 상관없이 모두 포함
         lastImportEnd = endLine;
       }
     } else {
-      // import가 아닌 문장 발견 - 이전 블록 저장
-      if (currentImportStart !== null && lastImportEnd !== null && lastImportEnd > currentImportStart) {
+      // import가 아닌 실제 코드 발견 - 이전 블록 저장
+      if (currentImportStart !== null && lastImportEnd !== null) {
+        // import가 1개만 있어도 저장 (>= 조건)
         importRanges.push({ start: currentImportStart, end: lastImportEnd });
       }
       currentImportStart = null;
@@ -53,8 +47,8 @@ export function collectFoldMetadata(
     }
   });
 
-  // 마지막 블록 처리
-  if (currentImportStart !== null && lastImportEnd !== null && lastImportEnd > currentImportStart) {
+  // 마지막 블록 처리 (파일 끝까지 import만 있는 경우)
+  if (currentImportStart !== null && lastImportEnd !== null) {
     importRanges.push({ start: currentImportStart, end: lastImportEnd });
   }
 
@@ -70,7 +64,6 @@ export function collectFoldMetadata(
         isFoldable: true,
         foldStart: actualStartLineNum,
         foldEnd: actualEndLineNum,
-        isInsideFold: false,
         foldType: 'import-block'
       };
 
@@ -81,8 +74,6 @@ export function collectFoldMetadata(
             isFoldable: false,
             foldStart: actualStartLineNum,
             foldEnd: actualEndLineNum,
-            isInsideFold: true,
-            parentFoldLine: actualStartLineNum,
             foldType: 'import-block'
           };
         }
@@ -184,7 +175,6 @@ export function collectFoldMetadata(
           isFoldable: true,
           foldStart: actualStartLineNum,
           foldEnd: actualEndLineNum,
-          isInsideFold: false,
           foldType: blockType,
           tagName
         };
@@ -196,8 +186,6 @@ export function collectFoldMetadata(
               isFoldable: false,
               foldStart: actualStartLineNum,
               foldEnd: actualEndLineNum,
-              isInsideFold: true,
-              parentFoldLine: actualStartLineNum,
               foldType: blockType,
               tagName
             };
@@ -219,7 +207,6 @@ export function collectFoldMetadata(
           isFoldable: true,
           foldStart: actualStartLineNum,
           foldEnd: actualEndLineNum,
-          isInsideFold: false,
           foldType: blockType,
           tagName
         };
@@ -231,8 +218,6 @@ export function collectFoldMetadata(
               isFoldable: false,
               foldStart: actualStartLineNum,
               foldEnd: actualEndLineNum,
-              isInsideFold: true,
-              parentFoldLine: actualStartLineNum,
               foldType: blockType,
               tagName
             };

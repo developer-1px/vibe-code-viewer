@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useSetAtom } from 'jotai';
-import { foldedLinesAtom } from '../../../store/atoms';
+import { foldedLinesAtom } from '../model/atoms';
 import type { CodeLine } from '../../../entities/CodeRenderer/model/types';
 import type { CanvasNode } from '../../../entities/CanvasNode';
 

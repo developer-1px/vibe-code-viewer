@@ -4,8 +4,8 @@
  */
 
 import React from 'react';
-import { useSetAtom } from 'jotai';
-import { foldedLinesAtom } from '../../../store/atoms';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { foldedLinesAtom } from '../model/atoms';
 import type { CodeLine } from '../../../entities/CodeRenderer/model/types';
 import type { CanvasNode } from '../../../entities/CanvasNode';
 
@@ -15,10 +15,15 @@ interface FoldButtonProps {
 }
 
 const FoldButton: React.FC<FoldButtonProps> = ({ line, node }) => {
+  const foldedLinesMap = useAtomValue(foldedLinesAtom);
   const setFoldedLinesMap = useSetAtom(foldedLinesAtom);
 
-  const { foldInfo, isFolded = false, num: lineNum } = line;
+  const { foldInfo, num: lineNum } = line;
   const nodeId = node.id;
+
+  // Calculate isFolded from atom state
+  const foldedLines = foldedLinesMap.get(nodeId) || new Set<number>();
+  const isFolded = foldInfo?.isFoldable && foldedLines.has(lineNum);
 
   if (!foldInfo?.isFoldable) {
     // Placeholder to maintain consistent spacing

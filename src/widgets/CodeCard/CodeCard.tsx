@@ -31,25 +31,30 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
     return renderCodeLinesDirect(node, files);
   }, [node, files]);
 
+  const foldedLinesMap = useAtomValue(foldedLinesAtom);
   const setFoldedLinesMap = useSetAtom(foldedLinesAtom);
 
   // Import 블록 자동 접기 (초기 렌더링 시 한 번만)
   useEffect(() => {
+    // 이미 fold 상태가 설정되어 있으면 초기화하지 않음
+    if (foldedLinesMap.has(node.id)) {
+      return;
+    }
+
     const importFoldLines = extractImportFoldLines(processedLines);
 
     if (importFoldLines.length > 0) {
       setFoldedLinesMap(prev => {
         const next = new Map(prev);
-        const nodeFolds = new Set(next.get(node.id) || new Set());
+        const nodeFolds = new Set<number>();
         importFoldLines.forEach(lineNum => nodeFolds.add(lineNum));
         next.set(node.id, nodeFolds);
         return next;
       });
     }
-  }, [node.id, processedLines, setFoldedLinesMap]);
+  }, [node.id, processedLines, foldedLinesMap, setFoldedLinesMap]);
 
   // Fold ranges 계산 (CodeCardLine에서 사용)
-  const foldedLinesMap = useAtomValue(foldedLinesAtom);
   const foldedLines = foldedLinesMap.get(node.id) || new Set<number>();
 
   const foldRanges = useMemo(() => {

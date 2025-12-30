@@ -54,8 +54,8 @@ export const searchResultsAtom = atom([] as SearchResult[]);
 export const searchFocusedIndexAtom = atom(0);
 export const searchModeAtom = atom<'all' | 'files' | 'symbols'>('all');
 
-// Code Fold atoms - Map<nodeId, Set<lineNumber>>
-export const foldedLinesAtom = atom(new Map<string, Set<number>>());
+// Code Fold atoms - Re-export from feature
+export { foldedLinesAtom } from '../features/CodeFold/model/atoms';
 
 // Card Position atoms - Map<nodeId, {x: number, y: number}>
 export const cardPositionsAtom = atom(new Map<string, {x: number, y: number}>());

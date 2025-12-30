@@ -17,10 +17,7 @@ export interface CodeLine {
   hasInput: boolean;
   hasTopLevelReturn?: boolean;
   hasDeclarationKeyword?: boolean; // interface, type, class, enum 등의 선언 키워드가 있는 라인
-  foldInfo?: FoldInfo;        // Fold 관련 메타데이터
-  isFolded?: boolean;          // 현재 접혀있는 상태인가? (UI에서 설정)
-  foldedCount?: number;        // 접힌 라인 수 (UI에서 설정)
-  isInsideFold?: boolean;      // 접힌 범위 내부 라인인가? (숨김 처리용, UI에서 설정)
+  foldInfo?: FoldInfo;        // Fold 관련 메타데이터 (collectFoldMetadata에서 생성)
 }
 
 /**

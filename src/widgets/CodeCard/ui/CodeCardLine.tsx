@@ -7,7 +7,7 @@ import CodeCardLineSlots from './CodeCardLineSlots';
 import CodeCardLineSegment from './CodeCardLineSegment';
 import FoldButton from '../../../features/CodeFold/ui/FoldButton';
 import FoldBadge from '../../../features/CodeFold/ui/FoldBadge';
-import { isLineInsideFold } from '../../../features/CodeFold/lib';
+import { isLineInsideFold, isLineFolded, getFoldedCount } from '../../../features/CodeFold/lib';
 import { targetLineAtom, foldedLinesAtom } from '../../../store/atoms';
 
 const CodeCardLine = ({
@@ -32,8 +32,8 @@ const CodeCardLine = ({
 
   // Fold 상태 계산
   const foldedLines = foldedLinesMap.get(node.id) || new Set<number>();
-  const isFolded = line.foldInfo?.isFoldable && foldedLines.has(line.num);
-  const foldedCount = isFolded && line.foldInfo ? line.foldInfo.foldEnd - line.foldInfo.foldStart : undefined;
+  const isFolded = isLineFolded(line, foldedLines);
+  const foldedCount = isFolded ? getFoldedCount(line) : undefined;
 
   // Line number 스타일 계산 (useMemo로 캐싱)
   const lineNumberClassName = useMemo(() => {
@@ -95,7 +95,9 @@ const CodeCardLine = ({
             segment={segment}
             segIdx={segIdx}
             node={node}
-            line={{ ...line, isFolded, foldedCount }}
+            line={line}
+            isFolded={isFolded}
+            foldedCount={foldedCount}
           />
         ))}
 

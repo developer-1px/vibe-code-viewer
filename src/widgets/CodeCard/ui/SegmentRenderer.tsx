@@ -38,12 +38,16 @@ export const SegmentRenderer = ({
   segment,
   segIdx,
   node,
-  line
+  line,
+  isFolded = false,
+  foldedCount
 }: {
   segment: CodeSegment;
   segIdx: number;
   node: CanvasNode;
   line: CodeLine;
+  isFolded?: boolean;
+  foldedCount?: number;
 }) => {
   const visibleNodeIds = useAtomValue(visibleNodeIdsAtom);
   const activeLocalVariables = useAtomValue(activeLocalVariablesAtom);
@@ -80,7 +84,6 @@ export const SegmentRenderer = ({
   }, [line.segments, line.hasTopLevelReturn, segIdx]);
 
   // 모든 hook 호출 후 early return 체크
-  const isFolded = line.isFolded || false;
   const foldInfo = line.foldInfo;
 
   // Import block이 접혔을 때: import 키워드만 남기고 나머지 숨김

@@ -44,3 +44,23 @@ export function isLineInsideFold(
 ): boolean {
   return foldRanges.some(range => lineNum > range.start && lineNum <= range.end);
 }
+
+/**
+ * Check if a line is currently folded
+ * @param line - The code line to check
+ * @param foldedLines - Set of folded line numbers for the current node
+ * @returns true if the line is foldable and currently folded
+ */
+export function isLineFolded(line: CodeLine, foldedLines: Set<number>): boolean {
+  return line.foldInfo?.isFoldable === true && foldedLines.has(line.num);
+}
+
+/**
+ * Calculate the number of folded lines
+ * @param line - The code line with fold info
+ * @returns Number of folded lines, or undefined if not foldable
+ */
+export function getFoldedCount(line: CodeLine): number | undefined {
+  if (!line.foldInfo) return undefined;
+  return line.foldInfo.foldEnd - line.foldInfo.foldStart;
+}
