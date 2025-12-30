@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
-import { Box as IconBox, FileCode as IconFileCode } from 'lucide-react';
+import { FileCode as IconFileCode } from 'lucide-react';
 import { filesAtom, isSidebarOpenAtom } from '../../store/atoms';
 import ResetFilesButton from '../../features/ResetFilesButton';
 import FolderView from './FolderView';
@@ -47,15 +47,6 @@ export const Sidebar: React.FC = () => {
         style={{ width: `${width}px` }}
         className="bg-vibe-panel border-r border-vibe-border flex flex-col h-full select-none shadow-xl z-20 relative"
       >
-      {/* Header */}
-      <div className="p-4 border-b border-vibe-border bg-[#162032] flex-shrink-0">
-        <h1 className="font-bold text-slate-100 flex items-center gap-2 mb-1">
-          <IconBox className="w-5 h-5 text-vibe-accent" />
-          Vibe Coder
-        </h1>
-        <p className="text-xs text-slate-500">Project Logic Visualization</p>
-      </div>
-
       {/* Folder View */}
       <FolderView files={files} />
 

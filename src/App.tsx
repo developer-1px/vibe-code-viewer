@@ -48,18 +48,17 @@ const App: React.FC = () => {
   }, [setIsSidebarOpen, setSearchModalOpen]);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-vibe-dark text-slate-200 font-sans">
-      {/* Left Sidebar - Code Input */}
-      <Sidebar />
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-vibe-dark text-slate-200 font-sans">
+      {/* Top Header */}
+      <Header />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#0f172a]">
-
-        {/* Minimal Header */}
-        <Header />
+      {/* Main Layout: Sidebar + Canvas */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Sidebar - Code Input */}
+        <Sidebar />
 
         {/* Canvas Area */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative bg-[#0f172a]">
           <PipelineCanvas />
         </div>
       </div>

@@ -10,7 +10,7 @@ const Header: React.FC = () => {
   const { error: parseError } = useGraphData();
 
   return (
-    <header className="h-14 bg-vibe-panel/50 backdrop-blur border-b border-vibe-border flex items-center px-6 justify-between relative z-0 transition-all duration-300">
+    <header className="h-14 bg-vibe-panel border-b border-vibe-border flex items-center px-6 justify-between relative z-50 flex-shrink-0">
       <div className="flex items-center gap-4">
         <button
           onClick={() => setIsSidebarOpen(prev => !prev)}
@@ -20,10 +20,12 @@ const Header: React.FC = () => {
           <IconPanelLeft className="w-4 h-4" />
         </button>
 
-        <h2 className="font-semibold text-slate-200 flex items-center gap-2">
-          <IconBox className="w-4 h-4 text-vibe-purple" />
-          <span className="text-slate-500 font-normal">Logic Visualization</span>
-        </h2>
+        <h1 className="font-bold text-slate-100 flex items-center gap-2">
+          <IconBox className="w-5 h-5 text-vibe-accent" />
+          Vibe Coder
+        </h1>
+
+        <span className="text-xs text-slate-500">Project Logic Visualization</span>
       </div>
 
       <div className="flex gap-2 items-center text-xs">
