@@ -10,7 +10,18 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
       },
-      plugins: [react()],
+      plugins: [
+        react({
+          babel: {
+            plugins: [
+              // Jotai debug labels for better DevTools experience
+              ['jotai/babel/plugin-debug-label', {}],
+              // Optional: React Refresh for better HMR
+              ['jotai/babel/plugin-react-refresh', {}],
+            ],
+          },
+        }),
+      ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)

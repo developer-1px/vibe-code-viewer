@@ -3,12 +3,13 @@
  * VSCode-style folder structure with collapsible folders
  */
 
-import React, { useMemo, useState, useCallback } from 'react';
-import { ChevronDown, ChevronRight, Folder, FolderOpen, FileCode, FileJson, Component } from 'lucide-react';
-import { useAtomValue, useSetAtom } from 'jotai';
-import { entryFileAtom, lastExpandedIdAtom } from '../../store/atoms';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useHotkeys } from 'react-hotkeys-hook';
+import { entryFileAtom, lastExpandedIdAtom, focusedPaneAtom } from '../../store/atoms';
 import { openFile } from '../../features/File';
-import UploadFolderButton from '../../features/UploadFolderButton';
+import FolderItemView from './FolderItemView';
+import FileItemView from './FileItemView';
 
 interface FolderNode {
   name: string;
@@ -18,39 +19,24 @@ interface FolderNode {
   filePath?: string; // file일 경우 전체 경로
 }
 
-// 확장자에 따른 아이콘 반환
-const getFileIcon = (fileName: string) => {
-  const ext = fileName.split('.').pop()?.toLowerCase();
-
-  switch (ext) {
-    case 'vue':
-      return { Icon: Component, color: 'text-emerald-400' };
-    case 'tsx':
-    case 'jsx':
-      return { Icon: Component, color: 'text-blue-400' };
-    case 'ts':
-    case 'js':
-      return { Icon: FileCode, color: 'text-yellow-400' };
-    case 'json':
-      return { Icon: FileJson, color: 'text-orange-400' };
-    default:
-      return { Icon: FileCode, color: 'text-slate-400' };
-  }
-};
-
 const FolderView = ({ files }: { files: Record<string, string> }) => {
   const entryFile = useAtomValue(entryFileAtom);
   const setEntryFile = useSetAtom(entryFileAtom);
   const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
+  const [focusedPane, setFocusedPane] = useAtom(focusedPaneAtom);
+  const [focusedIndex, setFocusedIndex] = useState(0);
 
-  // 초기 상태: 모든 폴더를 접어둠
+  // 초기 상태: 루트 레벨 폴더는 열어두고, 그 하위 폴더들은 모두 접어둠
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(() => {
     const allFolders = new Set<string>();
     Object.keys(files).forEach((filePath) => {
       const parts = filePath.split('/').filter(Boolean);
       for (let i = 0; i < parts.length - 1; i++) {
         const folderPath = parts.slice(0, i + 1).join('/');
-        allFolders.add(folderPath);
+        // 루트 레벨 폴더(depth 0)는 제외, 그 이하만 접어둠
+        if (i > 0) {
+          allFolders.add(folderPath);
+        }
       }
     });
     return allFolders;
@@ -140,63 +126,170 @@ const FolderView = ({ files }: { files: Record<string, string> }) => {
     });
   }, [entryFile, setEntryFile, setLastExpandedId]);
 
+  // Get flat list of all visible items (folders + files for keyboard navigation)
+  const flatItemList = useMemo(() => {
+    const items: { type: 'folder' | 'file'; path: string; filePath?: string }[] = [];
+    const traverse = (nodes: FolderNode[]) => {
+      nodes.forEach((node) => {
+        if (node.type === 'folder') {
+          items.push({ type: 'folder', path: node.path });
+          if (!collapsedFolders.has(node.path) && node.children) {
+            traverse(node.children);
+          }
+        } else if (node.type === 'file' && node.filePath) {
+          items.push({ type: 'file', path: node.path, filePath: node.filePath });
+        }
+      });
+    };
+    traverse(fileTree);
+    return items;
+  }, [fileTree, collapsedFolders]);
+
+  // Set sidebar as focused pane on mount
+  useEffect(() => {
+    console.log('[FolderView] Setting focusedPane to sidebar on mount');
+    setFocusedPane('sidebar');
+  }, [setFocusedPane]);
+
+  // Log focusedPane changes
+  useEffect(() => {
+    console.log('[FolderView] focusedPane changed:', focusedPane);
+  }, [focusedPane]);
+
+  // Sync focusedIndex with entryFile changes (only when entryFile actually changes)
+  useEffect(() => {
+    if (entryFile && flatItemList.length > 0) {
+      const entryIndex = flatItemList.findIndex(
+        item => item.type === 'file' && item.filePath === entryFile
+      );
+      if (entryIndex >= 0) {
+        console.log('[FolderView] Syncing focusedIndex with entryFile:', entryFile, 'index:', entryIndex);
+        setFocusedIndex(entryIndex);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entryFile]); // Only depend on entryFile, not flatItemList
+
+  // TEST: Always-enabled hotkey
+  useHotkeys('g', () => {
+    console.log('[FolderView] G key pressed - FolderView hotkey WORKS!');
+    console.log('[FolderView] Current focusedPane:', focusedPane);
+    console.log('[FolderView] Current flatItemList:', flatItemList);
+  });
+
+  // Keyboard navigation - Up/Down for both folders and files
+  useHotkeys('down', () => {
+    console.log('[FolderView] down key pressed');
+    if (flatItemList.length === 0) return;
+    setFocusedIndex(prev => Math.min(prev + 1, flatItemList.length - 1));
+  }, {
+    scopes: ['sidebar'],
+    enabled: focusedPane === 'sidebar'
+  });
+
+  useHotkeys('up', () => {
+    console.log('[FolderView] up key pressed');
+    if (flatItemList.length === 0) return;
+    setFocusedIndex(prev => Math.max(prev - 1, 0));
+  }, {
+    scopes: ['sidebar'],
+    enabled: focusedPane === 'sidebar'
+  });
+
+  // Enter - open file or toggle folder
+  useHotkeys('enter', () => {
+    console.log('[FolderView] enter key pressed, focusedIndex:', focusedIndex);
+    if (flatItemList.length === 0) return;
+    const item = flatItemList[focusedIndex];
+    if (item.type === 'file' && item.filePath) {
+      handleFileClick(item.filePath);
+    } else if (item.type === 'folder') {
+      toggleFolder(item.path);
+    }
+  }, {
+    scopes: ['sidebar'],
+    enabled: focusedPane === 'sidebar'
+  });
+
+  // Right - expand folder
+  useHotkeys('right', () => {
+    console.log('[FolderView] right key pressed');
+    if (flatItemList.length === 0) return;
+    const item = flatItemList[focusedIndex];
+    if (item.type === 'folder') {
+      // If collapsed, expand it
+      if (collapsedFolders.has(item.path)) {
+        toggleFolder(item.path);
+      }
+    }
+  }, {
+    scopes: ['sidebar'],
+    enabled: focusedPane === 'sidebar'
+  });
+
+  // Left - collapse folder
+  useHotkeys('left', () => {
+    console.log('[FolderView] left key pressed');
+    if (flatItemList.length === 0) return;
+    const item = flatItemList[focusedIndex];
+    if (item.type === 'folder') {
+      // If expanded, collapse it
+      if (!collapsedFolders.has(item.path)) {
+        toggleFolder(item.path);
+      }
+    }
+  }, {
+    scopes: ['sidebar'],
+    enabled: focusedPane === 'sidebar'
+  });
+
   const renderNode = (node: FolderNode, depth: number = 0): React.ReactNode => {
     const isCollapsed = collapsedFolders.has(node.path);
-    const paddingLeft = depth * 12 + 8; // 12px per level + 8px base
 
     if (node.type === 'file' && node.filePath) {
-      const isEntry = node.filePath === entryFile;
-      const { Icon: FileIcon, color: iconColor } = getFileIcon(node.filePath);
-
       return (
-        <div
+        <FileItemView
           key={node.path}
-          onClick={() => handleFileClick(node.filePath!)}
-          className={`flex items-center gap-1.5 py-0.5 px-2 text-[11px] cursor-pointer transition-colors border-l-2 ${
-            isEntry
-              ? 'text-vibe-accent border-vibe-accent bg-slate-700/30'
-              : 'text-slate-400 border-transparent hover:bg-slate-700/20'
-          }`}
-          style={{ paddingLeft: `${paddingLeft}px` }}
-        >
-          <FileIcon className={`w-2.5 h-2.5 flex-shrink-0 opacity-40 ${isEntry ? 'text-vibe-accent opacity-70' : iconColor}`} />
-          <span className={`font-medium truncate ${isEntry ? 'text-vibe-accent' : 'text-slate-400'}`}>
-            {node.name}
-          </span>
-        </div>
+          node={node}
+          depth={depth}
+          isEntry={node.filePath === entryFile}
+          isFocused={flatItemList[focusedIndex]?.type === 'file' && flatItemList[focusedIndex].filePath === node.filePath}
+          onFileFocus={(filePath) => {
+            // Single click - update focus
+            const itemIndex = flatItemList.findIndex(item => item.type === 'file' && item.filePath === filePath);
+            if (itemIndex >= 0) setFocusedIndex(itemIndex);
+          }}
+          onFileClick={(filePath) => {
+            // Double click - open file
+            handleFileClick(filePath);
+          }}
+        />
       );
     }
 
     if (node.type === 'folder') {
       return (
-        <div key={node.path}>
-          {/* Folder Header */}
-          <div
-            onClick={() => toggleFolder(node.path)}
-            className="flex items-center gap-1 py-0.5 px-2 text-[11px] text-slate-300 hover:bg-slate-700/40 cursor-pointer transition-colors group"
-            style={{ paddingLeft: `${paddingLeft}px` }}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="w-2.5 h-2.5 flex-shrink-0 text-slate-500" />
-            ) : (
-              <ChevronDown className="w-2.5 h-2.5 flex-shrink-0 text-slate-500" />
-            )}
-            {isCollapsed ? (
-              <Folder className="w-2.5 h-2.5 flex-shrink-0 text-blue-400/70" />
-            ) : (
-              <FolderOpen className="w-2.5 h-2.5 flex-shrink-0 text-blue-400/70" />
-            )}
-            <span className="truncate font-medium">{node.name}</span>
-            {node.children && (
-              <span className="text-slate-600 text-[9px] ml-auto">({node.children.length})</span>
-            )}
-          </div>
-
-          {/* Folder Children */}
-          {!isCollapsed && node.children && (
-            <div>{node.children.map((child) => renderNode(child, depth + 1))}</div>
-          )}
-        </div>
+        <FolderItemView
+          key={node.path}
+          node={node}
+          depth={depth}
+          isCollapsed={isCollapsed}
+          isFocused={flatItemList[focusedIndex]?.type === 'folder' && flatItemList[focusedIndex].path === node.path}
+          onFolderFocus={(path) => {
+            // Single click - update focus
+            const itemIndex = flatItemList.findIndex(item => item.type === 'folder' && item.path === path);
+            if (itemIndex >= 0) setFocusedIndex(itemIndex);
+          }}
+          onFolderClick={(path) => {
+            // Double click - toggle folder
+            toggleFolder(path);
+          }}
+          renderChildren={(childDepth) =>
+            !isCollapsed && node.children ? (
+              <div>{node.children.map((child) => renderNode(child, childDepth))}</div>
+            ) : null
+          }
+        />
       );
     }
 
@@ -204,24 +297,13 @@ const FolderView = ({ files }: { files: Record<string, string> }) => {
   };
 
   return (
-    <div className="flex-1 bg-[#0f172a] border-b border-vibe-border overflow-y-auto flex flex-col">
-      {/* Header */}
-      <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 flex items-center justify-between bg-black/20 flex-shrink-0 border-b border-vibe-border/50">
-        <div className="flex items-center gap-1">
-          <FolderOpen className="w-2.5 h-2.5" />
-          <span>Explorer</span>
-        </div>
-        <UploadFolderButton />
-      </div>
-
+    <div className="flex-1 bg-[#0f172a] border-b border-vibe-border overflow-y-auto py-1">
       {/* Folder Tree */}
-      <div className="flex-1 overflow-y-auto py-1">
-        {fileTree.length > 0 ? (
-          <div>{fileTree.map((node) => renderNode(node, 0))}</div>
-        ) : (
-          <div className="px-3 py-6 text-[11px] text-slate-500 text-center">No files</div>
-        )}
-      </div>
+      {fileTree.length > 0 ? (
+        <div>{fileTree.map((node) => renderNode(node, 0))}</div>
+      ) : (
+        <div className="px-3 py-6 text-[11px] text-slate-500 text-center">No files</div>
+      )}
     </div>
   );
 };

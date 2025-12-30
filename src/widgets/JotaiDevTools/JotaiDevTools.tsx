@@ -1,171 +1,183 @@
-import React, { useState } from 'react';
-import { useAtomValue } from 'jotai';
-import {
-  filesAtom,
-  activeFileAtom,
-  entryFileAtom,
-  isSidebarOpenAtom,
-  graphDataAtom,
-  parseErrorAtom,
-  layoutNodesAtom,
-  layoutLinksAtom,
-  fullNodeMapAtom,
-  templateRootIdAtom,
-  transformAtom,
-  visibleNodeIdsAtom,
-  lastExpandedIdAtom,
-  foldedLinesAtom,
-  targetLineAtom
-} from '../../store/atoms';
+/**
+ * Jotai DevTools - Custom compact implementation using store
+ */
+
+import React, { useState, useEffect } from 'react';
+import { Atom } from 'jotai';
+import { store } from '../../store/store';
+import * as atoms from '../../store/atoms';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+
+interface AtomUpdate {
+  name: string;
+  value: unknown;
+  timestamp: number;
+  id: string; // unique id for each update
+}
 
 const JotaiDevTools = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedAtom, setSelectedAtom] = useState<string | null>(null);
+  const [updateHistory, setUpdateHistory] = useState<AtomUpdate[]>([]);
 
-  // Read all atoms
-  const files = useAtomValue(filesAtom);
-  const activeFile = useAtomValue(activeFileAtom);
-  const entryFile = useAtomValue(entryFileAtom);
-  const isSidebarOpen = useAtomValue(isSidebarOpenAtom);
-  const graphData = useAtomValue(graphDataAtom);
-  const parseError = useAtomValue(parseErrorAtom);
-  const layoutNodes = useAtomValue(layoutNodesAtom);
-  const layoutLinks = useAtomValue(layoutLinksAtom);
-  const fullNodeMap = useAtomValue(fullNodeMapAtom);
-  const templateRootId = useAtomValue(templateRootIdAtom);
-  const transform = useAtomValue(transformAtom);
-  const visibleNodeIds = useAtomValue(visibleNodeIdsAtom);
-  const lastExpandedId = useAtomValue(lastExpandedIdAtom);
-  const foldedLines = useAtomValue(foldedLinesAtom);
-  const targetLine = useAtomValue(targetLineAtom);
+  useEffect(() => {
+    if (!isOpen) return;
 
-  const atoms = [
-    { name: 'filesAtom', value: files, type: 'Record<string, string>' },
-    { name: 'activeFileAtom', value: activeFile, type: 'string | null' },
-    { name: 'entryFileAtom', value: entryFile, type: 'string' },
-    { name: 'isSidebarOpenAtom', value: isSidebarOpen, type: 'boolean' },
-    { name: 'graphDataAtom', value: graphData, type: 'GraphData | null' },
-    { name: 'parseErrorAtom', value: parseError, type: 'string | null' },
-    { name: 'layoutNodesAtom', value: layoutNodes, type: 'CanvasNode[]' },
-    { name: 'layoutLinksAtom', value: layoutLinks, type: 'Link[]' },
-    { name: 'fullNodeMapAtom', value: fullNodeMap, type: 'Map<string, VariableNode>' },
-    { name: 'templateRootIdAtom', value: templateRootId, type: 'string | null' },
-    { name: 'transformAtom', value: transform, type: 'Transform' },
-    { name: 'visibleNodeIdsAtom', value: visibleNodeIds, type: 'Set<string>' },
-    { name: 'lastExpandedIdAtom', value: lastExpandedId, type: 'string | null' },
-    { name: 'foldedLinesAtom', value: foldedLines, type: 'Map<string, Set<number>>' },
-    { name: 'targetLineAtom', value: targetLine, type: '{ nodeId: string; lineNum: number } | null' }
-  ];
+    // Initialize history with current atom values
+    const initHistory = () => {
+      const updates: AtomUpdate[] = [];
+      Object.entries(atoms).forEach(([name, atom]) => {
+        if (!atom || typeof atom !== 'object' || !('read' in atom)) {
+          return;
+        }
 
-  const formatValue = (value: any): string => {
-    if (value === null || value === undefined) return String(value);
-    if (typeof value === 'boolean' || typeof value === 'string' || typeof value === 'number') {
-      return JSON.stringify(value);
-    }
-    if (value instanceof Set) {
-      return `Set(${value.size}) [${Array.from(value).slice(0, 3).join(', ')}${value.size > 3 ? '...' : ''}]`;
-    }
-    if (value instanceof Map) {
-      return `Map(${value.size}) {${Array.from(value.keys()).slice(0, 2).join(', ')}${value.size > 2 ? '...' : ''}}`;
-    }
-    if (Array.isArray(value)) {
-      return `Array(${value.length})`;
-    }
-    if (typeof value === 'object') {
-      const keys = Object.keys(value);
-      return `Object {${keys.slice(0, 2).join(', ')}${keys.length > 2 ? '...' : ''}}`;
-    }
-    return String(value);
-  };
+        try {
+          const value = store.get(atom as Atom<unknown>);
+          updates.push({
+            name,
+            value,
+            timestamp: Date.now(),
+            id: `${name}-${Date.now()}`
+          });
+        } catch (e) {
+          console.log(`Failed to read atom ${name}:`, e);
+        }
+      });
+      setUpdateHistory(updates.reverse()); // Most recent first
+    };
 
-  const formatDetailedValue = (value: any): string => {
-    if (value === null || value === undefined) return String(value);
-    if (value instanceof Set) {
-      return JSON.stringify(Array.from(value), null, 2);
-    }
-    if (value instanceof Map) {
-      return JSON.stringify(Object.fromEntries(value), null, 2);
-    }
-    return JSON.stringify(value, null, 2);
-  };
+    initHistory();
+
+    // Subscribe to all atom changes and add to history
+    const unsubscribers: Array<() => void> = [];
+
+    Object.entries(atoms).forEach(([name, atom]) => {
+      if (!atom || typeof atom !== 'object' || !('read' in atom)) {
+        return;
+      }
+
+      try {
+        const unsub = store.sub(atom as Atom<unknown>, () => {
+          const value = store.get(atom as Atom<unknown>);
+          const timestamp = Date.now();
+          const newUpdate: AtomUpdate = {
+            name,
+            value,
+            timestamp,
+            id: `${name}-${timestamp}`
+          };
+
+          // Remove old entry with same name and add new update to the top
+          setUpdateHistory(prev => {
+            const filtered = prev.filter(item => item.name !== name);
+            return [newUpdate, ...filtered];
+          });
+        });
+        unsubscribers.push(unsub);
+      } catch (e) {
+        // Skip atoms that can't be subscribed
+      }
+    });
+
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, [isOpen]);
+
+  // Only show in development
+  if (process.env.NODE_ENV === 'production') {
+    return null;
+  }
 
   if (!isOpen) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed top-4 right-4 z-[9999] px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-mono rounded shadow-lg transition-colors"
-        title="Open Jotai DevTools"
+        className="fixed top-4 right-4 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg shadow-lg text-xs font-semibold transition-colors z-50"
       >
-        DevTools
+        Jotai DevTools
       </button>
     );
   }
 
   return (
-    <div className="fixed top-4 right-4 z-[9999] w-96 max-h-[80vh] bg-slate-900 border border-purple-500/30 rounded-lg shadow-2xl flex flex-col">
+    <div className="fixed top-0 right-0 bg-slate-900/95 border-l border-slate-700 shadow-2xl w-96 h-screen overflow-hidden flex flex-col z-50 backdrop-blur-sm">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-purple-500/30 bg-purple-900/20">
+      <div className="flex items-center justify-between px-3 py-2 bg-slate-800 border-b border-slate-700 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></div>
-          <h3 className="text-sm font-bold text-purple-300 font-mono">Jotai DevTools</h3>
+          <span className="text-xs font-semibold text-purple-400">Jotai DevTools</span>
+          <span className="text-[10px] text-slate-500">({updateHistory.length} updates)</span>
         </div>
         <button
           onClick={() => setIsOpen(false)}
-          className="text-slate-400 hover:text-white transition-colors"
+          className="text-slate-400 hover:text-slate-200 transition-colors"
         >
-          ✕
+          <ChevronDown className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Atom List */}
-      <div className="flex-1 overflow-y-auto p-2">
-        {atoms.map((atom) => (
-          <div
-            key={atom.name}
-            className={`mb-2 rounded border transition-colors ${
-              selectedAtom === atom.name
-                ? 'border-purple-500 bg-purple-500/10'
-                : 'border-slate-700 hover:border-slate-600 bg-slate-800/50'
-            }`}
-          >
-            <button
-              onClick={() => setSelectedAtom(selectedAtom === atom.name ? null : atom.name)}
-              className="w-full px-3 py-2 text-left"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-mono font-semibold text-purple-300 truncate">
-                    {atom.name}
-                  </div>
-                  <div className="text-[10px] font-mono text-slate-500 mt-0.5">
-                    {atom.type}
-                  </div>
-                </div>
-                <div className="text-xs font-mono text-slate-400 truncate max-w-[120px]">
-                  {formatValue(atom.value)}
-                </div>
-              </div>
-            </button>
-
-            {/* Expanded View */}
-            {selectedAtom === atom.name && (
-              <div className="px-3 pb-3 border-t border-slate-700 mt-2 pt-2">
-                <pre className="text-[10px] font-mono text-slate-300 overflow-x-auto bg-slate-950 p-2 rounded max-h-60 overflow-y-auto">
-                  {formatDetailedValue(atom.value)}
-                </pre>
-              </div>
-            )}
+      {/* Update History - Most Recent First */}
+      <div className="flex-1 overflow-y-auto px-3 py-2">
+        {updateHistory.length === 0 ? (
+          <div className="text-xs text-slate-500 text-center py-4">No updates yet</div>
+        ) : (
+          <div className="space-y-1">
+            {updateHistory.map((update, index) => (
+              <AtomUpdateItem key={update.id} update={update} isFirst={index === 0} />
+            ))}
           </div>
-        ))}
+        )}
       </div>
+    </div>
+  );
+};
 
-      {/* Footer Stats */}
-      <div className="px-4 py-2 border-t border-purple-500/30 bg-slate-950 text-[10px] font-mono text-slate-500">
-        <div className="flex justify-between">
-          <span>Atoms: {atoms.length}</span>
-          <span>Nodes: {layoutNodes.length}</span>
-          <span>Visible: {visibleNodeIds.size}</span>
+const AtomUpdateItem: React.FC<{ update: AtomUpdate; isFirst: boolean }> = ({ update, isFirst }) => {
+  const { name, value, timestamp } = update;
+
+  const valuePreview = React.useMemo(() => {
+    try {
+      if (value === null) return 'null';
+      if (value === undefined) return 'undefined';
+      if (typeof value === 'string') return value.length > 50 ? `"${value.substring(0, 50)}..."` : `"${value}"`;
+      if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+      if (typeof value === 'function') return '[Function]';
+      if (Array.isArray(value)) return `Array(${value.length})`;
+      if (value instanceof Set) return `Set(${value.size})`;
+      if (value instanceof Map) return `Map(${value.size})`;
+      if (typeof value === 'object') {
+        const keys = Object.keys(value);
+        if (keys.length === 0) return '{}';
+        if (keys.length <= 2) {
+          return `{${keys.join(', ')}}`;
+        }
+        return `{${keys.length} keys}`;
+      }
+      return String(value);
+    } catch {
+      return '[Error]';
+    }
+  }, [value]);
+
+  const timeStr = new Date(timestamp).toLocaleTimeString('en-US', {
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    fractionalSecondDigits: 3
+  });
+
+  return (
+    <div className={`flex items-center justify-between gap-2 px-2 py-1 rounded ${isFirst ? 'bg-purple-900/30 border border-purple-500/50' : 'bg-slate-800/50 border border-slate-700/50'}`}>
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="text-[9px] text-slate-500 font-mono flex-shrink-0">
+          {timeStr}
         </div>
+        <div className="text-[10px] font-semibold text-purple-300 flex-shrink-0">
+          {name}
+        </div>
+      </div>
+      <div className="text-[10px] text-slate-400 font-mono truncate flex-shrink-0 max-w-[150px]">
+        {valuePreview}
       </div>
     </div>
   );

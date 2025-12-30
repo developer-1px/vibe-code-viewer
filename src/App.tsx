@@ -1,6 +1,7 @@
 
 import React, { useEffect, useRef } from 'react';
-import { useSetAtom } from 'jotai';
+import { Provider, useSetAtom } from 'jotai';
+import { HotkeysProvider, useHotkeys } from 'react-hotkeys-hook';
 import Sidebar from './widgets/Sidebar/Sidebar';
 import Header from './widgets/MainContent/Header.tsx';
 import PipelineCanvas from './widgets/PipelineCanvas.tsx';
@@ -9,8 +10,9 @@ import JotaiDevTools from './widgets/JotaiDevTools/JotaiDevTools';
 import { isSidebarOpenAtom, searchModalOpenAtom } from './store/atoms';
 import { useGraphDataInit } from './hooks/useGraphData';
 import { UnifiedSearchModal } from './features/UnifiedSearch/UnifiedSearchModal';
+import { store } from './store/store';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const setIsSidebarOpen = useSetAtom(isSidebarOpenAtom);
   const setSearchModalOpen = useSetAtom(searchModalOpenAtom);
 
@@ -19,6 +21,25 @@ const App: React.FC = () => {
 
   // Initialize and parse graph data (stores in atoms)
   useGraphDataInit();
+
+  // TEST: Simple hotkey to verify react-hotkeys-hook works
+  useEffect(() => {
+    console.log('[App] Component mounted');
+  }, []);
+
+  // TEST: Global hotkey - should work anywhere
+  useHotkeys('t', () => {
+    console.log('[App] T key pressed - TEST HOTKEY WORKS!');
+    alert('T key works!');
+  });
+
+  // TEST: Sidebar scope hotkey
+  useHotkeys('s', () => {
+    console.log('[App] S key pressed in sidebar scope');
+    alert('S key in sidebar scope!');
+  }, {
+    scopes: ['sidebar']
+  });
 
   // Toggle Sidebar Shortcut
   useEffect(() => {
@@ -74,6 +95,16 @@ const App: React.FC = () => {
       {/* Unified Search Modal (Shift+Shift) */}
       <UnifiedSearchModal />
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <Provider store={store}>
+      <HotkeysProvider initiallyActiveScopes={['sidebar']}>
+        <AppContent />
+      </HotkeysProvider>
+    </Provider>
   );
 };
 

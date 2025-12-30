@@ -15,11 +15,17 @@
     "jotai": "^2.16.1",
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "react-hotkeys-hook": "^5.2.1"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "babel-plugin-macros": "^3.1.0",
+    "jotai-devtools": "^0.13.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }
