@@ -3,7 +3,7 @@ import { useAtom, useAtomValue } from 'jotai';
 import { Box as IconBox, FileCode as IconFileCode } from 'lucide-react';
 import { filesAtom, isSidebarOpenAtom } from '../../store/atoms';
 import ResetFilesButton from '../../features/ResetFilesButton';
-import FileExplorer from './FileExplorer';
+import FolderView from './FolderView';
 
 export const Sidebar: React.FC = () => {
   const files = useAtomValue(filesAtom);
@@ -56,8 +56,8 @@ export const Sidebar: React.FC = () => {
         <p className="text-xs text-slate-500">Project Logic Visualization</p>
       </div>
 
-      {/* File Explorer */}
-      <FileExplorer files={files} />
+      {/* Folder View */}
+      <FolderView files={files} />
 
       {/* Footer */}
       <div className="p-3 border-t border-vibe-border bg-[#162032] flex justify-between items-center flex-shrink-0">

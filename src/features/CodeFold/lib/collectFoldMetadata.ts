@@ -10,7 +10,7 @@ import type { FoldInfo } from './types';
 interface CodeLineForFold {
   num: number;
   foldInfo?: FoldInfo;
-}햣 ㅔㅕ
+}
 
 export function collectFoldMetadata(
   sourceFile: ts.SourceFile,
