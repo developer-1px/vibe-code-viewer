@@ -39,14 +39,12 @@ export const Sidebar: React.FC = () => {
 
   return (
     <div
-      className={`overflow-hidden flex-shrink-0 relative z-50 ${isSidebarOpen ? `w-[${width}px]` : 'w-0'}`}
-      style={{ width: isSidebarOpen ? `${width}px` : '0px' }}
+      ref={sidebarRef}
+      className={`absolute top-0 left-0 h-full bg-vibe-panel border-r border-vibe-border flex flex-col select-none shadow-2xl z-50 transition-transform duration-300 ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}
+      style={{ width: `${width}px` }}
     >
-      <div
-        ref={sidebarRef}
-        style={{ width: `${width}px` }}
-        className="bg-vibe-panel border-r border-vibe-border flex flex-col h-full select-none shadow-xl z-20 relative"
-      >
       {/* Folder View */}
       <FolderView files={files} />
 
@@ -64,7 +62,6 @@ export const Sidebar: React.FC = () => {
         onMouseDown={() => setIsResizing(true)}
         className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-vibe-accent/50 ${isResizing ? 'bg-vibe-accent' : ''}`}
       />
-      </div>
     </div>
   );
 };

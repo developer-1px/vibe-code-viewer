@@ -52,15 +52,13 @@ const App: React.FC = () => {
       {/* Top Header */}
       <Header />
 
-      {/* Main Layout: Sidebar + Canvas */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar - Code Input */}
-        <Sidebar />
+      {/* Main Layout: Canvas with Floating Sidebar */}
+      <div className="flex-1 relative overflow-hidden bg-[#0f172a]">
+        {/* Canvas Area - Full Width */}
+        <PipelineCanvas />
 
-        {/* Canvas Area */}
-        <div className="flex-1 relative bg-[#0f172a]">
-          <PipelineCanvas />
-        </div>
+        {/* Floating Sidebar - Overlay on Canvas */}
+        <Sidebar />
       </div>
 
       {/* Jotai DevTools */}
