@@ -325,7 +325,7 @@ const enrichWithLanguageService = (
       ) {
         const defLocation = findDefinitionLocation(codeSnippet, filePath || '', segment.position, isTsx);
         const hoverInfo = !segment.nodeId
-          ? getQuickInfoAtPosition(codeSnippet, segment.position, isTsx)
+          ? getQuickInfoAtPosition(codeSnippet, filePath || '', segment.position, isTsx)
           : undefined;
 
         return {

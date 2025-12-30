@@ -8,7 +8,7 @@ import { DEFAULT_FILES, DEFAULT_ENTRY_FILE } from '../constants';
 export const filesAtom = atom<Record<string, string>>(DEFAULT_FILES);
 export const activeFileAtom = atom<string>(DEFAULT_ENTRY_FILE);
 export const entryFileAtom = atom<string>(DEFAULT_ENTRY_FILE);
-export const isSidebarOpenAtom = atom<boolean>(true);
+export const isSidebarOpenAtom = atom<boolean>(false);
 
 // Graph data atom (parsed project data)
 export const graphDataAtom = atom(null as GraphData | null);
@@ -62,3 +62,4 @@ export const cardPositionsAtom = atom(new Map<string, {x: number, y: number}>())
 
 // Focus Mode - Re-export from feature
 export { activeLocalVariablesAtom } from '../features/FocusMode/model/atoms';
+

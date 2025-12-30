@@ -41,8 +41,31 @@ function forEachBindingIdentifier(
 }
 
 /**
+ * Check if node is exported
+ */
+function isExportedNode(node: ts.Node): boolean {
+  // Check if node has export modifier
+  if (ts.canHaveModifiers(node)) {
+    const modifiers = ts.getModifiers(node);
+    if (modifiers && modifiers.some(mod => mod.kind === ts.SyntaxKind.ExportKeyword)) {
+      return true;
+    }
+  }
+
+  // Check if parent is export declaration/assignment
+  const parent = node.parent;
+  if (!parent) return false;
+
+  if (ts.isExportDeclaration(parent) || ts.isExportAssignment(parent)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Hook 0: Declaration 노드 처리
- * - hasDeclarationKeyword 플래그 설정
+ * - hasDeclarationKeyword 플래그 설정 (export된 선언만)
  * - Declaration 이름에 'self' kind 추가
  * - Local identifier로 등록
  */
@@ -60,7 +83,11 @@ export function processDeclarationNode(
   if (!isDeclarationNode(node)) return;
   if (lineIdx < 0 || lineIdx >= result.length) return;
 
-  result[lineIdx].hasDeclarationKeyword = true; // Output Port 표시용
+  // Output Port는 export된 선언에만 표시
+  const isExported = isExportedNode(node);
+  if (isExported) {
+    result[lineIdx].hasDeclarationKeyword = true; // Output Port 표시용
+  }
 
   // 선언 이름 추출 및 glow 표시
   if (ts.isVariableStatement(node)) {

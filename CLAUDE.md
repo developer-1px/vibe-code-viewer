@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **DO NOT use regular expressions for code parsing or analysis.**
 
 When analyzing JavaScript/TypeScript/Vue/React code:
-- ✅ **ALWAYS use `@babel/parser`** for JavaScript/TypeScript expressions
+- ✅ **ALWAYS use TypeScript Compiler API** (`typescript` package) for all code parsing
 - ✅ **ALWAYS use `@vue/compiler-sfc`** AST for Vue templates
 - ✅ **ALWAYS use AST-based position information** for token highlighting
 - ❌ **NEVER use regex patterns** like `/\w+/g`, `match()`, `split()` for code analysis
@@ -19,349 +19,220 @@ When analyzing JavaScript/TypeScript/Vue/React code:
 
 **If you find yourself writing regex for code analysis, STOP and use the proper parser instead.**
 
-See `/docs/정규식_분석_보고서.md` for detailed rationale.
-
 ---
 
 ## Project Overview
 
-**Vibe Code Viewer** - A developer tool that visualizes variable dependencies and logic pipelines in Vue.js and React components using D3.js force-directed graphs. The tool parses Vue SFC (Single File Components), React TSX files, and TypeScript files to create an interactive dependency graph.
-
-**Key Vision**: See `/docs/프로젝트_활용방안_및_비전.md` for detailed use cases and future roadmap.
+**Vibe Code Viewer** - A developer tool that visualizes file dependencies and code structure in Vue.js and React projects. The tool parses Vue SFC (Single File Components), React TSX files, and TypeScript files to create an interactive dependency graph using custom tree-based layout (not D3 force simulation).
 
 ## Development Commands
 
 - `npm install` - Install dependencies
-- `npm run dev` - Start development server
+- `npm run dev` - Start development server (port 5173)
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 
 ## Architecture
 
-### Dual Framework Support
+### Framework Support
 
 The application supports **both Vue 3 and React 19** projects:
-- **Vue**: Uses `@vue/compiler-sfc` to parse `.vue` files (script setup + template)
-- **React**: Uses `@babel/parser` with JSX plugin to parse `.tsx` files
-- **Shared**: TypeScript/JavaScript parsing via `@babel/parser` for both frameworks
+- **All code parsing**: TypeScript Compiler API (`typescript` package)
+- **Vue templates**: `@vue/compiler-sfc` for template section extraction
+- **Script extraction**: Vue files have their `<script>` content extracted before parsing
 
 ### State Management - Jotai Atoms
 
-The application uses **Jotai** for global state management instead of prop drilling:
+The application uses **Jotai** for global state management. See `CONVENTIONS.md` for full details on the "no props drilling" pattern.
 
-**Core Atoms** (`src/store/atoms.ts`):
+**Key Atoms** (`src/store/atoms.ts`):
 - `filesAtom` - Virtual file system (Record<string, string>)
-- `activeFileAtom` - Currently selected file in editor
 - `entryFileAtom` - Entry point for parsing
-- `isSidebarOpenAtom` - Sidebar visibility state
-- `graphDataAtom` - Parsed dependency graph
-- `parseErrorAtom` - Parser error messages
-- `layoutNodesAtom` - D3 layout-computed node positions
-- `layoutLinksAtom` - Layout-computed edges between nodes
-- `fullNodeMapAtom` - Map of all nodes by ID
-- `templateRootIdAtom` - Root template/JSX node ID
-- `transformAtom` - Canvas transform state (zoom/pan)
-- `visibleNodeIdsAtom` - Set of nodes to display (filtering)
-- `lastExpandedIdAtom` - Last expanded node for navigation
+- `graphDataAtom` - Parsed dependency graph (SourceFileNode[])
+- `layoutNodesAtom` - Computed layout positions (CanvasNode[])
+- `visibleNodeIdsAtom` - Set of nodes to display
+- `transformAtom` - Canvas zoom/pan state
+- `foldedLinesAtom` - Code folding state per node
+- `searchModalOpenAtom` - Unified search modal (Shift+Shift)
 
-**Architecture Pattern**: Feature components use atoms directly instead of receiving props from parent:
-```typescript
-// ✅ Modern pattern (Jotai)
-const ResetFilesButton = () => {
-  const setFiles = useSetAtom(filesAtom);
-  // Direct atom access, no props needed
-};
+**Architecture Pattern**: Feature components access atoms directly instead of receiving handlers via props. Data props are allowed, handler props are forbidden. See `CONVENTIONS.md` for the complete ruleset.
 
-// ❌ Old pattern (Prop drilling)
-const ResetFilesButton = ({ onReset }: { onReset: () => void }) => {
-  // Props passed down from App.tsx
-};
-```
+### File-Based Parser (`services/tsParser/`)
 
-### Core Parsing Pipeline
+The parser creates **one SourceFileNode per file** with TypeScript Compiler API:
 
-The application uses a **dual-parser architecture** with a multi-stage pipeline:
+**Main Entry**: `services/tsParser/index.ts` → `parseProject()`
 
-#### Standard Parser (`services/parser/`)
-Main entry: `services/parser/parseProject.ts` - 7-step processing pipeline per file:
+**Processing Steps**:
+1. **File Processing** - Each file becomes one node with `id = filePath`
+2. **Vue Extraction** - Extract `<script>` section from `.vue` files
+3. **TypeScript Parsing** - Create `ts.SourceFile` via `ts.createSourceFile()`
+4. **Import Resolution** - Extract imports, recursively process imported files
+5. **Dependency Caching** - Store computed dependencies in `SourceFileNode.dependencies`
 
-1. **Import Scanning** - Process imports, recursively parse imported files, create import nodes
-2. **Declaration Processing** - Scan top-level declarations (variables, functions, classes)
-3. **Initial Dependency Resolution** - Link nodes to their dependencies via AST traversal
-4. **Return Statement Extraction** - Extract return statements, create function-local variable nodes
-5. **Secondary Dependency Resolution** - Resolve dependencies for function-local variables
-6. **Template/JSX Processing** - Handle Vue templates or React JSX
-7. **File Root Creation** - Create FILE_ROOT for pure TypeScript files
+**Key Utilities**:
+- `utils/languageService.ts` - Creates TypeScript Language Service for identifier resolution
+- `utils/vueExtractor.ts` - Extracts script/template from Vue SFC
+- `utils/pathResolver.ts` - Resolves relative/alias imports
+- `entities/SourceFileNode/lib/getters.ts` - `getDependencies()` extracts import paths from AST
 
-**Key Modules**:
-- `core/` - Core processing (importScanner, declarationProcessor, expressionProcessor, dependencyResolver, returnStatementExtractor, defaultExport)
-- `processors/` - File-type specific (vueProcessor, templateProcessor, jsxProcessor, fileRootProcessor, reactComponentProcessor)
-- `ast/` - AST analysis (returnExtractor, localReferenceExtractor, hooksDetector, tokenExtractor)
-- `utils/` - Analysis utilities (purityChecker, mutabilityChecker)
-
-#### Functional Parser (`services/functionalParser/`)
-Specialized parser for pure TypeScript files focusing on:
-- **Functional Programming Analysis** - Identifying pure vs impure functions
-- **External Dependencies Only** - Highlights imports and closures, excludes local variables
-- **DFS Traversal** - Depth-first scope tracking with closure detection
-- **Non-Component Code** - Optimized for utility functions and business logic
-
-See `/docs/PARSER_ARCHITECTURE.md` and `/docs/FUNCTIONAL_PARSER.md` for detailed technical documentation.
-
-### Framework Primitives Filtering
-
-The parser **automatically excludes** React and Vue framework primitives to reduce noise:
-
-**React Primitives** (lines 11-16 in ProjectParser.ts):
-```typescript
-const REACT_PRIMITIVES = new Set([
-  'useState', 'useEffect', 'useContext', 'useReducer', 'useCallback',
-  'useMemo', 'useRef', 'useImperativeHandle', 'useLayoutEffect', 'useDebugValue',
-  'useDeferredValue', 'useTransition', 'useId', 'useSyncExternalStore', 'useInsertionEffect'
-]);
-```
-
-**Vue Primitives** (lines 18-22 in ProjectParser.ts):
-```typescript
-const VUE_PRIMITIVES = new Set([
-  'ref', 'reactive', 'computed', 'watch', 'watchEffect', 'toRef', 'toRefs',
-  'unref', 'isRef', 'shallowRef', 'triggerRef', 'customRef', 'shallowReactive',
-  'readonly', 'shallowReadonly', 'toRaw', 'markRaw', 'effectScope', 'getCurrentScope',
-  'onScopeDispose', 'onMounted', 'onUpdated', 'onUnmounted', 'onBeforeMount',
-  'onBeforeUpdate', 'onBeforeUnmount', 'onErrorCaptured', 'onRenderTracked',
-  'onRenderTriggered', 'onActivated', 'onDeactivated', 'onServerPrefetch',
-  'provide', 'inject', 'defineComponent', 'defineAsyncComponent', 'resolveComponent',
-  'getCurrentInstance', 'h', 'createVNode', 'cloneVNode', 'mergeProps', 'isVNode',
-  'nextTick', 'defineProps', 'defineEmits', 'defineExpose', 'withDefaults'
-]);
-```
-
-**Purpose**: Only show user-defined logic, not framework boilerplate.
+**Important**: The parser stores `ts.SourceFile` in each node. All analysis (token positions, identifiers, etc.) is done via getters that traverse the AST, not by duplicating data structures.
 
 ### Data Flow
 
 ```
-User edits code → filesAtom updated → parseProject() triggered → ProjectParser
-  → Graph nodes created → layoutNodesAtom computed → PipelineCanvas renders D3 visualization
+User uploads files → filesAtom updated → useGraphDataInit() → parseProject()
+  → SourceFileNode[] created → useCanvasLayout() computes positions
+  → layoutNodesAtom (CanvasNode[]) → PipelineCanvas renders
 ```
 
 ### Key Data Structures
 
-**VariableNode** (`entities/VariableNode/`): Represents a node in the dependency graph
-- `id`: Unique identifier (format: `filePath::localName`)
-- `label`: Display name
-- `filePath`: Source file path
-- `type`: Node category (`module`, `hook`, `computed`, `ref`, `call`, `function`, `template`, etc.)
-- `startLine`: Line number in source file (replaces old `sourceLineNum`)
-- `dependencies`: Array of node IDs this node depends on
-- `codeSnippet`: Extracted code snippet for display
-
-**GraphData**: Container for the parsed graph
+**SourceFileNode** (`entities/SourceFileNode/model/types.ts`):
 ```typescript
-{ nodes: VariableNode[] }
+interface SourceFileNode {
+  id: string;              // filePath
+  label: string;           // filename without extension
+  filePath: string;        // full file path
+  type: 'module';          // always 'module'
+  codeSnippet: string;     // full file content
+  startLine: number;       // always 1
+  sourceFile: ts.SourceFile;  // TypeScript AST
+  dependencies?: string[]; // cached import paths
+  vueTemplate?: string;    // Vue template section
+}
 ```
 
-**CanvasNode** (`entities/CanvasNode/`): VariableNode + layout information
-- Extends VariableNode with `x`, `y`, `level`, `visualId`, `isVisible` properties
-- Used by D3 force simulation for positioning
+**CanvasNode** (`entities/CanvasNode/model/types.ts`):
+- Extends SourceFileNode with layout properties: `x`, `y`, `level`, `visualId`, `isVisible`
+- Created by `useCanvasLayout()` custom tree algorithm
 
-### Component Architecture (Feature-Based)
+### Component Architecture (Feature-Sliced Design)
 
-**Feature Components** (`src/features/`):
-- `FileUpload/` - UploadFolderButton (upload local projects)
-- `ResetFiles/` - ResetFilesButton (reset to default examples)
+The codebase follows **Feature-Sliced Design (FSD)** - see `CONVENTIONS.md` for detailed layer rules.
 
-**Widget Components** (`src/widgets/`):
-- `Sidebar/` - Code editor interface with file tabs
-  - `FileExplorer.tsx` - File tree navigation
-  - `Editor.tsx` - Monaco-style code editor
-- `PipelineCanvas/` - D3.js visualization container
-  - `useCanvasLayout.ts` - Custom layout algorithm (NOT D3 force, manual tree layout)
-  - `useD3Zoom.ts` - Pan and zoom behavior
-  - `CanvasConnections.tsx` - Renders dependency arrows between nodes
-  - `CanvasBackground.tsx` - Grid background
-  - `NodeCard.tsx` - Individual node rendering with code snippets
+**Key Layers**:
+- `entities/` - Domain models (SourceFileNode, CanvasNode, CodeSegment)
+- `features/` - Business features (CodeFold, FocusMode, UnifiedSearch, File actions)
+- `widgets/` - Complex UI (Sidebar, PipelineCanvas, CodeCard)
+- `services/` - External services (tsParser, codeParser, searchService)
+- `store/` - Global Jotai atoms
 
-**Entity Components** (`src/entities/`):
-- `VariableNode/` - Core node type definitions
-- `CanvasNode/` - Layout-enhanced node type
-
-**Application Root**:
-- `App.tsx` - Main container, bootstraps Jotai provider
-- `index.tsx` - React entry point
+**Important Conventions** (from `CONVENTIONS.md`):
+1. **No barrel exports** - Direct imports only, no `index.ts` re-exports
+2. **No props drilling** - Data via props, handlers via atoms
+3. **Inline props types** - No separate interfaces for component props
+4. **AST parsing only** - Never use regex for code analysis
 
 ### Virtual File System
 
-The app operates on an in-memory file system:
-- `DEFAULT_FILES` (in `constants.ts`): Hardcoded example files loaded via `loadExampleFiles()`
-- `DEFAULT_ENTRY_FILE`: Starting point for parsing (`examples/react/App.tsx`)
-- Files can be edited in the UI and changes trigger re-parsing
-
-**Examples included**:
-- `examples/vue/` - Vue 3 example (App.vue, UserList.vue, UserCard.vue, useUsers.ts)
-- `examples/react/` - React 19 example (App.tsx, UserList.tsx, UserCard.tsx, useUsers.ts)
-
-### Template and JSX Analysis
-
-**Vue Template Parsing** (in `ProjectParser.ts`):
-- Extracts component usage from `<template>` section
-- Creates special `TEMPLATE_ROOT` node representing the template
-- Links template component references to script imports
-- Tracks which components are actually used vs just imported
-
-**React JSX Parsing** (lines 106-185 in `ProjectParser.ts`):
-- Extracts JSX snippets from function component returns
-- Creates special `JSX_ROOT` node representing the component's JSX tree
-- Identifies component usage within JSX (PascalCase identifiers)
-- Links JSX component references to imports
-- Handles both `return (...)` and `return <div>...</div>` patterns
-
-**Root Node Logic**:
-- `.vue` files → `TEMPLATE_ROOT` node
-- `.tsx` files → `JSX_ROOT` node
-- `.ts`/`.js` files → `FILE_ROOT` node
-- Root selection priority checked in `useCanvasLayout.ts` (lines 43-56)
-
-## Important Technical Details
-
+The app operates on an in-memory file system stored in `filesAtom`:
+- `DEFAULT_FILES` (loaded from `app/libs/loadExamples.ts`)
+- `DEFAULT_ENTRY_FILE`: Entry point for parsing
+- Users can upload local folders via `UploadFolderButton`
 ### Custom Layout Algorithm
 
-**NOT using D3 force simulation** - Instead uses custom tree-based layout:
+**NOT using D3 force simulation** - Uses custom tree-based layout algorithm in `widgets/PipelineCanvas/useCanvasLayout.ts`:
 
-**Algorithm** (`src/widgets/PipelineCanvas/useCanvasLayout.ts`):
-1. **Build Visual Tree** (lines 114-206): Creates hierarchical tree from dependency graph
-2. **Compute Heights** (lines 212-225): Calculate subtree heights for balanced layout
-3. **Assign Coordinates** (lines 233-256): Position nodes in LTR (left-to-right) tree layout
+**Algorithm Steps**:
+1. **Build Visual Tree** (lines 111-203): Creates hierarchical tree from dependency graph
+   - Skips nodes with empty code snippets (virtual intermediate nodes)
+   - Sorts dependencies by weighted category (imports → local logic → functions → components)
+2. **Compute Heights** (lines 209-222): Calculate subtree heights for balanced layout
+3. **Assign Coordinates** (lines 230-253): Position nodes in LTR (left-to-right) tree layout
    - X: Negative values, level-based (`-(level * LEVEL_SPACING)`)
    - Y: Centered based on subtree height
+4. **Handle Orphans**: Visible nodes not in tree are placed to the right
 
-**Node Sorting** (lines 92-111): Weighted category ordering:
-- Imports (non-component utilities) → top (weight: 0)
-- Local logic (ref, computed, store, hook) → middle (weight: 1-4)
-- Functions → lower middle (weight: 10)
-- Components/Templates → bottom (weight: 25-30)
+**Node Sorting** (lines 97-108): Weighted category ordering
+```typescript
+case 'ref': return 1;
+case 'computed': return 2;
+case 'store': return 3;
+case 'hook': return 4;
+case 'call': return 5;
+case 'function': return 10;
+case 'template': return 30; // Always at bottom
+```
 
-### Path Alias Configuration
+### Code Rendering System
 
-- `@/*` maps to `./src/*` (configured in `vite.config.ts` and `tsconfig.json`)
-- The parser must handle various import formats:
-  - Relative: `./component.vue`, `../utils.ts`, `./UserCard`
-  - Alias: `@/components/Button.vue`
-  - Extension-less: `./useUsers` (resolved to `.ts` or `.tsx`)
+The app displays code with **interactive tokens** (clickable identifiers):
 
-### Parser Node Types
+**Token Extraction** (`entities/SourceFileNode/lib/tokenUtils.ts`):
+- Uses TypeScript Scanner API to extract all tokens from `ts.SourceFile`
+- Returns position-based tokens (line, column, text, syntaxKind)
 
-The parser categorizes variables into functional programming-aware types:
+**Segment Building** (`entities/CodeRenderer/lib/segmentUtils.ts`):
+- Converts tokens into `CodeSegment[]` with semantic types
+- Types: `dependency` (imported identifiers), `local` (local variables), `static` (keywords/literals)
 
-**Pure/Immutable (Calculations)**:
-- `pure-function`: Pure functions with no side effects, state hooks, or mutations
-- `immutable-data`: Constants with immutable values (primitives, literals)
-- `computed`: Memoized/computed values (useMemo, useCallback)
+**Interactive Features**:
+- Click dependency token → expand that file's code card
+- Click local token → highlight all usages in Focus Mode
+- Fold/unfold code blocks via `CodeFold` feature
 
-**State Management (State Actions)**:
-- `state-ref`: State value references (first element of useState/useReducer destructuring)
-- `state-action`: State mutation functions (setters, dispatch functions)
-- `mutable-ref`: Mutable references (useRef)
-- `ref`: Generic references (legacy, backward compatibility)
+### Key Keyboard Shortcuts
 
-**Side Effects (Effect Actions)**:
-- `effect-action`: Functions with side effects or effect hooks
-- `hook`: Custom hooks (complex logic, assumed impure by default)
-
-**Structural**:
-- `template`: Templates/JSX (TEMPLATE_ROOT, JSX_ROOT)
-- `module`: Imports/exports/FILE_ROOT
-- `call`: Top-level function calls
-- `function`: Generic functions (legacy, re-classified during analysis)
-- `store`: State store references (storeToRefs)
-
-See `/docs/PARSER_ARCHITECTURE.md` section 2 for detailed node creation conditions.
+- `Cmd/Ctrl + \` - Toggle sidebar
+- `Shift + Shift` (double-tap) - Open unified search modal
+- File Explorer: Arrow keys + Enter for navigation
 
 ## Project Structure
 
 ```
-/
-├── src/
-│   ├── App.tsx                     # Main application container
-│   ├── index.tsx                   # React entry point
-│   ├── constants.ts                # Default example files
-│   ├── types.ts                    # Shared type definitions
-│   ├── store/
-│   │   └── atoms.ts                # Jotai global state atoms
-│   ├── features/                   # Feature components (Jotai-connected)
-│   │   ├── FileUpload/
-│   │   └── ResetFiles/
-│   ├── widgets/                    # Complex UI widgets
-│   │   ├── Sidebar/
-│   │   │   ├── Sidebar.tsx
-│   │   │   ├── FileExplorer.tsx
-│   │   │   └── Editor.tsx
-│   │   └── PipelineCanvas/         # D3 visualization components
-│   │       ├── PipelineCanvas.tsx
-│   │       ├── useCanvasLayout.ts  # Custom layout algorithm
-│   │       ├── useD3Zoom.ts
-│   │       ├── CanvasConnections.tsx
-│   │       ├── CanvasBackground.tsx
-│   │       └── NodeCard.tsx
-│   ├── services/
-│   │   ├── codeParser.ts           # Public parsing API (parseProject)
-│   │   ├── parser/                 # Standard parser (React/Vue components)
-│   │   │   ├── parseProject.ts     # Main entry point (7-step pipeline)
-│   │   │   ├── core/               # Core processors
-│   │   │   ├── processors/         # File-type processors
-│   │   │   ├── ast/                # AST analysis utilities
-│   │   │   └── utils/              # Purity & mutability checkers
-│   │   └── functionalParser/       # Functional parser (TypeScript utilities)
-│   │       ├── index.ts            # Functional thinking analysis
-│   │       ├── core/               # DFS traversal & function analyzer
-│   │       └── utils/              # Scope tracking & closure detection
-│   ├── entities/                   # Domain entities
-│   │   ├── VariableNode/           # Graph node entity
-│   │   └── CanvasNode/             # Layout-enhanced node
-│   ├── utils/
-│   │   └── loadExamples.ts         # Hardcoded example files
-│   └── examples/                   # Example projects
-│       ├── vue/                    # Vue 3 example
-│       │   ├── App.vue
-│       │   ├── UserList.vue
-│       │   ├── UserCard.vue
-│       │   └── useUsers.ts
-│       └── react/                  # React 19 example
-│           ├── App.tsx
-│           ├── UserList.tsx
-│           ├── UserCard.tsx
-│           └── useUsers.ts
-├── docs/                           # Documentation
-│   ├── PARSER_ARCHITECTURE.md      # Comprehensive parser technical docs
-│   ├── FUNCTIONAL_PARSER.md        # Functional parser documentation
-│   ├── 프로젝트_활용방안_및_비전.md  # Project vision and use cases
-│   ├── 정규식_분석_보고서.md        # Regex analysis report (why AST > regex)
-│   └── 경쟁사_분석_보고서.md        # Competitor analysis
-└── CLAUDE.md                       # This file
+src/
+├── App.tsx                       # Main container
+├── main.tsx                      # React entry point
+├── store/atoms.ts                # Jotai global state
+├── constants.ts                  # Default files
+├── app/libs/loadExamples.ts      # Example file loader
+├── services/
+│   ├── codeParser.ts             # Public API
+│   └── tsParser/                 # TypeScript parser
+│       ├── index.ts              # parseProject()
+│       └── utils/                # Path resolver, Vue extractor, LanguageService
+├── entities/
+│   ├── SourceFileNode/           # File node model
+│   │   ├── model/types.ts        # SourceFileNode interface
+│   │   └── lib/                  # getters, tokenUtils, lineUtils
+│   ├── CanvasNode/               # Layout node model
+│   ├── CodeSegment/              # Code token model
+│   └── CodeRenderer/             # Rendering utilities
+├── features/
+│   ├── CodeFold/                 # Code folding logic
+│   ├── FocusMode/                # Local variable highlighting
+│   ├── UnifiedSearch/            # Shift+Shift search
+│   └── File/                     # File/symbol navigation
+├── widgets/
+│   ├── Sidebar/                  # File explorer + code view
+│   │   ├── Sidebar.tsx
+│   │   ├── FileExplorer.tsx
+│   │   └── FolderView.tsx
+│   ├── PipelineCanvas/           # Canvas rendering
+│   │   ├── PipelineCanvas.tsx
+│   │   ├── useCanvasLayout.ts    # Custom tree layout
+│   │   ├── useD3Zoom.ts          # Pan/zoom
+│   │   ├── CanvasCodeCard.tsx
+│   │   └── CanvasConnections.tsx
+│   ├── CodeCard/                 # Code card UI
+│   │   ├── CodeCard.tsx
+│   │   └── ui/                   # Line, segment, token renderers
+│   └── MainContent/Header.tsx
+└── hooks/useGraphData.ts         # Parse trigger
 ```
 
-## Development Notes
+## Important Technical Notes
 
-### Parser Selection
-- **Pure TypeScript files** (`.ts`, non-component): Uses Functional Parser for external dependency analysis
-- **Vue files** (`.vue`): Uses Standard Parser with Vue template analysis
-- **React files** (`.tsx`): Uses Standard Parser with JSX analysis
-- **Fallback**: If Functional Parser fails, falls back to Standard Parser
+- **TypeScript AST as source of truth**: All code analysis uses `ts.SourceFile`, never regex
+- **Getter-based architecture**: Data is extracted on-demand from AST, not duplicated
+- **Feature-Sliced Design**: Strict layer separation (entities → features → widgets)
+- **No barrel exports**: Always import from exact file paths
+- **Inline component props**: No separate prop interfaces
+- **Atom-based handlers**: Feature components access atoms directly, not via props
 
-### Key Implementation Details
-- The parser builds a dependency graph where edges represent "depends on" relationships
-- Error handling: If parsing fails, the UI maintains last valid graph (stored in `parseErrorAtom`)
-- The custom layout algorithm automatically positions nodes in a hierarchical tree structure
-- Framework primitives (useState, ref, etc.) are automatically filtered out via `constants.ts`
-- JSX snippets are extracted from React component returns for visualization
-- Vue templates are analyzed for component usage and linked to imports
-- Both Vue and React examples are included for testing and demonstration
-- Purity analysis uses whitelisting (pure methods) and blacklisting (side effects)
-- Mutability detection tracks array mutations, object mutations, and reassignments
+## Reference Documentation
 
-### Important Files to Reference
-- `/docs/PARSER_ARCHITECTURE.md` - Deep dive into 7-step pipeline, node types, classification systems
-- `/docs/FUNCTIONAL_PARSER.md` - Functional parser API, scope tracking, external dependencies
-- `src/services/parser/constants.ts` - Framework primitive lists (React/Vue hooks to filter)
-- `src/services/parser/utils/purityChecker.ts` - Pure function classification logic
-- `src/services/parser/utils/mutabilityChecker.ts` - Mutation detection logic
+- `CONVENTIONS.md` - Complete coding conventions (FSD, no barrel exports, AST-only parsing)
+- `README.md` - Project setup and AI Studio integration
+- TypeScript Compiler API docs for AST traversal patterns

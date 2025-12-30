@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
-import { FileCode as IconFileCode } from 'lucide-react';
+import { FileCode as IconFileCode, ChevronRight, ChevronLeft } from 'lucide-react';
 import { filesAtom, isSidebarOpenAtom } from '../../store/atoms';
 import ResetFilesButton from '../../features/ResetFilesButton';
 import FolderView from './FolderView';
 
 export const Sidebar: React.FC = () => {
   const files = useAtomValue(filesAtom);
-  const [isSidebarOpen] = useAtom(isSidebarOpenAtom);
+  const [isSidebarOpen, setIsSidebarOpen] = useAtom(isSidebarOpenAtom);
   const [width, setWidth] = useState(300);
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -37,14 +37,52 @@ export const Sidebar: React.FC = () => {
     };
   }, [isResizing]);
 
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isSidebarOpen &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target as Node)
+      ) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    if (isSidebarOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSidebarOpen, setIsSidebarOpen]);
+
+  if (!isSidebarOpen) {
+    return null;
+  }
+
   return (
     <div
       ref={sidebarRef}
-      className={`absolute top-0 left-0 h-full bg-vibe-panel border-r border-vibe-border flex flex-col select-none shadow-2xl z-50 transition-transform duration-300 ${
-        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}
+      className="absolute top-0 left-0 h-full bg-vibe-panel border-r border-vibe-border flex flex-col select-none shadow-2xl z-50 transition-transform duration-200 ease-out"
       style={{ width: `${width}px` }}
     >
+      {/* Header with Close Button */}
+      <div className="p-2 border-b border-vibe-border flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <IconFileCode className="w-3 h-3" />
+          <span className="font-semibold">FILES</span>
+        </div>
+        <button
+          onClick={() => setIsSidebarOpen(false)}
+          className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
+          title="Close (or click outside)"
+        >
+          <ChevronLeft className="w-3 h-3" />
+        </button>
+      </div>
+
       {/* Folder View */}
       <FolderView files={files} />
 

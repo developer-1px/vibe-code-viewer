@@ -4,6 +4,7 @@ import { useSetAtom } from 'jotai';
 import Sidebar from './widgets/Sidebar/Sidebar';
 import Header from './widgets/MainContent/Header.tsx';
 import PipelineCanvas from './widgets/PipelineCanvas.tsx';
+import LeftSideToolbar from './widgets/LeftSideToolbar/LeftSideToolbar';
 import JotaiDevTools from './widgets/JotaiDevTools/JotaiDevTools';
 import { isSidebarOpenAtom, searchModalOpenAtom } from './store/atoms';
 import { useGraphDataInit } from './hooks/useGraphData';
@@ -48,17 +49,23 @@ const App: React.FC = () => {
   }, [setIsSidebarOpen, setSearchModalOpen]);
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-vibe-dark text-slate-200 font-sans">
-      {/* Top Header */}
-      <Header />
+    <div className="flex h-screen w-screen overflow-hidden bg-vibe-dark text-slate-200 font-sans">
+      {/* Left Icon Tab Bar */}
+      <LeftSideToolbar />
 
-      {/* Main Layout: Canvas with Floating Sidebar */}
-      <div className="flex-1 relative overflow-hidden bg-[#0f172a]">
-        {/* Canvas Area - Full Width */}
-        <PipelineCanvas />
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Header */}
+        <Header />
 
-        {/* Floating Sidebar - Overlay on Canvas */}
-        <Sidebar />
+        {/* Main Layout: Canvas with Floating Sidebar */}
+        <div className="flex-1 relative overflow-hidden bg-[#0f172a]">
+          {/* Canvas Area */}
+          <PipelineCanvas />
+
+          {/* Floating Sidebar */}
+          <Sidebar />
+        </div>
       </div>
 
       {/* Jotai DevTools */}

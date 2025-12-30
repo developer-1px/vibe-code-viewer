@@ -4,6 +4,82 @@
 import * as ts from 'typescript';
 import type { DefinitionLocation } from '../model/types';
 
+// Cache Language Services by file path to avoid recreating them for every identifier
+// Key: filePath, Value: { languageService, sourceFile, code }
+const languageServiceCache = new Map<string, {
+  languageService: ts.LanguageService;
+  sourceFile: ts.SourceFile;
+  code: string;
+}>();
+
+/**
+ * Get or create a cached Language Service for a file
+ */
+function getOrCreateLanguageService(code: string, filePath: string, isTsx: boolean) {
+  // Check if we have a cached service for this file with the same code
+  const cached = languageServiceCache.get(filePath);
+  if (cached && cached.code === code) {
+    return cached;
+  }
+
+  // Create new source file
+  const sourceFile = ts.createSourceFile(
+    isTsx ? 'temp.tsx' : 'temp.ts',
+    code,
+    ts.ScriptTarget.Latest,
+    true,
+    isTsx ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+  );
+
+  // Create a minimal language service host
+  const host: ts.LanguageServiceHost = {
+    getScriptFileNames: () => [sourceFile.fileName],
+    getScriptVersion: () => '0',
+    getScriptSnapshot: (fileName) => {
+      if (fileName === sourceFile.fileName) {
+        return ts.ScriptSnapshot.fromString(code);
+      }
+      return undefined;
+    },
+    getCurrentDirectory: () => '/',
+    getCompilationSettings: () => ({
+      target: ts.ScriptTarget.Latest,
+      module: ts.ModuleKind.ESNext,
+      jsx: isTsx ? ts.JsxEmit.React : undefined,
+      allowJs: true,
+      strict: false,
+    }),
+    getDefaultLibFileName: () => 'lib.d.ts', // Browser-safe: return dummy lib file name
+    fileExists: () => true,
+    readFile: () => undefined,
+    readDirectory: () => [],
+    directoryExists: () => true,
+    getDirectories: () => [],
+  };
+
+  // Create language service
+  const languageService = ts.createLanguageService(host);
+
+  // Cache it
+  const cacheEntry = { languageService, sourceFile, code };
+  languageServiceCache.set(filePath, cacheEntry);
+
+  // Limit cache size to prevent memory leaks (keep last 50 files)
+  if (languageServiceCache.size > 50) {
+    const firstKey = languageServiceCache.keys().next().value;
+    languageServiceCache.delete(firstKey);
+  }
+
+  return cacheEntry;
+}
+
+/**
+ * Clear the Language Service cache (useful when files change)
+ */
+export function clearLanguageServiceCache() {
+  languageServiceCache.clear();
+}
+
 /**
  * TypeScript Language Service를 사용하여 identifier의 정의 위치를 찾습니다
  */
@@ -14,43 +90,8 @@ export function findDefinitionLocation(
   isTsx: boolean
 ): DefinitionLocation | null {
   try {
-    // Create source file
-    const sourceFile = ts.createSourceFile(
-      isTsx ? 'temp.tsx' : 'temp.ts',
-      code,
-      ts.ScriptTarget.Latest,
-      true,
-      isTsx ? ts.ScriptKind.TSX : ts.ScriptKind.TS
-    );
-
-    // Create a minimal language service host
-    const host: ts.LanguageServiceHost = {
-      getScriptFileNames: () => [sourceFile.fileName],
-      getScriptVersion: () => '0',
-      getScriptSnapshot: (fileName) => {
-        if (fileName === sourceFile.fileName) {
-          return ts.ScriptSnapshot.fromString(code);
-        }
-        return undefined;
-      },
-      getCurrentDirectory: () => '/',
-      getCompilationSettings: () => ({
-        target: ts.ScriptTarget.Latest,
-        module: ts.ModuleKind.ESNext,
-        jsx: isTsx ? ts.JsxEmit.React : undefined,
-        allowJs: true,
-        strict: false,
-      }),
-      getDefaultLibFileName: () => 'lib.d.ts', // Browser-safe: return dummy lib file name
-      fileExists: () => true,
-      readFile: () => undefined,
-      readDirectory: () => [],
-      directoryExists: () => true,
-      getDirectories: () => [],
-    };
-
-    // Create language service
-    const languageService = ts.createLanguageService(host);
+    // Get or create cached language service
+    const { languageService, sourceFile } = getOrCreateLanguageService(code, filePath, isTsx);
 
     // Get definition at position
     const definitions = languageService.getDefinitionAtPosition(
@@ -89,44 +130,14 @@ export function findDefinitionLocation(
  */
 export function getQuickInfoAtPosition(
   code: string,
+  filePath: string,
   position: number,
   isTsx: boolean
 ): string | null {
   try {
-    const sourceFile = ts.createSourceFile(
-      isTsx ? 'temp.tsx' : 'temp.ts',
-      code,
-      ts.ScriptTarget.Latest,
-      true,
-      isTsx ? ts.ScriptKind.TSX : ts.ScriptKind.TS
-    );
+    // Get or create cached language service
+    const { languageService, sourceFile } = getOrCreateLanguageService(code, filePath, isTsx);
 
-    const host: ts.LanguageServiceHost = {
-      getScriptFileNames: () => [sourceFile.fileName],
-      getScriptVersion: () => '0',
-      getScriptSnapshot: (fileName) => {
-        if (fileName === sourceFile.fileName) {
-          return ts.ScriptSnapshot.fromString(code);
-        }
-        return undefined;
-      },
-      getCurrentDirectory: () => '/',
-      getCompilationSettings: () => ({
-        target: ts.ScriptTarget.Latest,
-        module: ts.ModuleKind.ESNext,
-        jsx: isTsx ? ts.JsxEmit.React : undefined,
-        allowJs: true,
-        strict: false,
-      }),
-      getDefaultLibFileName: () => 'lib.d.ts', // Browser-safe: return dummy lib file name
-      fileExists: () => true,
-      readFile: () => undefined,
-      readDirectory: () => [],
-      directoryExists: () => true,
-      getDirectories: () => [],
-    };
-
-    const languageService = ts.createLanguageService(host);
     const quickInfo = languageService.getQuickInfoAtPosition(sourceFile.fileName, position);
 
     if (!quickInfo) {
