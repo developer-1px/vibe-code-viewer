@@ -85,6 +85,11 @@ export function extractAllSearchableItems(
     // Code snippet (파싱 결과에서 가져옴)
     const codeSnippet = metadata?.codeSnippet || node.codeSnippet;
 
+    // Export 여부 판별 (symbol인 경우만)
+    const isExported = !isFile && codeSnippet
+      ? /^\s*export\s+(default\s+)?(const|let|var|function|class|interface|type|enum)\s+/.test(codeSnippet)
+      : undefined;
+
     // 유니크 ID 생성: 파일은 경로, 심볼은 node.id 사용
     const uniqueId = isFile
       ? `file-${node.id}`
@@ -112,6 +117,7 @@ export function extractAllSearchableItems(
       typeInfo: metadata?.typeInfo || undefined,
       codeSnippet,
       usageCount: metadata?.usageCount || 0,
+      isExported,
     });
   });
 

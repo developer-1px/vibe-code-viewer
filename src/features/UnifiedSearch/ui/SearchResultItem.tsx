@@ -3,7 +3,7 @@
  */
 
 import React, { forwardRef } from 'react';
-import { File, Folder, Code2, Database, Zap, Calculator, Shield, Box, Eye } from 'lucide-react';
+import { File, Folder, Code2, Database, Zap, Calculator, Shield, Box, Eye, Upload } from 'lucide-react';
 import type { SearchResult } from '../model/types';
 
 interface SearchResultItemProps {
@@ -26,6 +26,11 @@ export const SearchResultItem = forwardRef<HTMLDivElement, SearchResultItemProps
       // Usage: Eye icon (참조/사용) - 회색
       if (result.nodeType === 'usage') {
         return <Eye className="w-2.5 h-2.5 text-slate-400" />;
+      }
+
+      // Exported symbols: Upload icon - 주황색
+      if (result.isExported) {
+        return <Upload className="w-2.5 h-2.5 text-orange-400" />;
       }
 
       // Declaration icons - 녹색 계열로 통일

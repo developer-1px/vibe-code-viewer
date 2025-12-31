@@ -21,6 +21,7 @@ export interface SearchResult {
   typeInfo?: string; // TypeScript type information from Language Service
   codeSnippet?: string; // First line of code snippet
   usageCount?: number; // Number of places this symbol is used
+  isExported?: boolean; // Whether symbol is exported
 }
 
 // Symbol metadata cache (extracted once after parsing)
