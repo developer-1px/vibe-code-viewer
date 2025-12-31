@@ -7,6 +7,7 @@ import React from 'react';
 import { CanvasNode } from '../../entities/CanvasNode';
 import type { CodeLine as CodeLineType } from '../../entities/CodeRenderer/model/types';
 import CodeLine from './ui/CodeLine';
+import { useCodeTheme } from './config';
 
 interface CodeContentProps {
   processedLines: CodeLineType[];
@@ -15,8 +16,10 @@ interface CodeContentProps {
 }
 
 const CodeContent = ({ processedLines, node, foldRanges }: CodeContentProps) => {
+  const theme = useCodeTheme();
+
   return (
-    <div className="flex flex-col bg-[#0b1221] py-2">
+    <div className={`flex flex-col ${theme.colors.background} ${theme.spacing.containerY}`}>
       {processedLines.map((line) => {
         // Check for duplicate line numbers
         const duplicates = processedLines.filter(l => l.num === line.num);

@@ -4,6 +4,7 @@ import { useSetAtom, useAtomValue } from 'jotai';
 import { VariableNode } from '../../../entities/SourceFileNode/model/types';
 import { getSlotColor } from '../../../entities/SourceFileNode/lib/styleUtils';
 import { targetLineAtom, visibleNodeIdsAtom, lastExpandedIdAtom, layoutLinksAtom } from '../../../store/atoms';
+import { useCodeTheme } from '../config';
 
 const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine }: {
   tokenId: string;
@@ -12,6 +13,7 @@ const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine }: {
   depNode?: VariableNode;
   definitionLine?: number;
 }) => {
+  const theme = useCodeTheme();
   const setTargetLine = useSetAtom(targetLineAtom);
   const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
   const visibleNodeIds = useAtomValue(visibleNodeIdsAtom);
@@ -60,15 +62,15 @@ const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine }: {
   
   // Horizontal Position:
   // Move inside column (starting at 2px).
-  // Stagger multiple slots by 5px to avoid complete overlap while minimizing collision with line numbers.
-  const leftPos = 2 + (slotIdx * 5);
+  // Stagger multiple slots using theme spacing
+  const leftPos = 2 + (slotIdx * theme.dimensions.slotSpacing);
 
   // Border only shown when connected
   const borderClass = hasConnection ? 'border-2' : 'border-0';
 
   return (
     <div
-      className={`w-2 h-2 rounded-full absolute z-10 transition-all duration-300 ${borderClass} group-hover/line:scale-110 shadow-lg cursor-pointer hover:scale-125 ${slotColorClass}`}
+      className={`${theme.dimensions.slotSize} rounded-full absolute z-10 transition-all duration-300 ${borderClass} group-hover/line:scale-110 shadow-lg cursor-pointer hover:scale-125 ${slotColorClass}`}
       style={{ top: '6px', left: `${leftPos}px` }}
       data-input-slot-for={tokenId}
       data-input-slot-line={lineNum}

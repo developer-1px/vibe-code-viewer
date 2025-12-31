@@ -9,6 +9,7 @@ import FoldButton from '../../../features/CodeFold/ui/FoldButton';
 import FoldBadge from '../../../features/CodeFold/ui/FoldBadge';
 import { isLineInsideFold, isLineFolded, getFoldedCount } from '../../../features/CodeFold/lib';
 import { targetLineAtom, foldedLinesAtom } from '../../../store/atoms';
+import { useCodeTheme } from '../config';
 
 const CodeLine = ({
   line,
@@ -19,6 +20,7 @@ const CodeLine = ({
   node: CanvasNode;
   foldRanges: Array<{ start: number; end: number }>;
 }) => {
+  const theme = useCodeTheme();
   const targetLine = useAtomValue(targetLineAtom);
   const foldedLinesMap = useAtomValue(foldedLinesAtom);
   const lineRef = useRef<HTMLDivElement>(null);
@@ -69,8 +71,7 @@ const CodeLine = ({
       data-line-num={line.num}
     >
       {/* Line Number Column: Aligned text-right, fixed leading/padding to match code */}
-      {/* w-16 (64px) for line number + fold button space */}
-      <div className="flex-none w-16 pr-2 text-right select-none text-xs font-mono text-slate-600 border-r border-white/5 bg-[#0f172a]/50 leading-[1.15rem] py-0.5">
+      <div className={`flex-none ${theme.dimensions.lineNumberWidth} ${theme.spacing.lineNumberX} text-right select-none ${theme.typography.fontSize} ${theme.typography.fontFamily} ${theme.colors.lineNumber.text} border-r ${theme.colors.lineNumber.border} ${theme.colors.lineNumber.background} ${theme.typography.lineHeight} ${theme.spacing.lineY}`}>
         <div className="relative inline-block w-full flex items-center justify-end gap-1">
           {/* Render input slots for each dependency token in this line */}
           <CodeLineSlots line={line} />
@@ -87,8 +88,8 @@ const CodeLine = ({
         </div>
       </div>
 
-      {/* Code Content Column: leading-[1.15rem] (~18.4px) + py-0.5 (2px) = ~22.4px total height per line */}
-      <div className="flex-1 px-3 py-0.5 font-mono text-xs leading-[1.15rem] overflow-x-auto whitespace-pre-wrap break-words">
+      {/* Code Content Column */}
+      <div className={`flex-1 ${theme.spacing.lineX} ${theme.spacing.lineY} ${theme.typography.fontFamily} ${theme.typography.fontSize} ${theme.typography.lineHeight} overflow-x-auto whitespace-pre-wrap break-words`}>
         {line.segments.map((segment, segIdx) => (
           <CodeLineSegment
             key={segIdx}

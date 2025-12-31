@@ -11,12 +11,14 @@ import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, filesAtom } fr
 import { useAtomValue } from 'jotai';
 import type { CanvasNode } from '../../../entities/CanvasNode';
 import { extractTemplateComponents, extractTemplateVariables } from '../../../services/tsParser/utils/vueTemplateParser';
+import { useCodeTheme } from '../config';
 
 const VueTemplateSection = ({template, node, scriptEndLine }: {
   template: string;
   node: CanvasNode;
   scriptEndLine: number; // script 영역의 마지막 라인 번호
 }) => {
+  const theme = useCodeTheme();
   const setVisibleNodeIds = useSetAtom(visibleNodeIdsAtom);
   const fullNodeMap = useAtomValue(fullNodeMapAtom);
   const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
@@ -162,19 +164,19 @@ const VueTemplateSection = ({template, node, scriptEndLine }: {
           className="flex items-start"
         >
           {/* Line Number */}
-          <div className="flex-shrink-0 w-12 px-2 py-0.5 text-right text-xs text-slate-600 select-none font-mono">
+          <div className={`flex-shrink-0 ${theme.dimensions.lineNumberWidth} ${theme.spacing.lineNumberX} ${theme.spacing.lineY} text-right ${theme.typography.fontSize} ${theme.colors.lineNumber.text} select-none ${theme.typography.fontFamily}`}>
             {line.lineNum}
           </div>
 
           {/* Template Code with Clickable Tokens */}
-          <div className="flex-1 px-3 py-0.5 font-mono text-xs leading-5 overflow-x-auto whitespace-pre-wrap break-words">
+          <div className={`flex-1 ${theme.spacing.lineX} ${theme.spacing.lineY} ${theme.typography.fontFamily} ${theme.typography.fontSize} ${theme.typography.lineHeight} overflow-x-auto whitespace-pre-wrap break-words`}>
             {line.segments.map((seg, segIdx) => {
               if (seg.isClickable && seg.nodeId) {
                 return (
                   <span
                     key={segIdx}
                     onClick={(e) => handleTokenClick(seg.nodeId!, e)}
-                    className="inline-block px-0.5 rounded transition-all duration-200 select-text cursor-pointer border bg-slate-800/50 border-slate-700 text-emerald-300 hover:bg-white/10 hover:border-emerald-500/50"
+                    className={`inline-block px-0.5 rounded transition-all duration-200 select-text cursor-pointer border ${theme.colors.template.clickable.bg} ${theme.colors.template.clickable.border} ${theme.colors.template.clickable.text} ${theme.colors.template.clickable.hoverBg} ${theme.colors.template.clickable.hoverBorder}`}
                   >
                     {seg.text}
                   </span>
@@ -182,7 +184,7 @@ const VueTemplateSection = ({template, node, scriptEndLine }: {
               }
 
               return (
-                <span key={segIdx} className="text-slate-300 select-text">
+                <span key={segIdx} className={`${theme.colors.template.text} select-text`}>
                   {seg.text}
                 </span>
               );
