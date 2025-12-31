@@ -49,6 +49,43 @@ function extractIdentifiers(
 }
 
 /**
+ * Extract export information from source file using TypeScript AST
+ */
+function extractExportMap(files: Record<string, string>): Map<string, boolean> {
+  const exportMap = new Map<string, boolean>();
+
+  Object.entries(files).forEach(([filePath, content]) => {
+    try {
+      const sourceFile = ts.createSourceFile(
+        filePath,
+        content,
+        ts.ScriptTarget.Latest,
+        true
+      );
+
+      function visitNode(node: ts.Node) {
+        const isExported = !!(ts.getCombinedModifierFlags(node as ts.Declaration) & ts.ModifierFlags.Export);
+
+        if (isExported) {
+          const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+          const lineNumber = line + 1;
+          const key = `${filePath}:${lineNumber}`;
+          exportMap.set(key, true);
+        }
+
+        ts.forEachChild(node, visitNode);
+      }
+
+      visitNode(sourceFile);
+    } catch (e) {
+      // Skip files that fail to parse
+    }
+  });
+
+  return exportMap;
+}
+
+/**
  * Extract all searchable items (files + symbols + usages) from the node map
  * Parse each file only once
  */
@@ -60,15 +97,14 @@ export function extractAllSearchableItems(
   const results: SearchResult[] = [];
   const declaredSymbols = new Set<string>();
 
-  // 1. Extract declarations from fullNodeMap and collect symbol names
-  let fileCount = 0;
-  let symbolCount = 0;
+  // Extract export information from all files using TypeScript AST
+  const exportMap = extractExportMap(files);
 
+  // 1. Extract declarations from fullNodeMap and collect symbol names
   fullNodeMap.forEach((node) => {
-    // 파일 vs 심볼 구분 (먼저 체크)
     const isFile = !node.id.includes('::');
 
-    // Skip ROOT nodes (파서가 만든 메타 노드) - 파일이 아닌 경우만
+    // Skip ROOT nodes (parser metadata nodes)
     if (!isFile && (
       node.id.endsWith('::TEMPLATE_ROOT') ||
       node.id.endsWith('::JSX_ROOT') ||
@@ -77,28 +113,16 @@ export function extractAllSearchableItems(
       return;
     }
 
-    if (isFile) fileCount++;
-    else symbolCount++;
-
     const metadata = symbolMetadata.get(node.id);
-
-    // Code snippet (파싱 결과에서 가져옴)
     const codeSnippet = metadata?.codeSnippet || node.codeSnippet;
 
-    // Export 여부 판별 (symbol인 경우만)
-    const isExported = !isFile && codeSnippet
-      ? /^\s*export\s+(default\s+)?(const|let|var|function|class|interface|type|enum)\s+/.test(codeSnippet)
+    // Check export status using TypeScript AST-based export map
+    const isExported = !isFile && node.startLine
+      ? exportMap.get(`${node.filePath}:${node.startLine}`) || false
       : undefined;
 
-    // 유니크 ID 생성: 파일은 경로, 심볼은 node.id 사용
-    const uniqueId = isFile
-      ? `file-${node.id}`
-      : `symbol-${node.id}`;
-
-    // 파일명: 파일인 경우 확장자 포함, 심볼인 경우 label 그대로
-    const name = isFile
-      ? (node.filePath.split('/').pop() || node.filePath)
-      : node.label;
+    const uniqueId = isFile ? `file-${node.id}` : `symbol-${node.id}`;
+    const name = isFile ? (node.filePath.split('/').pop() || node.filePath) : node.label;
 
     // Collect declared symbol names for usage extraction
     if (!isFile) {
@@ -121,9 +145,9 @@ export function extractAllSearchableItems(
     });
   });
 
-  console.log(`[extractAllSearchableItems] Extracted ${fileCount} files, ${symbolCount} symbols from fullNodeMap`);
-
-  // 1.5. Add files and folders from virtual file system
+  // 2. Add orphaned files and folders from virtual file system
+  // filesInNodeMap: Track which files are in the dependency graph
+  // Orphaned files are files that exist in the project but are not imported/parsed
   const filesInNodeMap = new Set<string>();
   fullNodeMap.forEach(node => {
     if (!node.id.includes('::')) {
@@ -131,24 +155,9 @@ export function extractAllSearchableItems(
     }
   });
 
-  // Extract folders from file paths
-  const folderSet = new Set<string>();
-  Object.keys(files).forEach(filePath => {
-    const parts = filePath.split('/');
-    // Build all folder paths (e.g., "src", "src/widgets", "src/widgets/CodeCard")
-    for (let i = 1; i < parts.length; i++) {
-      const folderPath = parts.slice(0, i).join('/');
-      if (folderPath) {
-        folderSet.add(folderPath);
-      }
-    }
-  });
-
-  // Add orphaned files (not in dependency graph)
-  let orphanedFileCount = 0;
+  // Add files not in dependency graph
   Object.keys(files).forEach(filePath => {
     if (!filesInNodeMap.has(filePath)) {
-      orphanedFileCount++;
       const fileName = filePath.split('/').pop() || filePath;
       results.push({
         id: `file-${filePath}`,
@@ -160,7 +169,18 @@ export function extractAllSearchableItems(
     }
   });
 
-  // Add all folders
+  // Extract and add all folders
+  const folderSet = new Set<string>();
+  Object.keys(files).forEach(filePath => {
+    const parts = filePath.split('/');
+    for (let i = 1; i < parts.length; i++) {
+      const folderPath = parts.slice(0, i).join('/');
+      if (folderPath) {
+        folderSet.add(folderPath);
+      }
+    }
+  });
+
   folderSet.forEach(folderPath => {
     const folderName = folderPath.split('/').pop() || folderPath;
     results.push({
@@ -172,12 +192,7 @@ export function extractAllSearchableItems(
     });
   });
 
-  if (orphanedFileCount > 0) {
-    console.log(`[extractAllSearchableItems] Added ${orphanedFileCount} orphaned files not in dependency graph`);
-  }
-  console.log(`[extractAllSearchableItems] Added ${folderSet.size} folders`);
-
-  // 2. Parse each file once and extract all usages
+  // 3. Parse each file once and extract all usages
   Object.entries(files).forEach(([filePath, content]) => {
     try {
       const sourceFile = ts.createSourceFile(
@@ -188,18 +203,14 @@ export function extractAllSearchableItems(
       );
       const lines = content.split('\n');
 
-      // Extract all identifier usages from this file
       const usages = extractIdentifiers(filePath, sourceFile, lines, declaredSymbols);
       results.push(...usages);
     } catch (e) {
-      console.warn(`[extractAllSearchableItems] Failed to parse ${filePath}:`, e);
+      console.warn(`[symbolExtractor] Failed to parse ${filePath}:`, e);
     }
   });
 
-  const totalFiles = fileCount + orphanedFileCount;
-  console.log(`[extractAllSearchableItems] Total results: ${results.length} (${totalFiles} files [${fileCount} in graph + ${orphanedFileCount} orphaned] + ${folderSet.size} folders + ${symbolCount} symbols + usages)`);
-
-  // Remove duplicate usages (same file + same line as declaration)
+  // 4. Remove duplicate usages (same file + same line as declaration)
   const declarationKeys = new Set<string>();
   results.forEach(item => {
     if (item.type === 'symbol' && item.nodeType !== 'usage' && item.lineNumber) {
@@ -208,15 +219,11 @@ export function extractAllSearchableItems(
   });
 
   const deduped = results.filter(item => {
-    // Keep non-usages
     if (item.type !== 'symbol' || item.nodeType !== 'usage') return true;
 
-    // Remove usage if same file+line as declaration
     const key = `${item.filePath}:${item.lineNumber}`;
     return !declarationKeys.has(key);
   });
-
-  console.log(`[extractAllSearchableItems] After deduplication: ${deduped.length} (removed ${results.length - deduped.length} duplicate usages)`);
 
   // Sort by type priority: file > folder > symbol, then alphabetically
   return deduped.sort((a, b) => {
