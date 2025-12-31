@@ -1,0 +1,89 @@
+import React from 'react';
+import { ChevronDown, ChevronRight, Folder, FolderOpen } from 'lucide-react';
+
+interface FolderNode {
+  name: string;
+  path: string;
+  type: 'folder' | 'file';
+  children?: FolderNode[];
+  filePath?: string;
+}
+
+interface FolderItemViewProps {
+  node: FolderNode;
+  depth: number;
+  isCollapsed: boolean;
+  isFocused: boolean;
+  onFolderClick: (path: string) => void;
+  onFolderFocus: (path: string) => void;
+  renderChildren: (depth: number) => React.ReactNode;
+}
+
+const FolderItemView: React.FC<FolderItemViewProps> = ({
+  node,
+  depth,
+  isCollapsed,
+  isFocused,
+  onFolderClick,
+  onFolderFocus,
+  renderChildren
+}) => {
+  const paddingLeft = depth * 12 + 8;
+
+  const handleClick = () => {
+    // Single click - update focus
+    onFolderFocus(node.path);
+  };
+
+  const handleDoubleClick = () => {
+    // Double click - toggle folder
+    onFolderClick(node.path);
+  };
+
+  const handleChevronClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent folder focus
+    onFolderClick(node.path); // Toggle immediately
+  };
+
+  return (
+    <div>
+      {/* Folder Header */}
+      <div
+        onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
+        className={`flex items-center gap-1 py-0.5 px-2 text-[11px] cursor-pointer transition-colors group ${
+          isFocused
+            ? 'text-slate-100 bg-blue-900/20 border-l-2 border-blue-500'
+            : 'text-slate-300 border-l-2 border-transparent'
+        }`}
+        style={{ paddingLeft: `${paddingLeft}px` }}
+      >
+        {isCollapsed ? (
+          <ChevronRight
+            className="w-2.5 h-2.5 flex-shrink-0 text-slate-500"
+            onClick={handleChevronClick}
+          />
+        ) : (
+          <ChevronDown
+            className="w-2.5 h-2.5 flex-shrink-0 text-slate-500"
+            onClick={handleChevronClick}
+          />
+        )}
+        {isCollapsed ? (
+          <Folder className={`w-2.5 h-2.5 flex-shrink-0 ${isFocused ? 'text-blue-400' : 'text-blue-400/70'}`} />
+        ) : (
+          <FolderOpen className={`w-2.5 h-2.5 flex-shrink-0 ${isFocused ? 'text-blue-400' : 'text-blue-400/70'}`} />
+        )}
+        <span className="truncate font-medium">{node.name}</span>
+        {node.children && (
+          <span className="text-slate-600 text-[9px] ml-auto">({node.children.length})</span>
+        )}
+      </div>
+
+      {/* Folder Children */}
+      {renderChildren(depth + 1)}
+    </div>
+  );
+};
+
+export default FolderItemView;

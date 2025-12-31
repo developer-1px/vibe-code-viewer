@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **DO NOT use regular expressions for code parsing or analysis.**
 
-When analyzing JavaScript/TypeScript/Vue code:
-- ✅ **ALWAYS use `@babel/parser`** for JavaScript/TypeScript expressions
+When analyzing JavaScript/TypeScript/Vue/React code:
+- ✅ **ALWAYS use TypeScript Compiler API** (`typescript` package) for all code parsing
 - ✅ **ALWAYS use `@vue/compiler-sfc`** AST for Vue templates
 - ✅ **ALWAYS use AST-based position information** for token highlighting
 - ❌ **NEVER use regex patterns** like `/\w+/g`, `match()`, `split()` for code analysis
@@ -19,141 +19,220 @@ When analyzing JavaScript/TypeScript/Vue code:
 
 **If you find yourself writing regex for code analysis, STOP and use the proper parser instead.**
 
-See `/docs/정규식_분석_보고서.md` for detailed rationale.
-
 ---
 
 ## Project Overview
 
-**Vue Logic Visualizer** - A developer tool that visualizes variable dependencies and logic pipelines in Vue.js components using D3.js force-directed graphs. The tool parses Vue SFC (Single File Components) and TypeScript files to create an interactive dependency graph.
+**Vibe Code Viewer** - A developer tool that visualizes file dependencies and code structure in Vue.js and React projects. The tool parses Vue SFC (Single File Components), React TSX files, and TypeScript files to create an interactive dependency graph using custom tree-based layout (not D3 force simulation).
 
 ## Development Commands
 
 - `npm install` - Install dependencies
-- `npm run dev` - Start development server (runs on port 3000)
+- `npm run dev` - Start development server (port 5173)
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 
 ## Architecture
 
-### Core Parsing Pipeline
+### Framework Support
 
-The application uses a multi-stage parsing pipeline to analyze Vue projects:
+The application supports **both Vue 3 and React 19** projects:
+- **All code parsing**: TypeScript Compiler API (`typescript` package)
+- **Vue templates**: `@vue/compiler-sfc` for template section extraction
+- **Script extraction**: Vue files have their `<script>` content extracted before parsing
 
-1. **Entry Point**: `services/codeParser.ts` - Entry function `parseVueCode()`
-2. **Project Parser**: `services/parser/ProjectParser.ts` - Main orchestrator that:
-   - Processes files recursively starting from entry file
-   - Uses `@vue/compiler-sfc` to parse `.vue` files (extracts script and template)
-   - Uses `@babel/parser` to parse JavaScript/TypeScript AST
-   - Tracks imports/exports across files
-   - Builds dependency graph of variables, composables, and components
-3. **AST Utilities**: `services/parser/astUtils.ts` - Helper functions for traversing AST nodes
-4. **Path Resolution**: `services/parser/pathUtils.ts` - Resolves import paths and finds files in the virtual file system
+### State Management - Jotai Atoms
+
+The application uses **Jotai** for global state management. See `CONVENTIONS.md` for full details on the "no props drilling" pattern.
+
+**Key Atoms** (`src/store/atoms.ts`):
+- `filesAtom` - Virtual file system (Record<string, string>)
+- `entryFileAtom` - Entry point for parsing
+- `graphDataAtom` - Parsed dependency graph (SourceFileNode[])
+- `layoutNodesAtom` - Computed layout positions (CanvasNode[])
+- `visibleNodeIdsAtom` - Set of nodes to display
+- `transformAtom` - Canvas zoom/pan state
+- `foldedLinesAtom` - Code folding state per node
+- `searchModalOpenAtom` - Unified search modal (Shift+Shift)
+
+**Architecture Pattern**: Feature components access atoms directly instead of receiving handlers via props. Data props are allowed, handler props are forbidden. See `CONVENTIONS.md` for the complete ruleset.
+
+### File-Based Parser (`services/tsParser/`)
+
+The parser creates **one SourceFileNode per file** with TypeScript Compiler API:
+
+**Main Entry**: `services/tsParser/index.ts` → `parseProject()`
+
+**Processing Steps**:
+1. **File Processing** - Each file becomes one node with `id = filePath`
+2. **Vue Extraction** - Extract `<script>` section from `.vue` files
+3. **TypeScript Parsing** - Create `ts.SourceFile` via `ts.createSourceFile()`
+4. **Import Resolution** - Extract imports, recursively process imported files
+5. **Dependency Caching** - Store computed dependencies in `SourceFileNode.dependencies`
+
+**Key Utilities**:
+- `utils/languageService.ts` - Creates TypeScript Language Service for identifier resolution
+- `utils/vueExtractor.ts` - Extracts script/template from Vue SFC
+- `utils/pathResolver.ts` - Resolves relative/alias imports
+- `entities/SourceFileNode/lib/getters.ts` - `getDependencies()` extracts import paths from AST
+
+**Important**: The parser stores `ts.SourceFile` in each node. All analysis (token positions, identifiers, etc.) is done via getters that traverse the AST, not by duplicating data structures.
 
 ### Data Flow
 
 ```
-User edits code → App.tsx (useMemo trigger) → parseVueCode() → ProjectParser
-  → Graph nodes created → PipelineCanvas renders D3 force simulation
+User uploads files → filesAtom updated → useGraphDataInit() → parseProject()
+  → SourceFileNode[] created → useCanvasLayout() computes positions
+  → layoutNodesAtom (CanvasNode[]) → PipelineCanvas renders
 ```
 
 ### Key Data Structures
 
-- **VariableNode** (`entities/VariableNode/`): Represents a node in the dependency graph
-  - `id`: Unique identifier (format: `filePath::localName`)
-  - `label`: Display name
-  - `filePath`: Source file path
-  - `type`: Node category (`module`, `composable`, `computed`, `ref`, etc.)
-  - `sourceLineNum`: Line number in source file
-  - `dependencies`: Array of node IDs this node depends on
+**SourceFileNode** (`entities/SourceFileNode/model/types.ts`):
+```typescript
+interface SourceFileNode {
+  id: string;              // filePath
+  label: string;           // filename without extension
+  filePath: string;        // full file path
+  type: 'module';          // always 'module'
+  codeSnippet: string;     // full file content
+  startLine: number;       // always 1
+  sourceFile: ts.SourceFile;  // TypeScript AST
+  dependencies?: string[]; // cached import paths
+  vueTemplate?: string;    // Vue template section
+}
+```
 
-- **GraphData**: Container for the parsed graph
-  ```typescript
-  { nodes: VariableNode[] }
-  ```
+**CanvasNode** (`entities/CanvasNode/model/types.ts`):
+- Extends SourceFileNode with layout properties: `x`, `y`, `level`, `visualId`, `isVisible`
+- Created by `useCanvasLayout()` custom tree algorithm
 
-### Component Architecture
+### Component Architecture (Feature-Sliced Design)
 
-- **App.tsx**: Main container managing:
-  - Virtual file system state (`files`)
-  - Active file selection
-  - Sidebar toggle (Cmd/Ctrl + \\)
-  - Parse error handling with fallback to last valid graph
+The codebase follows **Feature-Sliced Design (FSD)** - see `CONVENTIONS.md` for detailed layer rules.
 
-- **Sidebar.tsx**: Code editor interface with file tabs
+**Key Layers**:
+- `entities/` - Domain models (SourceFileNode, CanvasNode, CodeSegment)
+- `features/` - Business features (CodeFold, FocusMode, UnifiedSearch, File actions)
+- `widgets/` - Complex UI (Sidebar, PipelineCanvas, CodeCard)
+- `services/` - External services (tsParser, codeParser, searchService)
+- `store/` - Global Jotai atoms
 
-- **PipelineCanvas.tsx**: D3.js visualization container
-  - **useCanvasLayout.ts**: D3 force simulation for node positioning
-  - **useD3Zoom.ts**: Pan and zoom behavior
-  - **CanvasConnections.tsx**: Renders dependency arrows between nodes
-  - **CanvasBackground.tsx**: Grid background
+**Important Conventions** (from `CONVENTIONS.md`):
+1. **No barrel exports** - Direct imports only, no `index.ts` re-exports
+2. **No props drilling** - Data via props, handlers via atoms
+3. **Inline props types** - No separate interfaces for component props
+4. **AST parsing only** - Never use regex for code analysis
 
 ### Virtual File System
 
-The app operates on an in-memory file system defined in `constants.ts`:
-- `DEFAULT_FILES`: Record of file paths to source code strings
-- `DEFAULT_ENTRY_FILE`: Starting point for parsing (`src/pages/MarketplaceIndex.vue`)
-- Files can be edited in the UI and changes trigger re-parsing
+The app operates on an in-memory file system stored in `filesAtom`:
+- `DEFAULT_FILES` (loaded from `app/libs/loadExamples.ts`)
+- `DEFAULT_ENTRY_FILE`: Entry point for parsing
+- Users can upload local folders via `UploadFolderButton`
+### Custom Layout Algorithm
 
-## Important Technical Details
+**NOT using D3 force simulation** - Uses custom tree-based layout algorithm in `widgets/PipelineCanvas/useCanvasLayout.ts`:
 
-### Path Alias Configuration
+**Algorithm Steps**:
+1. **Build Visual Tree** (lines 111-203): Creates hierarchical tree from dependency graph
+   - Skips nodes with empty code snippets (virtual intermediate nodes)
+   - Sorts dependencies by weighted category (imports → local logic → functions → components)
+2. **Compute Heights** (lines 209-222): Calculate subtree heights for balanced layout
+3. **Assign Coordinates** (lines 230-253): Position nodes in LTR (left-to-right) tree layout
+   - X: Negative values, level-based (`-(level * LEVEL_SPACING)`)
+   - Y: Centered based on subtree height
+4. **Handle Orphans**: Visible nodes not in tree are placed to the right
 
-- `@/*` maps to project root (configured in `vite.config.ts` and `tsconfig.json`)
-- The parser must handle various import formats:
-  - Relative: `./component.vue`, `../utils.ts`
-  - Alias: `@/components/Button.vue`
-  - Nuxt-style: `~~/layers/...` (mapped to `src/`)
+**Node Sorting** (lines 97-108): Weighted category ordering
+```typescript
+case 'ref': return 1;
+case 'computed': return 2;
+case 'store': return 3;
+case 'hook': return 4;
+case 'call': return 5;
+case 'function': return 10;
+case 'template': return 30; // Always at bottom
+```
 
-### Environment Variables
+### Code Rendering System
 
-- `GEMINI_API_KEY` must be set in `.env.local` for AI-powered explanations
-- Vite exposes this as `process.env.GEMINI_API_KEY` via the config
+The app displays code with **interactive tokens** (clickable identifiers):
 
-### Parser Node Types
+**Token Extraction** (`entities/SourceFileNode/lib/tokenUtils.ts`):
+- Uses TypeScript Scanner API to extract all tokens from `ts.SourceFile`
+- Returns position-based tokens (line, column, text, syntaxKind)
 
-The parser categorizes variables into types:
-- `module`: Imported components/functions
-- `composable`: Composable functions (e.g., `useFetch...`)
-- `computed`: Vue computed properties
-- `ref`: Vue refs
-- `reactive`: Vue reactive objects
-- `function`: Regular functions
-- `const`: Constants
-- `let`/`var`: Mutable variables
+**Segment Building** (`entities/CodeRenderer/lib/segmentUtils.ts`):
+- Converts tokens into `CodeSegment[]` with semantic types
+- Types: `dependency` (imported identifiers), `local` (local variables), `static` (keywords/literals)
 
-### Template Analysis
+**Interactive Features**:
+- Click dependency token → expand that file's code card
+- Click local token → highlight all usages in Focus Mode
+- Fold/unfold code blocks via `CodeFold` feature
 
-Vue template parsing (in `ProjectParser.ts`):
-- Extracts component usage from `<template>` section
-- Links template component references to script imports
-- Tracks which components are actually used vs just imported
+### Key Keyboard Shortcuts
+
+- `Cmd/Ctrl + \` - Toggle sidebar
+- `Shift + Shift` (double-tap) - Open unified search modal
+- File Explorer: Arrow keys + Enter for navigation
 
 ## Project Structure
 
 ```
-/
-├── App.tsx                    # Main application container
-├── index.tsx                  # React entry point
-├── constants.ts               # Default Vue project files for demo
-├── types.ts                   # Shared type definitions
-├── components/
-│   ├── Sidebar.tsx           # Code editor UI
-│   └── PipelineCanvas/       # D3 visualization components
+src/
+├── App.tsx                       # Main container
+├── main.tsx                      # React entry point
+├── store/atoms.ts                # Jotai global state
+├── constants.ts                  # Default files
+├── app/libs/loadExamples.ts      # Example file loader
 ├── services/
-│   ├── codeParser.ts         # Public parsing API
-│   ├── geminiService.ts      # AI explanation integration
-│   └── parser/               # Core parsing logic
-│       ├── ProjectParser.ts  # Main parser class
-│       ├── astUtils.ts       # AST traversal helpers
-│       └── pathUtils.ts      # Import path resolution
-└── entities/
-    └── VariableNode/         # Graph node entity and types
+│   ├── codeParser.ts             # Public API
+│   └── tsParser/                 # TypeScript parser
+│       ├── index.ts              # parseProject()
+│       └── utils/                # Path resolver, Vue extractor, LanguageService
+├── entities/
+│   ├── SourceFileNode/           # File node model
+│   │   ├── model/types.ts        # SourceFileNode interface
+│   │   └── lib/                  # getters, tokenUtils, lineUtils
+│   ├── CanvasNode/               # Layout node model
+│   ├── CodeSegment/              # Code token model
+│   └── CodeRenderer/             # Rendering utilities
+├── features/
+│   ├── CodeFold/                 # Code folding logic
+│   ├── FocusMode/                # Local variable highlighting
+│   ├── UnifiedSearch/            # Shift+Shift search
+│   └── File/                     # File/symbol navigation
+├── widgets/
+│   ├── Sidebar/                  # File explorer + code view
+│   │   ├── Sidebar.tsx
+│   │   ├── FileExplorer.tsx
+│   │   └── FolderView.tsx
+│   ├── PipelineCanvas/           # Canvas rendering
+│   │   ├── PipelineCanvas.tsx
+│   │   ├── useCanvasLayout.ts    # Custom tree layout
+│   │   ├── useD3Zoom.ts          # Pan/zoom
+│   │   ├── CanvasCodeCard.tsx
+│   │   └── CanvasConnections.tsx
+│   ├── CodeCard/                 # Code card UI
+│   │   ├── CodeCard.tsx
+│   │   └── ui/                   # Line, segment, token renderers
+│   └── MainContent/Header.tsx
+└── hooks/useGraphData.ts         # Parse trigger
 ```
 
-## Development Notes
+## Important Technical Notes
 
-- The parser builds a dependency graph where edges represent "depends on" relationships
-- Error handling: If parsing fails, the UI displays last valid graph with error indicator
-- The force simulation in D3 automatically positions nodes to minimize edge crossings
-- Keyboard shortcut: `Cmd/Ctrl + \` toggles the sidebar visibility
+- **TypeScript AST as source of truth**: All code analysis uses `ts.SourceFile`, never regex
+- **Getter-based architecture**: Data is extracted on-demand from AST, not duplicated
+- **Feature-Sliced Design**: Strict layer separation (entities → features → widgets)
+- **No barrel exports**: Always import from exact file paths
+- **Inline component props**: No separate prop interfaces
+- **Atom-based handlers**: Feature components access atoms directly, not via props
+
+## Reference Documentation
+
+- `CONVENTIONS.md` - Complete coding conventions (FSD, no barrel exports, AST-only parsing)
+- `README.md` - Project setup and AI Studio integration
+- TypeScript Compiler API docs for AST traversal patterns

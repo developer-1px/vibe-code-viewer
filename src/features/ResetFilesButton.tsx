@@ -1,19 +1,17 @@
 import React from 'react';
 import { useSetAtom } from 'jotai';
-import { Eraser } from 'lucide-react';
-import { filesAtom, activeFileAtom, entryFileAtom } from '../store/atoms';
+import { Eraser as IconEraser } from 'lucide-react';
+import { filesAtom, activeFileAtom } from '../store/atoms';
 import { DEFAULT_FILES, DEFAULT_ENTRY_FILE } from '../constants';
 
 const ResetFilesButton: React.FC = () => {
   const setFiles = useSetAtom(filesAtom);
   const setActiveFile = useSetAtom(activeFileAtom);
-  const setEntryFile = useSetAtom(entryFileAtom);
 
   const handleReset = () => {
     if (window.confirm("Reset all files to default?")) {
       setFiles(DEFAULT_FILES);
       setActiveFile(DEFAULT_ENTRY_FILE);
-      setEntryFile(DEFAULT_ENTRY_FILE);
     }
   };
 
@@ -23,7 +21,7 @@ const ResetFilesButton: React.FC = () => {
       className="text-xs flex items-center gap-1.5 text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-white/5 transition-colors"
       title="Reset to sample code"
     >
-      <Eraser className="w-3 h-3" />
+      <IconEraser className="w-3 h-3" />
       Reset
     </button>
   );

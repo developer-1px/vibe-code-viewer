@@ -1,30 +1,20 @@
 import React from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw as IconRotateCcw } from 'lucide-react';
 import {
   visibleNodeIdsAtom,
-  lastExpandedIdAtom,
-  templateRootIdAtom,
-  fullNodeMapAtom,
-  entryFileAtom
+  openedFilesAtom
 } from '../store/atoms.ts';
 
 const ResetViewButton: React.FC = () => {
   const visibleNodeIds = useAtomValue(visibleNodeIdsAtom);
   const setVisibleNodeIds = useSetAtom(visibleNodeIdsAtom);
-  const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
-  const templateRootId = useAtomValue(templateRootIdAtom);
-  const fullNodeMap = useAtomValue(fullNodeMapAtom);
-  const entryFile = useAtomValue(entryFileAtom);
+  const setOpenedFiles = useSetAtom(openedFilesAtom);
 
   const handleReset = () => {
-    const initialSet = new Set<string>();
-    if (templateRootId) initialSet.add(templateRootId);
-    fullNodeMap.forEach(n => {
-      if (n.type === 'call' && n.filePath === entryFile) initialSet.add(n.id);
-    });
-    setVisibleNodeIds(initialSet);
-    if (templateRootId) setLastExpandedId(templateRootId);
+    // Clear all opened files and visible nodes
+    setVisibleNodeIds(new Set());
+    setOpenedFiles(new Set());
   };
 
   if (visibleNodeIds.size <= 1) return null;
@@ -35,7 +25,7 @@ const ResetViewButton: React.FC = () => {
         onClick={handleReset}
         className="bg-vibe-panel/90 backdrop-blur px-4 py-2 rounded-lg border border-vibe-border text-slate-200 hover:text-white hover:border-vibe-accent flex items-center gap-2 text-sm shadow-xl transition-all font-medium"
       >
-        <RotateCcw className="w-4 h-4 text-pink-500" />
+        <IconRotateCcw className="w-4 h-4 text-pink-500" />
         Reset View
       </button>
     </div>

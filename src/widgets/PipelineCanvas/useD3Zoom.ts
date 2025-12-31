@@ -1,16 +1,12 @@
-import { useEffect, useRef, useState, useCallback, RefObject } from 'react';
-import { useAtom, useAtomValue } from 'jotai';
+import { useEffect, useRef, useState, RefObject } from 'react';
+import { useSetAtom } from 'jotai';
 import * as d3 from 'd3';
-import { CanvasNode } from '../../entities/CanvasNode';
-import { lastExpandedIdAtom, layoutNodesAtom } from '../../store/atoms';
+import { transformAtom } from '../../store/atoms';
 
 export const useD3Zoom = (containerRef: RefObject<HTMLDivElement>) => {
     const [transform, setTransform] = useState({ k: 0.9, x: 0, y: 0 });
+    const setTransformAtom = useSetAtom(transformAtom);
     const zoomBehaviorRef = useRef<d3.ZoomBehavior<HTMLDivElement, unknown> | null>(null);
-
-    // Atoms for auto-centering
-    const [lastExpandedId, setLastExpandedId] = useAtom(lastExpandedIdAtom);
-    const layoutNodes = useAtomValue(layoutNodesAtom);
 
     useEffect(() => {
         if (containerRef.current) {
@@ -19,9 +15,18 @@ export const useD3Zoom = (containerRef: RefObject<HTMLDivElement>) => {
             const zoom = d3.zoom<HTMLDivElement, unknown>()
                 .scaleExtent([0.1, 2])
                 .filter((event: any) => {
-                   if (event.type === 'mousedown' || event.type === 'touchstart') return !event.ctrlKey && !event.button;
+                   // Ignore events from cards (they handle their own dragging)
+                   const target = event.target as HTMLElement;
+                   const isCard = target.closest('.canvas-code-card');
+                   if (isCard && (event.type === 'mousedown' || event.type === 'touchstart')) {
+                     return false;
+                   }
+
+                   if (event.type === 'mousedown' || event.type === 'touchstart') {
+                     return !event.ctrlKey && !event.button;
+                   }
                    if (event.type === 'wheel') return event.ctrlKey || event.metaKey;
-                   return false;
+                   return true;
                 })
                 .on('zoom', (event) => {
                     setTransform(event.transform);
@@ -43,52 +48,15 @@ export const useD3Zoom = (containerRef: RefObject<HTMLDivElement>) => {
                 zoom.transform(selection, newTransform);
             });
     
-            // Initial Center (Offset to right for LTR)
-            selection.call(zoom.transform, d3.zoomIdentity.translate(width - 400, height/2).scale(0.8));
+            // Initial Center
+            selection.call(zoom.transform, d3.zoomIdentity.translate(width / 2, height / 2).scale(0.8));
         }
       }, []);
 
-      const centerOnNode = useCallback((node: CanvasNode) => {
-        if (!containerRef.current || !zoomBehaviorRef.current) return;
-
-        const nodeEl = document.getElementById(`node-${node.visualId}`);
-        if (!nodeEl) return;
-
-        const { width, height } = containerRef.current.getBoundingClientRect();
-        const rect = nodeEl.getBoundingClientRect();
-        const currentK = transform.k;
-
-        const w = rect.width / currentK;
-        const h = rect.height / currentK;
-        const centerX = node.x + w / 2;
-        const centerY = node.y + h / 2;
-
-        const targetX = width / 2 - centerX * currentK;
-        const targetY = height / 2 - centerY * currentK;
-
-        const newTransform = d3.zoomIdentity.translate(targetX, targetY).scale(currentK);
-        d3.select(containerRef.current)
-            .transition()
-            .duration(600)
-            .ease(d3.easeCubicOut)
-            .call(zoomBehaviorRef.current.transform, newTransform);
-      }, [transform.k]);
-
-      // --- Auto-center when node expanded ---
+      // --- Sync transform to atom ---
       useEffect(() => {
-        if (lastExpandedId && layoutNodes.length > 0) {
-            const targetNode = layoutNodes.find(n => n.id === lastExpandedId);
-            if (targetNode) {
-                // Wait a bit for layout to settle, then center
-                const timer = setTimeout(() => {
-                    centerOnNode(targetNode);
-                    setLastExpandedId(null);
-                }, 100);
+        setTransformAtom(transform);
+      }, [transform, setTransformAtom]);
 
-                return () => clearTimeout(timer);
-            }
-        }
-      }, [lastExpandedId, layoutNodes, centerOnNode, setLastExpandedId]);
-
-      return { transform, centerOnNode };
+      return { transform };
 };

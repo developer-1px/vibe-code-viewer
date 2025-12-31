@@ -1,10 +1,10 @@
 
 import { CanvasNode } from '../../entities/CanvasNode';
-import { VariableNode } from '../../entities/VariableNode';
+import { VariableNode } from '../../entities/SourceFileNode';
 
 // --- Constants ---
-export const LEVEL_SPACING = 700; // Horizontal space between columns
-export const VERTICAL_GAP = 60; // Gap between vertically stacked nodes
+export const LEVEL_SPACING = 850; // Horizontal space between columns
+export const VERTICAL_GAP = 150; // Gap between vertically stacked nodes
 export const CHAR_WRAP_LIMIT = 120; // Estimated characters per line before wrapping
 
 // --- Helpers ---
@@ -32,8 +32,9 @@ export const getUsageIndex = (code: string, id: string) => {
 // Helper to estimate the rendered height of a node with wrapping
 export const estimateNodeHeight = (node: CanvasNode) => {
     if (!node.codeSnippet) return 60;
+
     const lines = node.codeSnippet.split('\n');
-    
+
     let visualLineCount = 0;
     lines.forEach(line => {
         const length = line.length;
@@ -46,7 +47,9 @@ export const estimateNodeHeight = (node: CanvasNode) => {
 
     const baseHeight = 60; // Header + padding
     const lineHeight = 20; // Approximation of line-height in pixels
-    return baseHeight + (visualLineCount * lineHeight);
+    const totalHeight = baseHeight + (visualLineCount * lineHeight);
+
+    return totalHeight;
 };
 
 /**

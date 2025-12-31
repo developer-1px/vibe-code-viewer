@@ -1,0 +1,197 @@
+/**
+ * Vue Template Section Component
+ *
+ * Module 노드에서 Vue template을 렌더링
+ * CodeCardLine과 동일한 스타일 + 컴포넌트/변수 참조 지원
+ */
+
+import React, { useMemo } from 'react';
+import { useSetAtom } from 'jotai';
+import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, filesAtom } from '../../../store/atoms';
+import { useAtomValue } from 'jotai';
+import type { CanvasNode } from '../../../entities/CanvasNode';
+import { extractTemplateComponents, extractTemplateVariables } from '../../../services/tsParser/utils/vueTemplateParser';
+
+const VueTemplateSection = ({template, node, scriptEndLine }: {
+  template: string;
+  node: CanvasNode;
+  scriptEndLine: number; // script 영역의 마지막 라인 번호
+}) => {
+  const setVisibleNodeIds = useSetAtom(visibleNodeIdsAtom);
+  const fullNodeMap = useAtomValue(fullNodeMapAtom);
+  const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
+  const files = useAtomValue(filesAtom);
+
+  // AST 기반 template 토큰 추출
+  const templateLines = useMemo(() => {
+    const lines = template.split('\n');
+
+    // Vue 파일 전체 컨텐츠에서 AST 추출
+    const fullContent = files[node.filePath];
+    if (!fullContent) {
+      // Fallback: 단순 텍스트 렌더링
+      return lines.map((lineText, idx) => ({
+        lineNum: scriptEndLine + idx + 1,
+        segments: [{ text: lineText, isClickable: false }]
+      }));
+    }
+
+    // AST 기반 컴포넌트 및 변수 추출
+    const components = extractTemplateComponents(fullContent, node.filePath);
+    const variables = extractTemplateVariables(fullContent, node.filePath);
+
+    // 라인별 토큰 맵 생성
+    const tokensByLine = new Map<number, Array<{ start: number; end: number; name: string; nodeId?: string }>>();
+
+    // 컴포넌트 토큰 추가
+    components.forEach(comp => {
+      const depId = node.dependencies.find(dep => dep.endsWith(`::${comp.name}`));
+      if (depId) {
+        if (!tokensByLine.has(comp.line)) {
+          tokensByLine.set(comp.line, []);
+        }
+        tokensByLine.get(comp.line)!.push({
+          start: comp.column - 1, // column은 1-based
+          end: comp.column - 1 + comp.name.length,
+          name: comp.name,
+          nodeId: depId
+        });
+      }
+    });
+
+    // 변수 토큰 추가 (아직 dependencies 연결 안 함, 추후 확장 가능)
+    variables.forEach(variable => {
+      const depId = node.dependencies.find(dep => dep.endsWith(`::${variable.name}`));
+      if (depId) {
+        if (!tokensByLine.has(variable.line)) {
+          tokensByLine.set(variable.line, []);
+        }
+        tokensByLine.get(variable.line)!.push({
+          start: variable.column - 1,
+          end: variable.column - 1 + variable.name.length,
+          name: variable.name,
+          nodeId: depId
+        });
+      }
+    });
+
+    // 라인별 segment 생성
+    return lines.map((lineText, idx) => {
+      const lineNum = scriptEndLine + idx + 1;
+      const tokens = tokensByLine.get(lineNum) || [];
+
+      // 토큰 위치순 정렬
+      tokens.sort((a, b) => a.start - b.start);
+
+      const segments: Array<{ text: string; nodeId?: string; isClickable: boolean }> = [];
+      let cursor = 0;
+
+      tokens.forEach(token => {
+        // 토큰 이전 텍스트
+        if (token.start > cursor) {
+          segments.push({
+            text: lineText.slice(cursor, token.start),
+            isClickable: false
+          });
+        }
+
+        // 토큰
+        segments.push({
+          text: token.name,
+          nodeId: token.nodeId,
+          isClickable: !!token.nodeId
+        });
+
+        cursor = token.end;
+      });
+
+      // 남은 텍스트
+      if (cursor < lineText.length) {
+        segments.push({
+          text: lineText.slice(cursor),
+          isClickable: false
+        });
+      }
+
+      return { lineNum, segments };
+    });
+  }, [template, node.dependencies, node.filePath, scriptEndLine, files]);
+
+  const handleTokenClick = (nodeId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!fullNodeMap.has(nodeId)) return;
+
+    const forceExpand = e.metaKey || e.ctrlKey;
+
+    setVisibleNodeIds((prev: Set<string>) => {
+      const next = new Set(prev);
+
+      if (next.has(nodeId) && !forceExpand) {
+        // Fold
+        next.delete(nodeId);
+      } else {
+        // Expand recursively
+        const expandRecursive = (id: string) => {
+          if (next.has(id)) return;
+          next.add(id);
+
+          const node = fullNodeMap.get(id);
+          if (node && node.type !== 'template') {
+            node.dependencies.forEach(depId => {
+              if (fullNodeMap.has(depId)) {
+                expandRecursive(depId);
+              }
+            });
+          }
+        };
+
+        expandRecursive(nodeId);
+      }
+      return next;
+    });
+
+    setLastExpandedId(nodeId);
+  };
+
+  return (
+    <div className="flex flex-col">
+      {templateLines.map((line, idx) => (
+        <div
+          key={idx}
+          className="flex items-start"
+        >
+          {/* Line Number */}
+          <div className="flex-shrink-0 w-12 px-2 py-0.5 text-right text-xs text-slate-600 select-none font-mono">
+            {line.lineNum}
+          </div>
+
+          {/* Template Code with Clickable Tokens */}
+          <div className="flex-1 px-3 py-0.5 font-mono text-xs leading-5 overflow-x-auto whitespace-pre-wrap break-words">
+            {line.segments.map((seg, segIdx) => {
+              if (seg.isClickable && seg.nodeId) {
+                return (
+                  <span
+                    key={segIdx}
+                    onClick={(e) => handleTokenClick(seg.nodeId!, e)}
+                    className="inline-block px-0.5 rounded transition-all duration-200 select-text cursor-pointer border bg-slate-800/50 border-slate-700 text-emerald-300 hover:bg-white/10 hover:border-emerald-500/50"
+                  >
+                    {seg.text}
+                  </span>
+                );
+              }
+
+              return (
+                <span key={segIdx} className="text-slate-300 select-text">
+                  {seg.text}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default VueTemplateSection;

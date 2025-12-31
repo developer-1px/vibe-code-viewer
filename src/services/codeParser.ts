@@ -1,7 +1,14 @@
-import { GraphData } from '../entities/VariableNode';
-import { ProjectParser } from './parser/ProjectParser.ts';
+/**
+ * Code Parser Entry Point
+ *
+ * ✅ TypeScript Compiler 기반 파서 (Babel 완전 제거)
+ * ✅ 외부 참조 중심 분석 (import, file-level, closure, global)
+ * ✅ 함수 호출 그래프 생성
+ */
 
-export const parseProject = (files: Record<string, string>, entryFile: string): GraphData => {
-    const parser = new ProjectParser(files);
-    return parser.parseProject(entryFile);
+import { GraphData } from '../entities/SourceFileNode';
+import { parseProject as parseProjectTS } from './tsParser';
+
+export const parseProject = (files: Record<string, string>, entryFile?: string): GraphData => {
+    return parseProjectTS(files, entryFile);
 };

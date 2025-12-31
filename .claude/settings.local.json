@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npx tsc:*)",
+      "Bash(find src/entities/VariableNode/ui -type f ( -name \"*.ts\" -o -name \"*.tsx\" ) -exec sed -i '' \"s|from ''../model/types.ts''|from ''../../../CanvasNode''|g\" {} ;)",
+      "Bash(find src/entities/VariableNode/ui/components -type f ( -name \"*.ts\" -o -name \"*.tsx\" ) -exec sed -i '' \"s|from ''../../model/types.ts''|from ''../../../../CanvasNode''|g\" {} ;)",
+      "Bash(npx tsx test-ast.ts)",
+      "Bash(npx tsx:*)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
