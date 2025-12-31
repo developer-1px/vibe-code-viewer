@@ -67,7 +67,7 @@ export function buildSegmentStyle(
 
   // 주석
   if (primaryKind === 'comment') {
-    const textColor = hasFocusMode && !isFocused ? 'text-slate-600' : 'text-slate-400';
+    const textColor = hasFocusMode && !isFocused ? 'text-slate-500' : 'text-slate-400/85';
     return {
       className: `${textColor} italic select-text`,
       clickable: false
