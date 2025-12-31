@@ -70,35 +70,25 @@ export function searchResultsFuzzy(
           })
           .filter((item): item is SearchResult => item !== null);
 
-        // Boost priority: files matching query without extension
-        const queryLower = query.toLowerCase();
+        // Sort by type priority: file → export → definition → usage
         results.sort((a, b) => {
-          // Check if file name (without extension) matches query exactly
-          const isFileA = a.type === 'file';
-          const isFileB = b.type === 'file';
+          // Get type priority (lower = higher priority)
+          const getPriority = (item: SearchResult): number => {
+            if (item.type === 'file' || item.type === 'folder') return 0; // file/folder first
+            if (item.nodeType === 'usage') return 3; // usage last
+            if (item.isExported) return 1; // exported symbols second
+            return 2; // normal definitions third
+          };
 
-          if (isFileA) {
-            const nameWithoutExt = a.name.replace(/\.[^/.]+$/, '').toLowerCase();
-            const exactMatchA = nameWithoutExt === queryLower ? 1 : 0;
+          const priorityA = getPriority(a);
+          const priorityB = getPriority(b);
 
-            if (isFileB) {
-              const nameWithoutExtB = b.name.replace(/\.[^/.]+$/, '').toLowerCase();
-              const exactMatchB = nameWithoutExtB === queryLower ? 1 : 0;
-
-              // Both files: exact match first
-              if (exactMatchA !== exactMatchB) return exactMatchB - exactMatchA;
-            } else {
-              // A is file, B is not: exact match file wins
-              if (exactMatchA) return -1;
-            }
-          } else if (isFileB) {
-            const nameWithoutExtB = b.name.replace(/\.[^/.]+$/, '').toLowerCase();
-            const exactMatchB = nameWithoutExtB === queryLower ? 1 : 0;
-            // B is file, A is not: exact match file wins
-            if (exactMatchB) return 1;
+          // Primary sort: type priority
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
           }
 
-          // Keep Fuse.js order
+          // Secondary sort: keep Fuse.js order (already sorted by relevance)
           return 0;
         });
 
