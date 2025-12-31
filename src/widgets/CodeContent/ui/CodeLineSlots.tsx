@@ -1,5 +1,5 @@
 /**
- * CodeCardLineSlots - Line의 dependency slots 렌더링
+ * CodeLineSlots - Line의 dependency slots 렌더링
  * identifier 토큰에 대한 input slot 표시
  */
 
@@ -7,13 +7,13 @@ import React from 'react';
 import { useAtomValue } from 'jotai';
 import { fullNodeMapAtom } from '../../../store/atoms';
 import type { CodeLine } from '../../../entities/CodeRenderer/model/types';
-import CodeCardSlot from './CodeCardSlot';
+import CodeSlot from './CodeSlot';
 
-interface CodeCardLineSlotsProps {
+interface CodeLineSlotsProps {
   line: CodeLine;
 }
 
-export const CodeCardLineSlots: React.FC<CodeCardLineSlotsProps> = ({ line }) => {
+export const CodeLineSlots: React.FC<CodeLineSlotsProps> = ({ line }) => {
   const fullNodeMap = useAtomValue(fullNodeMapAtom);
 
   const slots = line.segments
@@ -27,7 +27,7 @@ export const CodeCardLineSlots: React.FC<CodeCardLineSlotsProps> = ({ line }) =>
       const defLine = seg.definitionLocation?.line ?? depNode.startLine;
 
       return (
-        <CodeCardSlot
+        <CodeSlot
           key={`slot-${slotIdx}`}
           tokenId={seg.nodeId!}
           lineNum={line.num}
@@ -42,4 +42,4 @@ export const CodeCardLineSlots: React.FC<CodeCardLineSlotsProps> = ({ line }) =>
   return <>{slots}</>;
 };
 
-export default CodeCardLineSlots;
+export default CodeLineSlots;

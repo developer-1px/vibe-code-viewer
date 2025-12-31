@@ -2,20 +2,20 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { useAtomValue } from 'jotai';
 import { CanvasNode } from '../../../entities/CanvasNode';
-import type { CodeLine } from '../../../entities/CodeRenderer/model/types';
-import CodeCardLineSlots from './CodeCardLineSlots';
-import CodeCardLineSegment from './CodeCardLineSegment';
+import type { CodeLine as CodeLineType } from '../../../entities/CodeRenderer/model/types';
+import CodeLineSlots from './CodeLineSlots';
+import CodeLineSegment from './CodeLineSegment';
 import FoldButton from '../../../features/CodeFold/ui/FoldButton';
 import FoldBadge from '../../../features/CodeFold/ui/FoldBadge';
 import { isLineInsideFold, isLineFolded, getFoldedCount } from '../../../features/CodeFold/lib';
 import { targetLineAtom, foldedLinesAtom } from '../../../store/atoms';
 
-const CodeCardLine = ({
+const CodeLine = ({
   line,
   node,
   foldRanges
 }: {
-  line: CodeLine;
+  line: CodeLineType;
   node: CanvasNode;
   foldRanges: Array<{ start: number; end: number }>;
 }) => {
@@ -73,7 +73,7 @@ const CodeCardLine = ({
       <div className="flex-none w-16 pr-2 text-right select-none text-xs font-mono text-slate-600 border-r border-white/5 bg-[#0f172a]/50 leading-[1.15rem] py-0.5">
         <div className="relative inline-block w-full flex items-center justify-end gap-1">
           {/* Render input slots for each dependency token in this line */}
-          <CodeCardLineSlots line={line} />
+          <CodeLineSlots line={line} />
 
           <span className={lineNumberClassName}>
             {line.num}
@@ -90,7 +90,7 @@ const CodeCardLine = ({
       {/* Code Content Column: leading-[1.15rem] (~18.4px) + py-0.5 (2px) = ~22.4px total height per line */}
       <div className="flex-1 px-3 py-0.5 font-mono text-xs leading-[1.15rem] overflow-x-auto whitespace-pre-wrap break-words">
         {line.segments.map((segment, segIdx) => (
-          <CodeCardLineSegment
+          <CodeLineSegment
             key={segIdx}
             segment={segment}
             segIdx={segIdx}
@@ -122,4 +122,4 @@ const CodeCardLine = ({
   );
 };
 
-export default CodeCardLine;
+export default CodeLine;

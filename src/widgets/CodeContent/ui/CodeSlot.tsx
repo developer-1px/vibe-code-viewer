@@ -5,7 +5,7 @@ import { VariableNode } from '../../../entities/SourceFileNode/model/types';
 import { getSlotColor } from '../../../entities/SourceFileNode/lib/styleUtils';
 import { targetLineAtom, visibleNodeIdsAtom, lastExpandedIdAtom, layoutLinksAtom } from '../../../store/atoms';
 
-const CodeCardSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine }: {
+const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine }: {
   tokenId: string;
   lineNum: number;
   slotIdx: number;
@@ -79,4 +79,4 @@ const CodeCardSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine }: {
   );
 };
 
-export default CodeCardSlot;
+export default CodeSlot;

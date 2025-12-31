@@ -1,12 +1,12 @@
 /**
- * DependencyTokenSegment - 의존성 토큰 렌더링 (CodeCardToken 래핑)
+ * DependencyTokenSegment - 의존성 토큰 렌더링 (CodeToken 래핑)
  * identifier with nodeId의 특수 케이스
  */
 
 import React from 'react';
 import type { CodeSegment, SegmentStyle } from '../../../../entities/CodeSegment';
 import type { CanvasNode } from '../../../../entities/CanvasNode';
-import CodeCardToken from '../CodeCardToken';
+import CodeToken from '../CodeToken';
 
 interface DependencyTokenSegmentProps {
   segment: CodeSegment;
@@ -23,7 +23,7 @@ export const DependencyTokenSegment: React.FC<DependencyTokenSegmentProps> = ({ 
 
   return (
     <span className={className}>
-      <CodeCardToken
+      <CodeToken
         text={segment.text}
         tokenId={segment.nodeId!}
         nodeId={node.id}

@@ -5,7 +5,7 @@ import { getTokenStyle } from '../../../entities/SourceFileNode/lib/styleUtils';
 import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, activeLocalVariablesAtom, cardPositionsAtom, transformAtom } from '../../../store/atoms';
 import { pruneDetachedNodes } from '../../PipelineCanvas/utils';
 
-const CodeCardToken = ({text, tokenId, nodeId, lineHasFocusedVariable }: {
+const CodeToken = ({text, tokenId, nodeId, lineHasFocusedVariable }: {
   text: string;
   tokenId: string;
   nodeId: string;
@@ -112,4 +112,4 @@ const CodeCardToken = ({text, tokenId, nodeId, lineHasFocusedVariable }: {
   );
 };
 
-export default CodeCardToken;
+export default CodeToken;
