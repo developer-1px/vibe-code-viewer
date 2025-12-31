@@ -4,8 +4,8 @@
  * Fuzzy search runs in Web Worker for performance
  */
 
-import type { SearchResult } from '../store/atoms';
-import type { FuzzySearchRequest, FuzzySearchResponse } from '../workers/fuzzySearchWorker';
+import type { SearchResult } from '../model/types';
+import type { FuzzySearchRequest, FuzzySearchResponse } from './fuzzySearchWorker';
 
 // Lazy-load Web Worker
 let fuzzyWorker: Worker | null = null;
@@ -13,7 +13,7 @@ let fuzzyWorker: Worker | null = null;
 function getFuzzyWorker(): Worker {
   if (!fuzzyWorker) {
     fuzzyWorker = new Worker(
-      new URL('../workers/fuzzySearchWorker.ts', import.meta.url),
+      new URL('./fuzzySearchWorker.ts', import.meta.url),
       { type: 'module' }
     );
   }

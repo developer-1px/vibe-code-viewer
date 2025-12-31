@@ -7,7 +7,7 @@ import Header from './widgets/MainContent/Header.tsx';
 import PipelineCanvas from './widgets/PipelineCanvas.tsx';
 import LeftSideToolbar from './widgets/LeftSideToolbar/LeftSideToolbar';
 import JotaiDevTools from './widgets/JotaiDevTools/JotaiDevTools';
-import { UnifiedSearchModal } from './features/UnifiedSearch/UnifiedSearchModal';
+import { UnifiedSearchModal } from './features/UnifiedSearch';
 import { KeyboardShortcuts } from './features/KeyboardShortcuts';
 import { store } from './store/store';
 import { filesAtom, graphDataAtom, parseErrorAtom } from './store/atoms';

@@ -37,32 +37,7 @@ export const focusedFileIndexAtom = atom(0);
 export const collapsedFoldersAtom = atom(new Set<string>()); // 접힌 폴더들
 
 // Unified Search atoms (Shift+Shift)
-export interface SearchResult {
-  id: string;
-  type: 'file' | 'folder' | 'symbol';
-  name: string;
-  filePath: string;
-  nodeType?: string; // For symbols: 'pure-function', 'state-ref', etc.
-  nodeId?: string; // For navigation
-  lineNumber?: number;
-  score: number;
-  matchType?: 'basic' | 'fuzzy'; // Match type for visual indication
-  matches?: Array<{ // Fuzzy match indices for highlighting
-    key: string;      // Which field matched (name, filePath, etc.)
-    indices: number[][]; // [start, end] pairs for highlighting
-  }>;
-  // Enriched metadata
-  typeInfo?: string; // TypeScript type information from Language Service
-  codeSnippet?: string; // First line of code snippet
-  usageCount?: number; // Number of places this symbol is used
-}
-
-// Symbol metadata cache (extracted once after parsing)
-export interface SymbolMetadata {
-  typeInfo: string | null; // TS Language Service hover info
-  codeSnippet: string; // Definition line code snippet
-  usageCount: number; // Number of dependencies referencing this symbol
-}
+export type { SearchResult, SymbolMetadata } from '../features/UnifiedSearch/model/types';
 
 export const searchModalOpenAtom = atom(false);
 export const searchQueryAtom = atom('');

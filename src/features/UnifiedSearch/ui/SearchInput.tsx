@@ -4,7 +4,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { useAtom } from 'jotai';
-import { searchQueryAtom } from '../../store/atoms';
+import { searchQueryAtom } from '../../../store/atoms';
 import { Search } from 'lucide-react';
 
 export const SearchInput: React.FC = () => {

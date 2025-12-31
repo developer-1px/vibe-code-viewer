@@ -15,7 +15,7 @@ import {
   activeLocalVariablesAtom,
   fullNodeMapAtom,
   lastExpandedIdAtom,
-} from '../../store/atoms';
+} from '../../../store/atoms';
 import { SearchResultItem } from './SearchResultItem';
 
 interface SearchResultsProps {

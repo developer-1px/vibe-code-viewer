@@ -4,7 +4,7 @@
 
 import React, { forwardRef } from 'react';
 import { File, Folder, Code2, Database, Zap, Calculator, Shield, Box, Eye } from 'lucide-react';
-import type { SearchResult } from '../../store/atoms';
+import type { SearchResult } from '../model/types';
 
 interface SearchResultItemProps {
   result: SearchResult;
