@@ -8,7 +8,7 @@ import type {CanvasNode} from '../../../../entities/CanvasNode'
 import {findDefinitionLocation, getQuickInfoAtPosition} from './tsLanguageService'
 import type {CodeLine, CodeSegment, SegmentKind} from '../types'
 import {getImportSource} from '../../../../entities/SourceFileNode/lib/getters'
-import {resolvePath} from '../../../services/tsParser/utils/pathResolver'
+import {resolvePath} from '../../../../services/tsParser/utils/pathResolver'
 import {
   extractShortId,
   createDependencyMap,
@@ -22,7 +22,7 @@ import {
   processTemplateLiteral,
   processIdentifier
 } from './astHooks'
-import { collectFoldMetadata } from '../../../features/CodeFold/lib'
+import { collectFoldMetadata } from '../../../../features/CodeFold/lib'
 
 // ===== 타입 정의 =====
 
