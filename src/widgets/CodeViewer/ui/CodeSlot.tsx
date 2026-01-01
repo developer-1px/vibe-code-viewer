@@ -4,7 +4,7 @@ import { useSetAtom, useAtomValue } from 'jotai';
 import { VariableNode } from '../../../entities/SourceFileNode/model/types';
 import { getSlotColor } from '../../../entities/SourceFileNode/lib/styleUtils';
 import { targetLineAtom, visibleNodeIdsAtom, lastExpandedIdAtom, layoutLinksAtom } from '../../../store/atoms';
-import { useEditorTheme } from '../../../app/theme/editor';
+import { useEditorTheme } from '../../../app/theme';
 
 const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine }: {
   tokenId: string;

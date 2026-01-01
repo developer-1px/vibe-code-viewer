@@ -10,7 +10,7 @@ import type { CodeSegment, SegmentKind, CodeLine } from '../core/types';
 import type { CanvasNode } from '../../../entities/CanvasNode';
 import { buildSegmentStyle } from '../core';
 import { visibleNodeIdsAtom, activeLocalVariablesAtom } from '../../../store/atoms';
-import { useEditorTheme } from '../../../app/theme/editor';
+import { useEditorTheme } from '../../../app/theme';
 import {
   StaticSegment,
   ExpandSegment,

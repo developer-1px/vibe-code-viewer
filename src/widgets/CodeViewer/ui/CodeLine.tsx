@@ -9,7 +9,7 @@ import FoldButton from '../../../features/CodeFold/ui/FoldButton';
 import FoldBadge from '../../../features/CodeFold/ui/FoldBadge';
 import { isLineInsideFold, isLineFolded, getFoldedCount } from '../../../features/CodeFold/lib';
 import { targetLineAtom, foldedLinesAtom } from '../../../store/atoms';
-import { useEditorTheme } from '../../../app/theme/editor';
+import { useEditorTheme } from '../../../app/theme';
 
 const CodeLine = ({
   line,

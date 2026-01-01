@@ -8,7 +8,7 @@ import { useAtomValue } from 'jotai';
 import { CanvasNode } from '../../entities/CanvasNode';
 import type { CodeLine as CodeLineType } from './core/types';
 import CodeLine from './ui/CodeLine';
-import { defaultTheme, jetbrainsTheme, vscodeTheme, EditorThemeProvider } from '../../app/theme/editor';
+import { defaultEditorTheme, jetbrainsEditorTheme, vscodeEditorTheme, EditorThemeProvider } from '../../app/theme';
 import { currentThemeAtom } from '../../store/atoms';
 
 interface CodeViewerProps {
@@ -24,11 +24,11 @@ const CodeViewer = ({ processedLines, node, foldRanges }: CodeViewerProps) => {
   const theme = useMemo(() => {
     switch (currentThemeName) {
       case 'jetbrains':
-        return jetbrainsTheme;
+        return jetbrainsEditorTheme;
       case 'vscode':
-        return vscodeTheme;
+        return vscodeEditorTheme;
       default:
-        return defaultTheme;
+        return defaultEditorTheme;
     }
   }, [currentThemeName]);
 

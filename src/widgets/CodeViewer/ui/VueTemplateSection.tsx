@@ -11,7 +11,7 @@ import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, filesAtom } fr
 import { useAtomValue } from 'jotai';
 import type { CanvasNode } from '../../../entities/CanvasNode';
 import { extractTemplateComponents, extractTemplateVariables } from '../../../services/tsParser/utils/vueTemplateParser';
-import { useEditorTheme } from '../../../app/theme/editor';
+import { useEditorTheme } from '../../../app/theme';
 
 const VueTemplateSection = ({template, node, scriptEndLine }: {
   template: string;
