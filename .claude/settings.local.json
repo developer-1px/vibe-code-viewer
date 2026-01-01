@@ -12,7 +12,8 @@
       "Bash(npx tsx:*)",
       "WebSearch",
       "Bash(tree:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []
