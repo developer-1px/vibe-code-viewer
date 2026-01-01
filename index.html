@@ -15,54 +15,54 @@
               mono: ['Fira Code', 'monospace'],
             },
             colors: {
-              // Semantic theme tokens
+              // Semantic theme tokens - JetBrains New Dark inspired
               theme: {
-                // Backgrounds - Slate tones (subtle blue-gray undertone)
-                background: '#0a0e14',    // Main app background (dark slate)
-                canvas: '#0f1419',        // Canvas/workspace area (slate blue-gray)
-                sidebar: '#14181f',       // Sidebar background (lighter slate)
-                header: '#0c1016',        // Header background (dark slate)
-                panel: '#0f1419',         // Panel/card background (matches canvas)
+                // Backgrounds - Lighter slate tones (JetBrains-like)
+                background: '#1e1f22',    // Main app background (JetBrains New Dark base)
+                canvas: '#2b2d30',        // Canvas/workspace area (editor bg)
+                sidebar: '#2b2d30',       // Sidebar background (matches canvas)
+                header: '#25262a',        // Header background
+                panel: '#2b2d30',         // Panel/card background
 
-                // Borders - Slate-tinted grays
+                // Borders - Visible but subtle
                 border: {
-                  DEFAULT: '#252a31',     // Default border (slate gray)
-                  subtle: '#1a1e24',      // Subtle border
-                  strong: '#353b44',      // Strong border
+                  DEFAULT: '#3d3f43',     // Default border (visible gray)
+                  subtle: '#323438',      // Subtle border
+                  strong: '#4e5157',      // Strong border
                 },
 
-                // Text
+                // Text - Good contrast
                 text: {
-                  primary: '#e5e7eb',     // Primary text (slightly cool)
-                  secondary: '#9ca3af',   // Secondary text (slate gray)
-                  tertiary: '#6b7280',    // Tertiary/muted text
-                  accent: '#cbd5e1',      // Accent text (light slate)
+                  primary: '#bcbec4',     // Primary text (JetBrains text)
+                  secondary: '#868a91',   // Secondary text (dimmed)
+                  tertiary: '#6c6f77',    // Tertiary/muted text
+                  accent: '#dfe1e5',      // Accent text (brighter)
                 },
 
                 // Interactive states
-                hover: 'rgba(148, 163, 184, 0.08)',   // Slate-tinted hover
-                active: 'rgba(148, 163, 184, 0.12)',  // Slate-tinted active
-                focus: 'rgba(148, 163, 184, 0.16)',   // Slate-tinted focus
+                hover: 'rgba(255, 255, 255, 0.06)',   // Subtle hover
+                active: 'rgba(255, 255, 255, 0.10)',  // Active state
+                focus: 'rgba(255, 255, 255, 0.12)',   // Focus state
 
                 // Status colors
-                success: '#4ade80',
-                warning: '#fbbf24',
-                error: '#f87171',
-                info: '#94a3b8',          // Slate info color
+                success: '#59a869',       // JetBrains green
+                warning: '#c77c3b',       // JetBrains orange
+                error: '#c55661',         // JetBrains red
+                info: '#5394ec',          // JetBrains blue
 
                 // Special
-                purple: '#a78bfa',
-                amber: '#fbbf24',
-                emerald: '#4ade80',
+                purple: '#9876aa',        // JetBrains purple
+                amber: '#c77c3b',
+                emerald: '#59a869',
               },
 
               // Legacy tokens (for backward compatibility)
-              'vibe-dark': '#0a0e14',
-              'vibe-panel': '#0f1419',
-              'vibe-border': '#252a31',
-              'vibe-accent': '#cbd5e1',
-              'vibe-success': '#4ade80',
-              'vibe-purple': '#a78bfa',
+              'vibe-dark': '#1e1f22',
+              'vibe-panel': '#2b2d30',
+              'vibe-border': '#3d3f43',
+              'vibe-accent': '#dfe1e5',
+              'vibe-success': '#59a869',
+              'vibe-purple': '#9876aa',
             }
           }
         }
@@ -70,8 +70,8 @@
     </script>
     <style>
       body {
-        background-color: #0a0e14;  /* Dark slate */
-        color: #e5e7eb;             /* Light gray-white */
+        background-color: #1e1f22;  /* JetBrains New Dark base */
+        color: #bcbec4;             /* JetBrains text color */
       }
 
       /* Custom Scrollbar */
@@ -80,14 +80,14 @@
         height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #0f1419;        /* Slate canvas */
+        background: #2b2d30;        /* JetBrains editor bg */
       }
       ::-webkit-scrollbar-thumb {
-        background: #353b44;        /* Slate gray thumb */
+        background: #4e5157;        /* Visible scrollbar */
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #454d58;        /* Lighter slate on hover */
+        background: #5e6167;        /* Lighter on hover */
       }
     </style>
   <script type="importmap">
