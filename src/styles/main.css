@@ -1,0 +1,196 @@
+/**
+ * Tailwind CSS v4 - Main Entry
+ * Theme variables defined using @theme directive
+ */
+
+@import "tailwindcss";
+
+/* =============================================================================
+   DEFAULT THEME - Figma Dark inspired
+   ============================================================================= */
+
+@theme {
+  /* Backgrounds - generates bg-theme-* utilities */
+  --color-theme-background: #0e0e0e;
+  --color-theme-canvas: #1e1e1e;
+  --color-theme-sidebar: #1e1e1e;
+  --color-theme-header: #181818;
+  --color-theme-panel: #2c2c2c;
+
+  /* Borders - generates border-theme-* utilities */
+  --color-theme-border: #333333;
+  --color-theme-border-subtle: #282828;
+  --color-theme-border-strong: #444444;
+
+  /* Text - generates text-theme-text-* utilities */
+  --color-theme-text-primary: #f5f5f5;
+  --color-theme-text-secondary: #b3b3b3;
+  --color-theme-text-tertiary: #8c8c8c;
+  --color-theme-text-accent: #22d3ee;
+
+  /* Status colors - generates text-theme-* utilities */
+  --color-theme-success: #5fb76b;
+  --color-theme-warning: #f5a623;
+  --color-theme-error: #f24822;
+  --color-theme-info: #18a0fb;
+
+  /* Special colors */
+  --color-theme-purple: #b58bf7;
+  --color-theme-amber: #f5a623;
+  --color-theme-emerald: #5fb76b;
+
+  /* Interactive states (rgba) - generates bg-theme-* utilities */
+  --color-theme-hover: rgb(255 255 255 / 0.06);
+  --color-theme-active: rgb(255 255 255 / 0.10);
+  --color-theme-focus: rgb(255 255 255 / 0.12);
+
+  /* Legacy vibe-* tokens for backward compatibility */
+  --color-vibe-dark: #0e0e0e;
+  --color-vibe-panel: #2c2c2c;
+  --color-vibe-border: #333333;
+  --color-vibe-accent: #22d3ee;
+  --color-vibe-success: #5fb76b;
+  --color-vibe-purple: #b58bf7;
+}
+
+/* =============================================================================
+   VSCODE THEME
+   ============================================================================= */
+
+[data-theme="vscode"] {
+  @theme inline {
+    --color-theme-background: var(--vscode-background);
+    --color-theme-canvas: var(--vscode-canvas);
+    --color-theme-sidebar: var(--vscode-sidebar);
+    --color-theme-header: var(--vscode-header);
+    --color-theme-panel: var(--vscode-panel);
+
+    --color-theme-border: var(--vscode-border);
+    --color-theme-border-subtle: var(--vscode-border-subtle);
+    --color-theme-border-strong: var(--vscode-border-strong);
+
+    --color-theme-text-primary: var(--vscode-text-primary);
+    --color-theme-text-secondary: var(--vscode-text-secondary);
+    --color-theme-text-tertiary: var(--vscode-text-tertiary);
+    --color-theme-text-accent: var(--vscode-text-accent);
+
+    --color-theme-success: var(--vscode-success);
+    --color-theme-warning: var(--vscode-warning);
+    --color-theme-error: var(--vscode-error);
+    --color-theme-info: var(--vscode-info);
+
+    --color-theme-hover: var(--vscode-hover);
+    --color-theme-active: var(--vscode-active);
+    --color-theme-focus: var(--vscode-focus);
+  }
+
+  /* VSCode theme color values */
+  --vscode-background: #1e1e1e;
+  --vscode-canvas: #252526;
+  --vscode-sidebar: #252526;
+  --vscode-header: #1e1e1e;
+  --vscode-panel: #2d2d30;
+
+  --vscode-border: #3e3e42;
+  --vscode-border-subtle: #2b2b2b;
+  --vscode-border-strong: #4d4d50;
+
+  --vscode-text-primary: #cccccc;
+  --vscode-text-secondary: #969696;
+  --vscode-text-tertiary: #6e6e6e;
+  --vscode-text-accent: #4ec9b0;
+
+  --vscode-success: #89d185;
+  --vscode-warning: #dcdcaa;
+  --vscode-error: #f48771;
+  --vscode-info: #4ec9b0;
+
+  --vscode-hover: rgb(255 255 255 / 0.05);
+  --vscode-active: rgb(255 255 255 / 0.08);
+  --vscode-focus: rgb(255 255 255 / 0.10);
+}
+
+/* =============================================================================
+   JETBRAINS THEME
+   ============================================================================= */
+
+[data-theme="jetbrains"] {
+  @theme inline {
+    --color-theme-background: var(--jetbrains-background);
+    --color-theme-canvas: var(--jetbrains-canvas);
+    --color-theme-sidebar: var(--jetbrains-sidebar);
+    --color-theme-header: var(--jetbrains-header);
+    --color-theme-panel: var(--jetbrains-panel);
+
+    --color-theme-border: var(--jetbrains-border);
+    --color-theme-border-subtle: var(--jetbrains-border-subtle);
+    --color-theme-border-strong: var(--jetbrains-border-strong);
+
+    --color-theme-text-primary: var(--jetbrains-text-primary);
+    --color-theme-text-secondary: var(--jetbrains-text-secondary);
+    --color-theme-text-tertiary: var(--jetbrains-text-tertiary);
+    --color-theme-text-accent: var(--jetbrains-text-accent);
+
+    --color-theme-success: var(--jetbrains-success);
+    --color-theme-warning: var(--jetbrains-warning);
+    --color-theme-error: var(--jetbrains-error);
+    --color-theme-info: var(--jetbrains-info);
+
+    --color-theme-hover: var(--jetbrains-hover);
+    --color-theme-active: var(--jetbrains-active);
+    --color-theme-focus: var(--jetbrains-focus);
+  }
+
+  /* JetBrains theme color values */
+  --jetbrains-background: #2b2b2b;
+  --jetbrains-canvas: #313335;
+  --jetbrains-sidebar: #3c3f41;
+  --jetbrains-header: #2b2b2b;
+  --jetbrains-panel: #3c3f41;
+
+  --jetbrains-border: #4e5254;
+  --jetbrains-border-subtle: #323232;
+  --jetbrains-border-strong: #5e6164;
+
+  --jetbrains-text-primary: #a9b7c6;
+  --jetbrains-text-secondary: #787878;
+  --jetbrains-text-tertiary: #606366;
+  --jetbrains-text-accent: #6897bb;
+
+  --jetbrains-success: #629755;
+  --jetbrains-warning: #bbb529;
+  --jetbrains-error: #bc3f3c;
+  --jetbrains-info: #6897bb;
+
+  --jetbrains-hover: rgb(255 255 255 / 0.04);
+  --jetbrains-active: rgb(255 255 255 / 0.07);
+  --jetbrains-focus: rgb(255 255 255 / 0.09);
+}
+
+/* =============================================================================
+   GLOBAL STYLES
+   ============================================================================= */
+
+body {
+  background-color: var(--color-theme-background);
+  color: var(--color-theme-text-primary);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-theme-canvas);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-theme-border-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555555;
+}
