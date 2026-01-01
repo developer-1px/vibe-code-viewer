@@ -1,7 +1,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useSetAtom, useAtomValue } from 'jotai';
-import { GraphData, VariableNode } from '../../entities/SourceFileNode';
+import { GraphData, SourceFileNode } from '../../entities/SourceFileNode';
 import { CanvasNode } from '../../entities/CanvasNode';
 import {
   layoutNodesAtom,
@@ -22,9 +22,9 @@ export const useCanvasLayout = (
     const setFullNodeMapAtom = useSetAtom(fullNodeMapAtom);
 
     const fullNodeMap = useMemo(() => {
-        if (!initialData) return new Map<string, VariableNode>();
+        if (!initialData) return new Map<string, SourceFileNode>();
         // All files are already parsed by parseProject
-        return new Map<string, VariableNode>(initialData.nodes.map(n => [n.id, n]));
+        return new Map<string, SourceFileNode>(initialData.nodes.map(n => [n.id, n]));
     }, [initialData]);
 
     // --- Simple Layout: Just display visible nodes without auto-positioning ---

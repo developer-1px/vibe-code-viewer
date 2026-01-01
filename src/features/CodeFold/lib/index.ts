@@ -2,6 +2,7 @@
  * CodeFold feature library exports
  */
 
-export * from './types';
+// Re-export types from entities layer
+export type { FoldInfo, FoldPlaceholder } from '../../../entities/CodeFold';
 export * from './collectFoldMetadata';
 export * from './foldUtils';

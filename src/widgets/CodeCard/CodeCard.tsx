@@ -6,7 +6,7 @@ import { CanvasNode } from '../../entities/CanvasNode';
 import { renderCodeLinesDirect, renderVueFile } from '../CodeViewer/core';
 import type { CodeLine } from '../CodeViewer/core/types';
 import { getNodeBorderColor } from '../../entities/SourceFileNode/lib/styleUtils';
-import { getFoldableLinesByMaxDepth, calculateFoldRanges } from '../../features/CodeFold/lib';
+import { getFoldableLinesByMaxDepth } from '../../features/CodeFold/lib';
 
 // UI Components
 import CodeCardHeader from './ui/CodeCardHeader';
@@ -50,13 +50,6 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
     });
   }, [node.id, processedLines, foldedLinesMap, setFoldedLinesMap]);
 
-  // Fold ranges 계산 (CodeCardLine에서 사용)
-  const foldedLines = foldedLinesMap.get(node.id) || new Set<number>();
-
-  const foldRanges = useMemo(() => {
-    return calculateFoldRanges(foldedLines, processedLines);
-  }, [processedLines, foldedLines]);
-
   // Script 영역의 마지막 라인 번호 계산
   const scriptEndLine = useMemo(() => {
     if (processedLines.length === 0) return 0;
@@ -84,7 +77,6 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
         <CodeViewer
           processedLines={processedLines}
           node={node}
-          foldRanges={foldRanges}
         />
       )}
 

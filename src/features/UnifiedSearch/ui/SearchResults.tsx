@@ -82,7 +82,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ onSelect }) => {
       // Focus sidebar
       setFocusedPane('sidebar');
     } else if (result.type === 'symbol') {
-      console.log('[SearchResults] Symbol selected:', {
+      console.log('[SearchResults] CodeSymbol selected:', {
         name: result.name,
         nodeId: result.nodeId,
         filePath: result.filePath,

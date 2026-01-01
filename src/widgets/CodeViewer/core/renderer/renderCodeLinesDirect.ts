@@ -8,7 +8,7 @@ import type {CanvasNode} from '../../../../entities/CanvasNode'
 import {findDefinitionLocation, getQuickInfoAtPosition} from './tsLanguageService'
 import type {CodeLine, CodeSegment, SegmentKind} from '../types'
 import {getImportSource} from '../../../../entities/SourceFileNode/lib/getters'
-import {resolvePath} from '../../../../services/tsParser/utils/pathResolver'
+import {resolvePath} from '@/shared/tsParser/utils/pathResolver'
 import {
   extractShortId,
   createDependencyMap,
@@ -20,7 +20,8 @@ import {
 import {
   processDeclarationNode,
   processTemplateLiteral,
-  processIdentifier
+  processIdentifier,
+  processExportDeclaration
 } from './astHooks'
 import { collectFoldMetadata } from '../../../../features/CodeFold/lib'
 
@@ -415,6 +416,9 @@ export function renderCodeLinesDirect(node: CanvasNode, files: Record<string, st
 
       // Declaration 노드 처리
       processDeclarationNode(node, sourceFile, tempResult, localIdentifiers, addKind);
+
+      // Export Declaration 처리 (export { foo, bar })
+      processExportDeclaration(node, sourceFile, currentLines, filePath);
 
       // Keyword, Punctuation, String 체크
       const basicKind = getSegmentKind(node);

@@ -2,9 +2,12 @@
  * FocusedIdentifierItem - Focus mode의 active identifier 표시 및 제거
  */
 
-import React from 'react';
-import { useSetAtom } from 'jotai';
+import React, { useRef } from 'react';
+import { useSetAtom, useAtomValue } from 'jotai';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { activeLocalVariablesAtom } from '../model/atoms';
+import { visibleNodeIdsAtom, fullNodeMapAtom } from '../../../store/atoms';
+import { pruneDetachedNodes } from '../../../widgets/PipelineCanvas/utils';
 import type { IdentifierMetadata } from './FocusedIdentifiers';
 
 interface FocusedIdentifierItemProps {
@@ -14,10 +17,11 @@ interface FocusedIdentifierItemProps {
 
 export const FocusedIdentifierItem: React.FC<FocusedIdentifierItemProps> = ({ metadata, nodeId }) => {
   const setActiveLocalVariables = useSetAtom(activeLocalVariablesAtom);
+  const setVisibleNodeIds = useSetAtom(visibleNodeIdsAtom);
+  const fullNodeMap = useAtomValue(fullNodeMapAtom);
+  const chipRef = useRef<HTMLDivElement>(null);
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
+  const handleRemove = () => {
     // Deactivate (remove from focus mode)
     setActiveLocalVariables((prev: Map<string, Set<string>>) => {
       const next = new Map(prev);
@@ -33,17 +37,48 @@ export const FocusedIdentifierItem: React.FC<FocusedIdentifierItemProps> = ({ me
 
       return next;
     });
+
+    // Close the node
+    setVisibleNodeIds((prev: Set<string>) => {
+      const next = new Set(prev);
+
+      // Try to remove the specific node
+      if (next.has(nodeId)) {
+        next.delete(nodeId);
+      }
+
+      // Also try file node if it's a function/variable node
+      const filePath = nodeId.split('::')[0];
+      if (fullNodeMap.has(filePath) && next.has(filePath)) {
+        next.delete(filePath);
+      }
+
+      return pruneDetachedNodes(next, fullNodeMap, null, null);
+    });
   };
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleRemove();
+  };
+
+  // Delete/Backspace to remove
+  useHotkeys('delete,backspace', handleRemove, {
+    enabled: () => chipRef.current === document.activeElement,
+    enableOnFormTags: false
+  });
 
   return (
     <div
+      ref={chipRef}
       onClick={handleClick}
+      tabIndex={0}
       className="
         group relative flex items-start gap-2 px-3 py-1.5 text-xs font-mono
         border-l-2 border-l-cyan-400 rounded-r transition-all duration-200
-        cursor-pointer bg-cyan-500/10 hover:bg-cyan-500/20
+        cursor-pointer bg-cyan-500/10 hover:bg-cyan-500/20 focus:bg-cyan-500/30 focus:outline-none focus:ring-2 focus:ring-cyan-400/50
       "
-      title="Click to deactivate highlight"
+      title="Click or press Delete/Backspace to close"
     >
       {/* Identifier name */}
       <span className="flex-shrink-0 font-semibold text-cyan-100">

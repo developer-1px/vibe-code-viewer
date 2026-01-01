@@ -24,12 +24,5 @@ export interface SearchResult {
   isExported?: boolean; // Whether symbol is exported
 }
 
-// Symbol metadata cache (extracted once after parsing)
-export interface SymbolMetadata {
-  typeInfo: string | null; // TS Language Service hover info
-  codeSnippet: string; // Definition line code snippet
-  usageCount: number; // Number of dependencies referencing this symbol
-}
-
 // Search mode
 export type SearchMode = 'all' | 'files' | 'symbols';

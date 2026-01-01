@@ -9,16 +9,23 @@ import { CanvasNode } from '../../entities/CanvasNode';
 import type { CodeLine as CodeLineType } from './core/types';
 import CodeLine from './ui/CodeLine';
 import { defaultEditorTheme, jetbrainsEditorTheme, vscodeEditorTheme, EditorThemeProvider } from '../../app/theme';
-import { currentThemeAtom } from '../../store/atoms';
+import { currentThemeAtom, foldedLinesAtom } from '../../store/atoms';
+import { calculateFoldRanges } from '../../features/CodeFold/lib';
 
 interface CodeViewerProps {
   processedLines: CodeLineType[];
   node: CanvasNode;
-  foldRanges: Array<{ start: number; end: number }>;
 }
 
-const CodeViewer = ({ processedLines, node, foldRanges }: CodeViewerProps) => {
+const CodeViewer = ({ processedLines, node }: CodeViewerProps) => {
   const currentThemeName = useAtomValue(currentThemeAtom);
+  const foldedLinesMap = useAtomValue(foldedLinesAtom);
+
+  // Calculate fold ranges from folded lines
+  const foldRanges = useMemo(() => {
+    const foldedLines = foldedLinesMap.get(node.id) || new Set<number>();
+    return calculateFoldRanges(foldedLines, processedLines);
+  }, [foldedLinesMap, node.id, processedLines]);
 
   // Select theme based on atom value
   const theme = useMemo(() => {

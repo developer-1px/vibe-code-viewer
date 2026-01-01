@@ -1,5 +1,5 @@
 /**
- * Symbol opening utilities - shared logic for expanding symbols in canvas
+ * CodeSymbol opening utilities - shared logic for expanding symbols in canvas
  */
 
 import type { SetStateAction } from 'jotai';

@@ -5,7 +5,7 @@
  * graph connectivity (nodes remain visible if reachable from other paths).
  */
 
-import { VariableNode } from '../types';
+import type { SourceFileNode } from './types';
 
 /**
  * Check if all dependencies of a node are expanded (visible)
@@ -24,7 +24,7 @@ export const checkAllDepsExpanded = (
  */
 export const expandDependenciesRecursive = (
   nodeId: string,
-  fullNodeMap: Map<string, VariableNode>,
+  fullNodeMap: Map<string, SourceFileNode>,
   visibleNodeIds: Set<string>
 ): Set<string> => {
   const newVisible = new Set(visibleNodeIds);
@@ -72,7 +72,7 @@ export const expandDependenciesRecursive = (
  */
 export const collapseDependencies = (
   nodeId: string,
-  fullNodeMap: Map<string, VariableNode>,
+  fullNodeMap: Map<string, SourceFileNode>,
   visibleNodeIds: Set<string>
 ): Set<string> => {
   const next = new Set(visibleNodeIds);
@@ -139,7 +139,7 @@ export const collapseDependencies = (
  */
 export const getFirstDependency = (
   nodeId: string,
-  fullNodeMap: Map<string, VariableNode>
+  fullNodeMap: Map<string, SourceFileNode>
 ): string | null => {
   const node = fullNodeMap.get(nodeId);
   if (!node || node.dependencies.length === 0) return null;

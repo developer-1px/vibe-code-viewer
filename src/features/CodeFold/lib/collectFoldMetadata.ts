@@ -4,7 +4,7 @@
  */
 
 import * as ts from 'typescript';
-import type { FoldInfo } from './types';
+import type { FoldInfo } from '../../../entities/CodeFold';
 
 // CodeLine 인터페이스 (순환 참조 방지를 위해 필요한 필드만 정의)
 interface CodeLineForFold {

@@ -256,3 +256,47 @@ function isDestructuredParameter(identifier: ts.Identifier): boolean {
 
   return false;
 }
+
+/**
+ * Hook 3: Export Declaration 처리
+ * - export { foo, bar } 형태의 export 문 감지
+ * - 각 export되는 식별자에 대해 exportSlots 추가
+ * - 나중에 nodeId를 찾아서 매핑 (현재는 이름만 저장)
+ */
+export function processExportDeclaration(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+  result: CodeLine[],
+  filePath: string
+): void {
+  if (!ts.isExportDeclaration(node)) return;
+
+  const exportClause = node.exportClause;
+  if (!exportClause || !ts.isNamedExports(exportClause)) return;
+
+  const start = node.getStart(sourceFile);
+  const pos = sourceFile.getLineAndCharacterOfPosition(start);
+  const lineIdx = pos.line;
+
+  if (lineIdx < 0 || lineIdx >= result.length) return;
+
+  // Initialize exportSlots array if not exists
+  if (!result[lineIdx].exportSlots) {
+    result[lineIdx].exportSlots = [];
+  }
+
+  // Process each exported identifier: export { foo, bar as baz }
+  exportClause.elements.forEach(element => {
+    const name = element.name.text;
+    const elementStart = element.name.getStart(sourceFile);
+    const offset = sourceFile.getLineAndCharacterOfPosition(elementStart).character;
+
+    // TODO: nodeId 매핑은 나중에 추가 (원본 선언을 찾아서 연결)
+    // 현재는 이름만 저장
+    result[lineIdx].exportSlots!.push({
+      name,
+      offset,
+      // nodeId will be resolved later
+    });
+  });
+}

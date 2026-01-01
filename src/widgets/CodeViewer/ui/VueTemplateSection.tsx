@@ -10,7 +10,7 @@ import { useSetAtom } from 'jotai';
 import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, filesAtom } from '../../../store/atoms';
 import { useAtomValue } from 'jotai';
 import type { CanvasNode } from '../../../entities/CanvasNode';
-import { extractTemplateComponents, extractTemplateVariables } from '../../../services/tsParser/utils/vueTemplateParser';
+import { extractTemplateComponents, extractTemplateVariables } from '@/shared/tsParser/utils/vueTemplateParser';
 import { useEditorTheme } from '../../../app/theme';
 
 const VueTemplateSection = ({template, node, scriptEndLine }: {

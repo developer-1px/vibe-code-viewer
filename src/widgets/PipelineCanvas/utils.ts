@@ -1,6 +1,6 @@
 
 import { CanvasNode } from '../../entities/CanvasNode';
-import { VariableNode } from '../../entities/SourceFileNode';
+import { SourceFileNode } from '../../entities/SourceFileNode';
 
 // --- Constants ---
 export const LEVEL_SPACING = 850; // Horizontal space between columns
@@ -58,7 +58,7 @@ export const estimateNodeHeight = (node: CanvasNode) => {
  */
 export const pruneDetachedNodes = (
     visibleSet: Set<string>,
-    nodeMap: Map<string, VariableNode>,
+    nodeMap: Map<string, SourceFileNode>,
     entryFile: string,
     templateRootId: string | null
 ): Set<string> => {

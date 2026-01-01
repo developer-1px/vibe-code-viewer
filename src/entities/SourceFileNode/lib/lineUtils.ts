@@ -1,5 +1,27 @@
 
-import { ProcessedLine, TokenRange, LineSegment } from './types.ts';
+// LEGACY: This file is deprecated and not used
+// Types were moved to entities/CodeSegment and entities/CodeLine
+// TODO: Remove this file or refactor to use new entities
+
+// Internal types for legacy code
+interface TokenRange {
+  start: number;
+  end: number;
+  type: 'self' | 'dependency' | 'other-known' | 'text' | 'primitive' | 'import-source' | 'string' | 'comment' | 'external-import' | 'external-closure' | 'keyword' | 'punctuation';
+  text: string;
+}
+
+interface LineSegment {
+  text: string;
+  type: 'text' | 'self' | 'token' | 'primitive' | 'import-source' | 'string' | 'comment' | 'directive-if' | 'directive-for' | 'directive-else' | 'directive-else-if' | 'external-import' | 'external-closure' | 'keyword' | 'punctuation';
+  tokenId?: string;
+}
+
+interface ProcessedLine {
+  num: number;
+  segments: LineSegment[];
+  hasInput: boolean;
+}
 import type { TemplateTokenRange } from '../../CanvasNode';
 
 export const processCodeLines = (

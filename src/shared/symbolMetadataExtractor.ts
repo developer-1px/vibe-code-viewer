@@ -1,10 +1,10 @@
 /**
- * Symbol Metadata Extractor - Extract type info, snippets, and usage counts
+ * CodeSymbol Metadata Extractor - Extract type info, snippets, and usage counts
  * Uses TypeScript Language Service to enrich symbols with metadata
  */
 
-import type { VariableNode } from '../entities/SourceFileNode';
-import type { SymbolMetadata } from '../store/atoms';
+import type { SourceFileNode } from '../entities/SourceFileNode';
+import type { CodeSymbolMetadata } from '../entities/CodeSymbol';
 import { getQuickInfoAtPosition } from '../widgets/CodeViewer/core';
 
 /**
@@ -25,7 +25,7 @@ function extractFirstLine(codeSnippet: string): string {
 /**
  * Count how many times a symbol is used by other nodes
  */
-function countUsages(nodeId: string, fullNodeMap: Map<string, VariableNode>): number {
+function countUsages(nodeId: string, fullNodeMap: Map<string, SourceFileNode>): number {
   let count = 0;
 
   fullNodeMap.forEach((node) => {
@@ -49,11 +49,11 @@ function isTsxFile(filePath: string): boolean {
  * Called once after parsing completes
  */
 export function extractSymbolMetadata(
-  fullNodeMap: Map<string, VariableNode>,
+  fullNodeMap: Map<string, SourceFileNode>,
   files: Record<string, string>
-): Map<string, SymbolMetadata> {
+): Map<string, CodeSymbolMetadata> {
   console.log('[symbolMetadataExtractor] Starting extraction, fullNodeMap size:', fullNodeMap.size);
-  const metadata = new Map<string, SymbolMetadata>();
+  const metadata = new Map<string, CodeSymbolMetadata>();
 
   fullNodeMap.forEach((node) => {
     // Skip excluded node types

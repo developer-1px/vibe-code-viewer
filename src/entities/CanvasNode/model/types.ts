@@ -1,5 +1,5 @@
 
-import type { VariableNode } from '../../SourceFileNode';
+import type { SourceFileNode } from '../../SourceFileNode';
 
 export interface TemplateTokenRange {
   startOffset: number;  // Absolute position in template content
@@ -11,7 +11,7 @@ export interface TemplateTokenRange {
   type?: 'token' | 'string' | 'comment' | 'directive-if' | 'directive-for' | 'directive-else' | 'directive-else-if'; // Added to distinguish variable tokens from string literals, comments, and directives
 }
 
-export interface CanvasNode extends VariableNode {
+export interface CanvasNode extends SourceFileNode {
   x: number;
   y: number;
   level: number; // 0 for Template, -1 for immediate deps, etc.

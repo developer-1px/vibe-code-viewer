@@ -13,7 +13,7 @@ import ResetViewButton from '../features/ResetViewButton.tsx';
 
 // Atoms & Hooks
 import { visibleNodeIdsAtom, selectedNodeIdsAtom, openedFilesAtom, fullNodeMapAtom, symbolMetadataAtom, filesAtom, focusedPaneAtom, graphDataAtom } from '../store/atoms';
-import { extractSymbolMetadata } from '../services/symbolMetadataExtractor';
+import { extractSymbolMetadata } from '@/shared/symbolMetadataExtractor';
 
 const PipelineCanvas: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);

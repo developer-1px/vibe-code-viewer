@@ -4,6 +4,7 @@ import { useAtomValue } from 'jotai';
 import { CanvasNode } from '../../../entities/CanvasNode';
 import type { CodeLine as CodeLineType } from '../core/types';
 import CodeLineSlots from './CodeLineSlots';
+import CodeLineExportSlots from './CodeLineExportSlots';
 import CodeLineSegment from './CodeLineSegment';
 import FoldButton from '../../../features/CodeFold/ui/FoldButton';
 import FoldBadge from '../../../features/CodeFold/ui/FoldBadge';
@@ -121,6 +122,11 @@ const CodeLine = ({
           data-output-port-line={line.num}
         />
       )}
+
+      {/* Export Slots: Show for export { ... } statements */}
+      <div className="absolute right-0 top-0">
+        <CodeLineExportSlots line={line} />
+      </div>
     </div>
   );
 };

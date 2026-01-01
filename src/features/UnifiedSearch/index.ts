@@ -3,6 +3,7 @@
  */
 
 export { UnifiedSearchModal } from './ui/UnifiedSearchModal';
-export type { SearchResult, SymbolMetadata } from './model/types';
+export type { SearchResult } from './model/types';
+export type { CodeSymbolMetadata } from '../../entities/CodeSymbol';
 export { searchResultsFuzzy } from './lib/searchService';
 export { extractAllSearchableItems } from './lib/symbolExtractor';

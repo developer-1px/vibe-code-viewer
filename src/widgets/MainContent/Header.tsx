@@ -42,7 +42,7 @@ const Header: React.FC = () => {
       <div className="flex items-center gap-3">
         <h1 className="font-bold text-sm text-theme-text-primary flex items-center gap-2">
           <IconBox className="w-4 h-4 text-theme-text-accent" />
-          Teo's Devtools
+          Teo's IDE
         </h1>
 
         <span className="text-xs text-theme-text-secondary">Project Logic Visualization</span>

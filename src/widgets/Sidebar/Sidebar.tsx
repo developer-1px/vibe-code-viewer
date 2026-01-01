@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAtom, useAtomValue } from 'jotai';
 import { FolderTree } from 'lucide-react';
-import { filesAtom, isSidebarOpenAtom } from '../../store/atoms';
+import { filesAtom, isSidebarOpenAtom, viewModeAtom } from '../../store/atoms';
 import UploadFolderButton from '../../features/UploadFolderButton';
 import FolderView from './FolderView';
 
 export const Sidebar: React.FC = () => {
   const files = useAtomValue(filesAtom);
   const [isSidebarOpen, setIsSidebarOpen] = useAtom(isSidebarOpenAtom);
+  const viewMode = useAtomValue(viewModeAtom);
   const [width, setWidth] = useState(300);
   const [isResizing, setIsResizing] = useState(false);
 
@@ -40,9 +41,15 @@ export const Sidebar: React.FC = () => {
     return null;
   }
 
+  // IDE 모드: relative positioning for flex layout
+  // Canvas 모드: absolute positioning for floating
+  const positionClass = viewMode === 'ide'
+    ? 'relative'
+    : 'absolute top-0 left-0 z-50';
+
   return (
     <div
-      className="absolute top-0 left-0 h-full bg-theme-sidebar border-r border-theme-border flex flex-col select-none shadow-2xl z-50 transition-transform duration-200 ease-out"
+      className={`${positionClass} h-full bg-theme-sidebar border-r border-theme-border flex flex-col select-none shadow-2xl transition-transform duration-200 ease-out`}
       style={{ width: `${width}px` }}
     >
       {/* Compact Header */}
