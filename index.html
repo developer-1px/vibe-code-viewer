@@ -15,54 +15,54 @@
               mono: ['Fira Code', 'monospace'],
             },
             colors: {
-              // Semantic theme tokens - Balanced + Cyan/Teal identity
+              // Semantic theme tokens - Figma Dark inspired + Cyan/Teal identity
               theme: {
-                // Backgrounds - Between VSCode & JetBrains
-                background: '#181a1f',    // Main app background (darker for contrast)
-                canvas: '#1f2228',        // Canvas/workspace area (darker)
-                sidebar: '#1f2228',       // Sidebar background (matches canvas)
-                header: '#1b1d23',        // Header background (subtle distinction)
-                panel: '#252830',         // Panel/card background (lighter for hierarchy)
+                // Backgrounds - Figma Dark style (very dark, high contrast)
+                background: '#0e0e0e',    // Very dark background (Figma style)
+                canvas: '#1e1e1e',        // Canvas/workspace (dark gray)
+                sidebar: '#1e1e1e',       // Sidebar background (matches canvas)
+                header: '#181818',        // Header background (slightly darker)
+                panel: '#2c2c2c',         // Panel/card background (lighter for hierarchy)
 
-                // Borders - More visible
+                // Borders - Figma style (subtle, minimal)
                 border: {
-                  DEFAULT: '#3b4048',     // Default border (more visible)
-                  subtle: '#2d3340',      // Subtle border
-                  strong: '#4d5362',      // Strong border
+                  DEFAULT: '#333333',     // Subtle border (Figma style)
+                  subtle: '#282828',      // Very subtle
+                  strong: '#444444',      // Strong border (still minimal)
                 },
 
-                // Text - Higher contrast
+                // Text - Figma style (high contrast, bright)
                 text: {
-                  primary: '#d4d6dd',     // Primary text (brighter)
-                  secondary: '#9ba0aa',   // Secondary text (clearer)
-                  tertiary: '#7a7f8a',    // Tertiary/muted text (still readable)
-                  accent: '#22d3ee',      // Cyan-400 accent (AI vibe)
+                  primary: '#f5f5f5',     // Very bright primary text (Figma style)
+                  secondary: '#b3b3b3',   // Clear secondary text
+                  tertiary: '#8c8c8c',    // Muted but readable
+                  accent: '#22d3ee',      // Cyan-400 accent (AI vibe, our identity)
                 },
 
-                // Interactive states
-                hover: 'rgba(255, 255, 255, 0.08)',   // More visible hover
-                active: 'rgba(255, 255, 255, 0.12)',  // Active state
-                focus: 'rgba(255, 255, 255, 0.15)',   // Focus state
+                // Interactive states - Figma style
+                hover: 'rgba(255, 255, 255, 0.06)',   // Subtle hover (Figma minimal)
+                active: 'rgba(255, 255, 255, 0.10)',  // Active state
+                focus: 'rgba(255, 255, 255, 0.12)',   // Focus state
 
-                // Status colors - More vibrant
-                success: '#5fb76b',       // Green (brighter)
-                warning: '#d88a48',       // Orange (brighter)
-                error: '#d66169',         // Red (brighter)
-                info: '#06b6d4',          // Cyan-600 (teal, AI identity)
+                // Status colors - Vibrant on dark
+                success: '#5fb76b',       // Green
+                warning: '#f5a623',       // Figma-style orange
+                error: '#f24822',         // Figma-style red
+                info: '#18a0fb',          // Figma blue (keep cyan for identity)
 
                 // Special
-                purple: '#a688bb',        // Brighter purple
-                amber: '#d88a48',         // Brighter amber
-                emerald: '#5fb76b',       // Brighter emerald
+                purple: '#b58bf7',        // Figma purple
+                amber: '#f5a623',         // Figma amber
+                emerald: '#5fb76b',       // Emerald green
               },
 
               // Legacy tokens (for backward compatibility)
-              'vibe-dark': '#181a1f',
-              'vibe-panel': '#252830',
-              'vibe-border': '#3b4048',
+              'vibe-dark': '#0e0e0e',
+              'vibe-panel': '#2c2c2c',
+              'vibe-border': '#333333',
               'vibe-accent': '#22d3ee',
               'vibe-success': '#5fb76b',
-              'vibe-purple': '#a688bb',
+              'vibe-purple': '#b58bf7',
             }
           }
         }
@@ -70,24 +70,24 @@
     </script>
     <style>
       body {
-        background-color: #181a1f;  /* Balanced dark (VSCode ↔ JetBrains) */
-        color: #d4d6dd;             /* Primary text color (brighter) */
+        background-color: #0e0e0e;  /* Figma Dark style */
+        color: #f5f5f5;             /* Bright primary text */
       }
 
-      /* Custom Scrollbar */
+      /* Custom Scrollbar - Figma style */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #1f2228;        /* Canvas background */
+        background: #1e1e1e;        /* Canvas background */
       }
       ::-webkit-scrollbar-thumb {
-        background: #4d5362;        /* Visible scrollbar */
+        background: #444444;        /* Minimal scrollbar */
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #5d6372;        /* Lighter on hover */
+        background: #555555;        /* Lighter on hover */
       }
     </style>
   <script type="importmap">
