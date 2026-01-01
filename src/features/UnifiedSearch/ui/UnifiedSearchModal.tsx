@@ -98,7 +98,7 @@ export const UnifiedSearchModal: React.FC = () => {
       className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]"
       onClick={handleBackdropClick}
     >
-      <div className="w-full max-w-2xl bg-[#0f172a] border border-vibe-border rounded shadow-2xl overflow-hidden">
+      <div className="w-full max-w-2xl bg-theme-background border border-theme-border rounded shadow-2xl overflow-hidden">
         {/* Search Input */}
         <SearchInput />
 
@@ -106,13 +106,13 @@ export const UnifiedSearchModal: React.FC = () => {
         <SearchResults onSelect={handleClose} />
 
         {/* Footer */}
-        <div className="px-2.5 py-1.5 bg-black/20 border-t border-vibe-border/50 flex items-center justify-between text-[9px] text-slate-500 font-mono">
+        <div className="px-2.5 py-1.5 bg-theme-background/20 border-t border-theme-border/50 flex items-center justify-between text-[9px] text-theme-text-tertiary font-mono">
           <div className="flex gap-3">
             <span>↑↓ Navigate</span>
             <span>↵ Select</span>
             <span>ESC Close</span>
-            <span className="text-slate-600">|</span>
-            <span className="text-vibe-accent/70">symbol/file or symbol file</span>
+            <span className="text-theme-border">|</span>
+            <span className="text-theme-text-accent/70">symbol/file or symbol file</span>
           </div>
           <div>Shift+Shift to open</div>
         </div>

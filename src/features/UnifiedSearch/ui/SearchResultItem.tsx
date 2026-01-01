@@ -141,10 +141,10 @@ export const SearchResultItem = forwardRef<HTMLDivElement, SearchResultItemProps
         {result.type === 'file' || result.type === 'folder' ? (
           // FILE/FOLDER: Name → full path
           <>
-            <div className="text-[11px] text-slate-100 font-mono font-semibold flex-shrink-0">
+            <div className="text-[11px] text-theme-text-primary font-mono font-semibold flex-shrink-0">
               {highlightText(result.name, 'name')}
             </div>
-            <div className="text-[9px] text-slate-500 font-mono truncate flex-1" title={result.filePath}>
+            <div className="text-[9px] text-theme-text-tertiary font-mono truncate flex-1" title={result.filePath}>
               {highlightText(result.filePath, 'filePath')}
             </div>
           </>
@@ -153,7 +153,7 @@ export const SearchResultItem = forwardRef<HTMLDivElement, SearchResultItemProps
           <>
             {/* Code snippet with symbol name highlighted */}
             {result.codeSnippet ? (
-              <div className="text-[9px] text-slate-500 font-mono truncate flex-1" title={result.codeSnippet}>
+              <div className="text-[9px] text-theme-text-tertiary font-mono truncate flex-1" title={result.codeSnippet}>
                 {(() => {
                   const snippet = result.codeSnippet;
                   const symbolName = result.name;
@@ -166,20 +166,20 @@ export const SearchResultItem = forwardRef<HTMLDivElement, SearchResultItemProps
                   return (
                     <>
                       <span>{snippet.slice(0, index)}</span>
-                      <span className="text-white font-semibold">{highlightText(symbolName, 'name')}</span>
+                      <span className="text-theme-text-accent font-semibold">{highlightText(symbolName, 'name')}</span>
                       <span>{snippet.slice(index + symbolName.length)}</span>
                     </>
                   );
                 })()}
               </div>
             ) : (
-              <div className="text-[11px] text-white font-mono font-semibold flex-1">
+              <div className="text-[11px] text-theme-text-accent font-mono font-semibold flex-1">
                 {highlightText(result.name, 'name')}
               </div>
             )}
 
             {/* File location */}
-            <div className="text-[9px] text-slate-500 font-mono flex-shrink-0" title={result.filePath}>
+            <div className="text-[9px] text-theme-text-tertiary font-mono flex-shrink-0" title={result.filePath}>
               {fileName}{result.lineNumber && `:${result.lineNumber}`}
             </div>
           </>

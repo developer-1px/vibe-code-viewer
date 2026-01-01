@@ -183,7 +183,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ onSelect }) => {
 
   if (results.length === 0) {
     return (
-      <div className="px-3 py-6 text-center text-slate-500 text-[11px]">
+      <div className="px-3 py-6 text-center text-theme-text-secondary text-[11px]">
         No results found
       </div>
     );

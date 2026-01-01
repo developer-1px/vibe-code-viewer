@@ -52,7 +52,7 @@ const FoldBadge: React.FC<FoldBadgeProps> = ({ line, node, isFolded, foldedCount
   return (
     <span
       onClick={handleUnfold}
-      className="ml-1 px-1 py-1 rounded bg-slate-700/40 text-slate-400 text-[10px] select-none border border-slate-600/30 cursor-pointer hover:bg-slate-600/60 hover:text-slate-300 hover:border-slate-500/50 transition-colors"
+      className="ml-1 px-1 py-1 rounded bg-theme-panel/40 text-theme-text-secondary text-[10px] select-none border border-theme-border/30 cursor-pointer hover:bg-theme-hover hover:text-theme-text-primary hover:border-theme-border-strong/50 transition-colors"
       title="Click to unfold"
     >
       {badgeText}

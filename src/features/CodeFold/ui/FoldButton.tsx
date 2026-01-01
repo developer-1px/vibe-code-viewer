@@ -54,7 +54,7 @@ const FoldButton: React.FC<FoldButtonProps> = ({ line, node }) => {
       className={`flex-shrink-0 w-3 h-3 flex items-center justify-center transition-colors cursor-pointer ${
         isFolded
           ? 'text-vibe-accent hover:text-vibe-accent/80'
-          : 'text-slate-500 hover:text-vibe-accent'
+          : 'text-theme-text-tertiary hover:text-vibe-accent'
       }`}
       title={isFolded ? 'Unfold' : 'Fold'}
     >

@@ -43,7 +43,7 @@ export const Sidebar: React.FC = () => {
 
   return (
     <div
-      className="absolute top-0 left-0 h-full bg-vibe-panel border-r border-vibe-border flex flex-col select-none shadow-2xl z-50 transition-transform duration-200 ease-out"
+      className="absolute top-0 left-0 h-full bg-theme-sidebar border-r border-theme-border flex flex-col select-none shadow-2xl z-50 transition-transform duration-200 ease-out"
       style={{ width: `${width}px` }}
     >
       {/* Compact Header */}

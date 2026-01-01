@@ -71,8 +71,8 @@ export const FocusedIdentifiers: React.FC<FocusedIdentifiersProps> = ({ node }) 
   }
 
   return (
-    <div className="flex flex-col gap-0.5 bg-[#0d1526] border-y border-white/5 py-2">
-      <div className="px-3 text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1">
+    <div className="flex flex-col gap-0.5 bg-theme-panel border-y border-theme-border py-2">
+      <div className="px-3 text-[10px] uppercase tracking-wider text-theme-text-tertiary font-semibold mb-1">
         Focused Identifiers
       </div>
       {identifiersWithMetadata.map((metadata) => (

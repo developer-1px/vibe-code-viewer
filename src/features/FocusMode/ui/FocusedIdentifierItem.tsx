@@ -52,7 +52,7 @@ export const FocusedIdentifierItem: React.FC<FocusedIdentifierItemProps> = ({ me
 
       {/* Type info summary */}
       {metadata.hoverInfo && (
-        <span className="flex-1 text-slate-400 truncate opacity-70">
+        <span className="flex-1 text-theme-text-secondary truncate opacity-70">
           {metadata.hoverInfo}
         </span>
       )}
@@ -63,7 +63,7 @@ export const FocusedIdentifierItem: React.FC<FocusedIdentifierItemProps> = ({ me
       </span>
 
       {/* Active indicator */}
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 rounded-full bg-cyan-400 ring-2 ring-vibe-panel" />
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 rounded-full bg-cyan-400 ring-2 ring-theme-panel" />
     </div>
   );
 };
