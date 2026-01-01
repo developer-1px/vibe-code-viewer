@@ -218,6 +218,15 @@ const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
     }
   };
 
+  // Get display label with extension for file nodes
+  const displayLabel = useMemo(() => {
+    if (node.type === 'module' && node.filePath) {
+      const fileName = node.filePath.split('/').pop() || node.label;
+      return fileName;
+    }
+    return node.label;
+  }, [node.type, node.filePath, node.label]);
+
   return (
     <div className="px-3 py-1.5 border-b border-white/5 flex justify-between items-center bg-black/20">
       <div className="flex items-center gap-2 overflow-hidden">
@@ -233,7 +242,7 @@ const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
         )}
         {getIcon()}
         <div className="flex flex-col">
-          <span className="font-bold text-xs text-slate-100 truncate max-w-[300px]">{node.label}</span>
+          <span className="font-bold text-xs text-slate-100 truncate max-w-[300px]">{displayLabel}</span>
           <span className="text-[9px] text-slate-500 font-mono truncate max-w-[300px]">{node.filePath?.replace('src/', '') || node.filePath || ''}</span>
         </div>
       </div>
