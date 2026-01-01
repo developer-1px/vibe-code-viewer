@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext } from 'react';
-import { defaultEditorTheme } from './default';
+import { defaultEditorTheme } from './default/editor';
 import type { EditorTheme } from './types';
 
 const EditorThemeContext = createContext<EditorTheme>(defaultEditorTheme);

@@ -1,7 +1,14 @@
 
 import * as ts from 'typescript';
-import { TokenRange } from './types.ts';
-import type { FunctionAnalysis } from '../../../services/functionalParser/types';
+import type { FunctionAnalysis } from '@/shared/functionalParser/types';
+
+// Internal type for token ranges (legacy, not exported)
+interface TokenRange {
+  start: number;
+  end: number;
+  type: 'self' | 'dependency' | 'other-known' | 'text' | 'primitive' | 'import-source' | 'string' | 'comment' | 'external-import' | 'external-closure' | 'keyword' | 'punctuation';
+  text: string;
+}
 
 const REACT_PRIMITIVES = new Set([
   'useState', 'useEffect', 'useMemo', 'useCallback', 'useRef', 'useContext', 

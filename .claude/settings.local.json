@@ -13,7 +13,9 @@
       "WebSearch",
       "Bash(tree:*)",
       "Bash(git mv:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

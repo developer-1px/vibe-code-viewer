@@ -3,7 +3,7 @@
  */
 
 import * as ts from 'typescript';
-import type { CodeLine, SegmentKind } from '../types';
+import type { CodeLine, SegmentKind } from '../types/codeLine';
 import { isDeclarationNode, getDeclarationName } from './segmentUtils';
 
 export type AddKindFunction = (
@@ -44,20 +44,29 @@ function forEachBindingIdentifier(
  * Check if node is exported
  */
 function isExportedNode(node: ts.Node): boolean {
-  // Check if node has export modifier
-  if (ts.canHaveModifiers(node)) {
-    const modifiers = ts.getModifiers(node);
-    if (modifiers && modifiers.some(mod => mod.kind === ts.SyntaxKind.ExportKeyword)) {
+  const modifiers = (node as any).modifiers;
+  const parent = node.parent;
+
+  // Method 1: Check modifiers property directly (works for all TS versions)
+  if (modifiers && Array.isArray(modifiers)) {
+    if (modifiers.some((mod: any) => mod.kind === ts.SyntaxKind.ExportKeyword)) {
       return true;
     }
   }
 
-  // Check if parent is export declaration/assignment
-  const parent = node.parent;
-  if (!parent) return false;
+  // Method 2: Use ts.canHaveModifiers and ts.getModifiers (newer TS versions)
+  if (ts.canHaveModifiers && ts.canHaveModifiers(node)) {
+    const mods = ts.getModifiers && ts.getModifiers(node);
+    if (mods && mods.some(mod => mod.kind === ts.SyntaxKind.ExportKeyword)) {
+      return true;
+    }
+  }
 
-  if (ts.isExportDeclaration(parent) || ts.isExportAssignment(parent)) {
-    return true;
+  // Method 3: Check if parent is export declaration/assignment
+  if (parent) {
+    if (ts.isExportDeclaration(parent) || ts.isExportAssignment(parent)) {
+      return true;
+    }
   }
 
   return false;
@@ -68,12 +77,14 @@ function isExportedNode(node: ts.Node): boolean {
  * - hasDeclarationKeyword 플래그 설정 (export된 선언만)
  * - Declaration 이름에 'self' kind 추가
  * - Local identifier로 등록
+ * - declarationMap에 이름→라인 번호 저장 (export default 처리용)
  */
 export function processDeclarationNode(
   node: ts.Node,
   sourceFile: ts.SourceFile,
   result: CodeLine[],
   localIdentifiers: Set<string>,
+  declarationMap: Map<string, number>,
   addKind: AddKindFunction
 ): void {
   const start = node.getStart(sourceFile);
@@ -98,6 +109,7 @@ export function processDeclarationNode(
         const nameEnd = id.getEnd();
         addKind(nameStart, nameEnd, 'self', undefined, true, id); // isDeclarationName = true
         localIdentifiers.add(id.text);
+        declarationMap.set(id.text, lineIdx); // Store declaration location
       });
     });
   } else {
@@ -108,6 +120,7 @@ export function processDeclarationNode(
       const nameEnd = declarationName.getEnd();
       addKind(nameStart, nameEnd, 'self', undefined, true, declarationName); // isDeclarationName = true
       localIdentifiers.add(declarationName.text);
+      declarationMap.set(declarationName.text, lineIdx); // Store declaration location
     }
   }
 }
@@ -255,4 +268,76 @@ function isDestructuredParameter(identifier: ts.Identifier): boolean {
   }
 
   return false;
+}
+
+/**
+ * Hook 3: Export Declaration 처리
+ * - export { foo, bar } 형태의 export 문 감지
+ * - 각 export되는 식별자에 대해 exportSlots 추가
+ * - 나중에 nodeId를 찾아서 매핑 (현재는 이름만 저장)
+ */
+export function processExportDeclaration(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+  result: CodeLine[],
+  filePath: string
+): void {
+  if (!ts.isExportDeclaration(node)) return;
+
+  const exportClause = node.exportClause;
+  if (!exportClause || !ts.isNamedExports(exportClause)) return;
+
+  const start = node.getStart(sourceFile);
+  const pos = sourceFile.getLineAndCharacterOfPosition(start);
+  const lineIdx = pos.line;
+
+  if (lineIdx < 0 || lineIdx >= result.length) return;
+
+  // Initialize exportSlots array if not exists
+  if (!result[lineIdx].exportSlots) {
+    result[lineIdx].exportSlots = [];
+  }
+
+  // Process each exported identifier: export { foo, bar as baz }
+  exportClause.elements.forEach(element => {
+    const name = element.name.text;
+    const elementStart = element.name.getStart(sourceFile);
+    const offset = sourceFile.getLineAndCharacterOfPosition(elementStart).character;
+
+    // TODO: nodeId 매핑은 나중에 추가 (원본 선언을 찾아서 연결)
+    // 현재는 이름만 저장
+    result[lineIdx].exportSlots!.push({
+      name,
+      offset,
+      // nodeId will be resolved later
+    });
+  });
+}
+
+/**
+ * Hook 4: Export Default 처리
+ * - export default Identifier 형태의 export 문 감지
+ * - 해당 identifier의 원본 선언 라인을 찾아서 hasDeclarationKeyword 설정
+ */
+export function processExportDefault(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+  result: CodeLine[],
+  declarationMap: Map<string, number>
+): void {
+  // Check if this is export default
+  if (!ts.isExportAssignment(node)) return;
+
+  // Get the exported identifier
+  const expression = node.expression;
+  if (!ts.isIdentifier(expression)) return;
+
+  const exportedName = expression.text;
+
+  // Find the declaration line for this identifier
+  const declarationLineIdx = declarationMap.get(exportedName);
+
+  if (declarationLineIdx !== undefined && declarationLineIdx >= 0 && declarationLineIdx < result.length) {
+    result[declarationLineIdx].hasDeclarationKeyword = true;
+  }
 }

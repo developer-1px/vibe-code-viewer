@@ -2,7 +2,7 @@
  * TypeScript Language Service wrapper for Go to Definition
  */
 import * as ts from 'typescript';
-import type { DefinitionLocation } from '../types';
+import type { DefinitionLocation } from '../types/codeLine';
 
 // Cache Language Services by file path to avoid recreating them for every identifier
 // Key: filePath, Value: { languageService, sourceFile, code }

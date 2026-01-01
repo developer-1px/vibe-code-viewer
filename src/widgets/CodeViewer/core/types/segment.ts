@@ -1,49 +1,15 @@
 /**
- * Code Segment entity - represents a syntax-highlighted token within a code line
+ * Code Segment UI types
+ * Domain types (CodeSegment, SegmentKind) are re-exported from entities layer
  */
 
 import type React from 'react';
 
-/**
- * Segment kind flags - multiple kinds can be combined
- */
-export type SegmentKind =
-  | 'text'
-  | 'keyword'
-  | 'punctuation'
-  | 'string'
-  | 'comment'
-  | 'identifier'
-  | 'external-import'
-  | 'external-closure'
-  | 'external-function'
-  | 'self'
-  | 'local-variable'
-  | 'parameter';
+// Re-export domain types from entities layer
+export type { CodeSegment, SegmentKind, DefinitionLocation } from '../../../../entities/CodeSegment/model/types';
 
 /**
- * A code segment represents a single token/text piece within a code line
- * with syntax highlighting information
- */
-export interface CodeSegment {
-  text: string;
-  kinds: SegmentKind[]; // 여러 kind를 동시에 가질 수 있음
-  nodeId?: string;
-  definedIn?: string;
-  offset?: number; // Position in line for accurate sorting
-  isDeclarationName?: boolean; // 선언되는 변수/함수/타입 이름인지 여부
-  position?: number; // AST position for Language Service queries
-  hoverInfo?: string; // Quick info from Language Service
-  definitionLocation?: { // Definition location from Language Service
-    filePath: string;
-    line: number;
-    character: number;
-  };
-  tsNode?: any; // ts.Node reference for type queries (avoid circular dependency)
-}
-
-/**
- * Segment style definition for rendering
+ * Segment style definition for rendering (UI-specific)
  */
 export interface SegmentStyle {
   className: string;

@@ -1,17 +1,19 @@
 
 import React, { useMemo } from 'react';
 import { useSetAtom, useAtomValue } from 'jotai';
-import { VariableNode } from '../../../entities/SourceFileNode/model/types';
+import { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
 import { getSlotColor } from '../../../entities/SourceFileNode/lib/styleUtils';
 import { targetLineAtom, visibleNodeIdsAtom, lastExpandedIdAtom, layoutLinksAtom } from '../../../store/atoms';
-import { useEditorTheme } from '../../../app/theme';
+import { useEditorTheme } from '../../../app/theme/EditorThemeProvider';
 
-const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine }: {
+const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine, symbolName, isOutputSlot = false }: {
   tokenId: string;
   lineNum: number;
   slotIdx: number;
-  depNode?: VariableNode;
+  depNode?: SourceFileNode;
   definitionLine?: number;
+  symbolName?: string;
+  isOutputSlot?: boolean;
 }) => {
   const theme = useEditorTheme();
   const setTargetLine = useSetAtom(targetLineAtom);
@@ -56,14 +58,35 @@ const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine }: {
   };
 
   // Vertical Center Calculation:
-  // Line Height (leading-5) = 20px. Center = 10px.
-  // Slot Height = 8px (h-2). Center = 4px.
-  // Top Offset = 10px - 4px = 6px.
-  
+  // Line Height (leading-[1rem]) = 16px. Center = 8px.
+  // Slot Height = 6px (h-1.5). Center = 3px.
+  // Top Offset = 8px - 3px = 5px.
+
   // Horizontal Position:
-  // Move inside column (starting at 2px).
-  // Stagger multiple slots using theme spacing
-  const leftPos = 2 + (slotIdx * theme.dimensions.slotSpacing);
+  // Input slots: left side (starting at 2px)
+  // Output slots: right side (starting at 2px from right edge)
+  const horizontalPos = 2 + (slotIdx * theme.dimensions.slotSpacing);
+  const positionStyle = isOutputSlot
+    ? { top: '5px', right: `${horizontalPos}px` }
+    : { top: '5px', left: `${horizontalPos}px` };
+
+  // Data attributes based on slot type
+  const dataAttributes = isOutputSlot
+    ? {
+        'data-output-port': tokenId,
+        'data-output-port-line': lineNum,
+        'data-output-slot-for': tokenId,
+        'data-output-slot-line': lineNum,
+        'data-output-slot-def-line': definitionLine,
+        'data-output-slot-unique': `${tokenId}::line${lineNum}`
+      }
+    : {
+        'data-input-slot-for': tokenId,
+        'data-input-slot-line': lineNum,
+        'data-input-slot-def-line': definitionLine,
+        'data-input-slot-symbol': symbolName,
+        'data-input-slot-unique': `${tokenId}::line${lineNum}`
+      };
 
   // Border only shown when connected
   const borderClass = hasConnection ? 'border-2' : 'border-0';
@@ -71,11 +94,8 @@ const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine }: {
   return (
     <div
       className={`${theme.dimensions.slotSize} rounded-full absolute z-10 transition-all duration-300 ${borderClass} group-hover/line:scale-110 shadow-lg cursor-pointer hover:scale-125 ${slotColorClass}`}
-      style={{ top: '6px', left: `${leftPos}px` }}
-      data-input-slot-for={tokenId}
-      data-input-slot-line={lineNum}
-      data-input-slot-def-line={definitionLine}
-      data-input-slot-unique={`${tokenId}::line${lineNum}`}
+      style={positionStyle}
+      {...dataAttributes}
       onClick={handleSlotClick}
     />
   );

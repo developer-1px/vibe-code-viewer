@@ -4,8 +4,8 @@
  */
 
 import * as ts from 'typescript';
-import type { CanvasNode } from '../../../../entities/CanvasNode';
-import type { CodeLine, CodeSegment } from '../types';
+import type { CanvasNode } from '../../../../entities/CanvasNode/model/types';
+import type { CodeLine, CodeSegment } from '../types/codeLine';
 import { parse, compileTemplate } from '@vue/compiler-sfc';
 import { renderCodeLinesDirect } from './renderCodeLinesDirect';
 

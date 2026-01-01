@@ -5,10 +5,11 @@
 
 import React, { useMemo } from 'react';
 import { useAtomValue } from 'jotai';
-import { CanvasNode } from '../../../entities/CanvasNode';
+import { CanvasNode } from '../../../entities/CanvasNode/model/types';
 import { activeLocalVariablesAtom, filesAtom } from '../../../store/atoms';
 import { FocusedIdentifierItem } from './FocusedIdentifierItem';
-import { renderCodeLinesDirect, renderVueFile } from '../../../widgets/CodeViewer/core';
+import { renderCodeLinesDirect } from '../../../widgets/CodeViewer/core/renderer/renderCodeLinesDirect';
+import { renderVueFile } from '../../../widgets/CodeViewer/core/renderer/renderVueFile';
 
 interface FocusedIdentifiersProps {
   node: CanvasNode;

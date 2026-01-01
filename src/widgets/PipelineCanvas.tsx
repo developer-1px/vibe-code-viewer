@@ -13,13 +13,13 @@ import ResetViewButton from '../features/ResetViewButton.tsx';
 
 // Atoms & Hooks
 import { visibleNodeIdsAtom, selectedNodeIdsAtom, openedFilesAtom, fullNodeMapAtom, symbolMetadataAtom, filesAtom, focusedPaneAtom, graphDataAtom } from '../store/atoms';
-import { extractSymbolMetadata } from '../services/symbolMetadataExtractor';
+import { extractSymbolMetadata } from '@/shared/symbolMetadataExtractor';
 
 const PipelineCanvas: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Read atoms
-  const visibleNodeIds = useAtomValue(visibleNodeIdsAtom);
+  const [visibleNodeIds, setVisibleNodeIds] = useAtom(visibleNodeIdsAtom);
   const [openedFiles, setOpenedFiles] = useAtom(openedFilesAtom);
   const graphData = useAtomValue(graphDataAtom);
   const [selectedNodeIds, setSelectedNodeIds] = useAtom(selectedNodeIdsAtom);
@@ -102,14 +102,23 @@ const PipelineCanvas: React.FC = () => {
   useHotkeys('delete, backspace', (e) => {
     console.log('[PipelineCanvas] Delete/Backspace pressed, focusedPane:', focusedPane, 'selectedNodeIds:', selectedNodeIds.size);
 
-    if (selectedNodeIds.size === 0) return;
+    // Only work when canvas is focused AND there are selected nodes
+    if (focusedPane !== 'canvas' || selectedNodeIds.size === 0) {
+      console.log('[PipelineCanvas] Ignoring: focusedPane:', focusedPane, 'selectedCount:', selectedNodeIds.size);
+      return;
+    }
 
     // Prevent default backspace navigation
     e.preventDefault();
 
-    // Extract file paths from selected node IDs
+    // Extract file paths AND node IDs from selected nodes
     const filesToClose = new Set<string>();
+    const nodeIdsToRemove = new Set<string>();
+
     selectedNodeIds.forEach(nodeId => {
+      // Collect node ID for removal from visibleNodeIds
+      nodeIdsToRemove.add(nodeId);
+
       // Check if nodeId is a file path (orphaned file)
       if (files[nodeId]) {
         filesToClose.add(nodeId);
@@ -118,17 +127,33 @@ const PipelineCanvas: React.FC = () => {
         const node = fullNodeMap.get(nodeId);
         if (node) {
           filesToClose.add(node.filePath);
+
+          // Also remove all nodes from the same file
+          fullNodeMap.forEach((n) => {
+            if (n.filePath === node.filePath) {
+              nodeIdsToRemove.add(n.id);
+            }
+          });
         }
       }
     });
 
     console.log('[PipelineCanvas] Files to close:', Array.from(filesToClose));
+    console.log('[PipelineCanvas] Node IDs to remove:', Array.from(nodeIdsToRemove));
 
-    // Remove files from openedFiles
+    // Remove files from openedFiles AND nodes from visibleNodeIds
     if (filesToClose.size > 0) {
+      // Remove from openedFiles
       setOpenedFiles(prev => {
         const next = new Set(prev);
         filesToClose.forEach(filePath => next.delete(filePath));
+        return next;
+      });
+
+      // Remove from visibleNodeIds (prevents auto-re-opening)
+      setVisibleNodeIds(prev => {
+        const next = new Set(prev);
+        nodeIdsToRemove.forEach(nodeId => next.delete(nodeId));
         return next;
       });
 
@@ -136,8 +161,8 @@ const PipelineCanvas: React.FC = () => {
       setSelectedNodeIds(new Set());
     }
   }, {
-    scopes: ['canvas'],
-    enabled: focusedPane === 'canvas'
+    enableOnFormTags: false,
+    enabled: true // Always listen, but check focusedPane inside handler
   });
 
   return (

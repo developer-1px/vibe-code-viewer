@@ -4,11 +4,11 @@
  */
 
 import * as ts from 'typescript'
-import type {CanvasNode} from '../../../../entities/CanvasNode'
+import type {CanvasNode} from '../../../../entities/CanvasNode/model/types'
 import {findDefinitionLocation, getQuickInfoAtPosition} from './tsLanguageService'
-import type {CodeLine, CodeSegment, SegmentKind} from '../types'
+import type {CodeLine, CodeSegment, SegmentKind} from '../types/codeLine'
 import {getImportSource} from '../../../../entities/SourceFileNode/lib/getters'
-import {resolvePath} from '../../../../services/tsParser/utils/pathResolver'
+import {resolvePath} from '@/shared/tsParser/utils/pathResolver'
 import {
   extractShortId,
   createDependencyMap,
@@ -20,9 +20,11 @@ import {
 import {
   processDeclarationNode,
   processTemplateLiteral,
-  processIdentifier
+  processIdentifier,
+  processExportDeclaration,
+  processExportDefault
 } from './astHooks'
-import { collectFoldMetadata } from '../../../../features/CodeFold/lib'
+import { collectFoldMetadata } from '../../../../features/CodeFold/lib/collectFoldMetadata'
 
 // ===== 타입 정의 =====
 
@@ -381,6 +383,7 @@ export function renderCodeLinesDirect(node: CanvasNode, files: Record<string, st
   try {
     // 초기 상태
     let currentLines = createInitialLines(lines.length, startLineNum);
+    const declarationMap = new Map<string, number>(); // name → line index
 
     // Helper: segment 추가 함수
     const addKind = (
@@ -402,9 +405,6 @@ export function renderCodeLinesDirect(node: CanvasNode, files: Record<string, st
       });
     };
 
-    // 임시 result (processDeclarationNode용)
-    const tempResult: CodeLine[] = [];
-
     // AST 순회 함수 (재귀)
     const visit = (node: ts.Node): void => {
       const start = node.getStart(sourceFile);
@@ -414,7 +414,13 @@ export function renderCodeLinesDirect(node: CanvasNode, files: Record<string, st
       currentLines = addComments(currentLines, node, sourceFile, codeSnippet);
 
       // Declaration 노드 처리
-      processDeclarationNode(node, sourceFile, tempResult, localIdentifiers, addKind);
+      processDeclarationNode(node, sourceFile, currentLines, localIdentifiers, declarationMap, addKind);
+
+      // Export Declaration 처리 (export { foo, bar })
+      processExportDeclaration(node, sourceFile, currentLines, filePath);
+
+      // Export Default 처리 (export default Identifier)
+      processExportDefault(node, sourceFile, currentLines, declarationMap);
 
       // Keyword, Punctuation, String 체크
       const basicKind = getSegmentKind(node);

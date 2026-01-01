@@ -6,11 +6,12 @@ import {
   Calculator as IconCalculator, Shield as IconShield, Zap as IconZap, RefreshCw as IconRefreshCw, AlertCircle as IconAlertCircle,
   Maximize as IconMaximize, AlignJustify as IconCompact, Minimize as IconMinimize
 } from 'lucide-react';
-import { CanvasNode } from '../../../entities/CanvasNode';
-import { visibleNodeIdsAtom, fullNodeMapAtom, activeLocalVariablesAtom, filesAtom, foldedLinesAtom } from '../../../store/atoms';
-import { renderCodeLinesDirect, renderVueFile } from '../../CodeViewer/core';
+import { CanvasNode } from '../../../entities/CanvasNode/model/types';
+import { visibleNodeIdsAtom, fullNodeMapAtom, activeLocalVariablesAtom, filesAtom, foldedLinesAtom, viewModeAtom, focusedNodeIdAtom } from '../../../store/atoms';
+import { renderCodeLinesDirect } from '../../CodeViewer/core/renderer/renderCodeLinesDirect';
+import { renderVueFile } from '../../CodeViewer/core/renderer/renderVueFile';
 import { pruneDetachedNodes } from '../../PipelineCanvas/utils';
-import { getFoldableLinesByMaxDepth, getFoldableLinesExcludingDepth } from '../../../features/CodeFold/lib';
+import { getFoldableLinesByMaxDepth, getFoldableLinesExcludingDepth } from '../../../features/CodeFold/lib/foldUtils';
 
 const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
   const [visibleNodeIds, setVisibleNodeIds] = useAtom(visibleNodeIdsAtom);
@@ -19,6 +20,8 @@ const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
   const activeLocalVariables = useAtomValue(activeLocalVariablesAtom);
   const files = useAtomValue(filesAtom);
   const [foldedLinesMap, setFoldedLinesMap] = useAtom(foldedLinesAtom);
+  const setViewMode = useSetAtom(viewModeAtom);
+  const setFocusedNodeId = useSetAtom(focusedNodeIdAtom);
 
   // Focused identifiers for this node
   const focusedVariables = activeLocalVariables.get(node.id);
@@ -227,8 +230,18 @@ const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
     return node.label;
   }, [node.type, node.filePath, node.label]);
 
+  // Handle double-click to enter IDE view mode
+  const handleDoubleClick = () => {
+    setViewMode('ide');
+    setFocusedNodeId(node.id);
+  };
+
   return (
-    <div className="px-3 py-1.5 border-b border-white/5 flex justify-between items-center bg-black/20">
+    <div
+      className="px-3 py-1.5 border-b border-white/5 flex justify-between items-center bg-black/20 cursor-pointer select-none"
+      onDoubleClick={handleDoubleClick}
+      title="더블클릭하여 IDE 뷰로 전환"
+    >
       <div className="flex items-center gap-2 overflow-hidden">
         {/* Fold Level Toggle Button */}
         {processedLines.length > 0 && (

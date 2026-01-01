@@ -5,7 +5,7 @@
 
 import React from 'react';
 import type { CodeSegment, SegmentStyle } from '../../core/types';
-import type { CanvasNode } from '../../../../entities/CanvasNode';
+import type { CanvasNode } from '../../../../entities/CanvasNode/model/types';
 import CodeToken from '../CodeToken';
 
 interface DependencyTokenSegmentProps {

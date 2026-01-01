@@ -1,10 +1,11 @@
 /**
- * Symbol Extractor - Extract searchable items (files + symbols + usages) from parsed AST nodes
+ * CodeSymbol Extractor - Extract searchable items (files + symbols + usages) from parsed AST nodes
  */
 
 import * as ts from 'typescript';
-import type { VariableNode } from '../../../entities/SourceFileNode';
-import type { SearchResult, SymbolMetadata } from '../model/types';
+import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
+import type { SearchResult } from '../model/types';
+import type { CodeSymbolMetadata } from '../../../entities/CodeSymbol/model/types';
 
 /**
  * Extract all identifiers (usages) from a parsed source file
@@ -90,8 +91,8 @@ function extractExportMap(files: Record<string, string>): Map<string, boolean> {
  * Parse each file only once
  */
 export function extractAllSearchableItems(
-  fullNodeMap: Map<string, VariableNode>,
-  symbolMetadata: Map<string, SymbolMetadata>,
+  fullNodeMap: Map<string, SourceFileNode>,
+  symbolMetadata: Map<string, CodeSymbolMetadata>,
   files: Record<string, string>
 ): SearchResult[] {
   const results: SearchResult[] = [];

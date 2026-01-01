@@ -2,7 +2,7 @@
  * Fold utility functions
  */
 
-import type { CodeLine } from '../../../widgets/CodeViewer/core/types';
+import type { CodeLine } from '../../../widgets/CodeViewer/core/types/codeLine';
 
 /**
  * Extract foldable import lines from processed lines

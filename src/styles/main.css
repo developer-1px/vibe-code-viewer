@@ -126,7 +126,7 @@
     --editor-function: #d8b4fe;
     --editor-parameter: #fde68a;
     --editor-local: #a5f3fc;
-    --editor-focus-gray: #6b7280;
+    --editor-focus-gray: #52525b;
   }
 
   /* VSCode Theme */
@@ -170,7 +170,7 @@
     --editor-function: #DCDCAA;
     --editor-parameter: #9CDCFE;
     --editor-local: #9CDCFE;
-    --editor-focus-gray: #858585;
+    --editor-focus-gray: #6b6b6b;
   }
 
   /* JetBrains New UI / Islands Dark Theme */
@@ -218,7 +218,7 @@
     --editor-function: #56a8f5;
     --editor-parameter: #cf8e6d;
     --editor-local: #9a7ecc;
-    --editor-focus-gray: #6c6e75;
+    --editor-focus-gray: #52545a;
   }
 }
 

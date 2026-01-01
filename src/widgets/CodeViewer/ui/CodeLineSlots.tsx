@@ -34,6 +34,7 @@ export const CodeLineSlots: React.FC<CodeLineSlotsProps> = ({ line }) => {
           slotIdx={slotIdx}
           depNode={depNode}
           definitionLine={defLine}
+          symbolName={seg.text}
         />
       );
     })

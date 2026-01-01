@@ -1,7 +1,7 @@
 
-import { VariableNode } from '../model/types.ts';
+import { SourceFileNode } from '../model/types.ts';
 
-export const getNodeBorderColor = (type: VariableNode['type']): string => {
+export const getNodeBorderColor = (type: SourceFileNode['type']): string => {
     switch (type) {
         // === CALCULATIONS (불변, 청록/파랑 계열) ===
         case 'pure-function': return 'border-cyan-500/50 shadow-cyan-900/20'; // 순수 함수
@@ -40,7 +40,7 @@ export const getTokenStyle = (isActive: boolean, isComponent: boolean = false) =
         : 'bg-slate-800/50 border-slate-700 text-blue-300 hover:bg-white/10 hover:border-vibe-accent/50'; // Variable Inactive
 };
 
-export const getSlotColor = (type: VariableNode['type']): string => {
+export const getSlotColor = (type: SourceFileNode['type']): string => {
     switch (type) {
         // === CALCULATIONS (불변, 청록/파랑 계열) ===
         case 'pure-function':
@@ -79,7 +79,7 @@ export const getSlotColor = (type: VariableNode['type']): string => {
     }
 };
 
-export const getEdgeColor = (type: VariableNode['type']): string => {
+export const getEdgeColor = (type: SourceFileNode['type']): string => {
     switch (type) {
         // === CALCULATIONS (불변, 청록/파랑 계열) ===
         case 'pure-function': return '#06b6d4'; // cyan-500

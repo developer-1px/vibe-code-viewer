@@ -5,7 +5,7 @@
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import type { CanvasNode } from '../../entities/CanvasNode';
+import type { CanvasNode } from '../../entities/CanvasNode/model/types';
 import CodeCard from '../CodeCard/CodeCard';
 import { cardPositionsAtom, selectedNodeIdsAtom, transformAtom, focusedPaneAtom } from '../../store/atoms';
 
@@ -128,7 +128,7 @@ export const CanvasCodeCard: React.FC<CanvasCodeCardProps> = ({ node }) => {
       style={style}
       onMouseDown={handleMouseDown}
     >
-      <div className={`${isSelected ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-transparent rounded-lg' : ''}`}>
+      <div className={`${isSelected ? 'ring-1 ring-blue-400/40 rounded-lg' : ''}`}>
         <CodeCard node={node} />
       </div>
     </div>

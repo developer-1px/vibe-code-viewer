@@ -9,9 +9,9 @@ import React, { useMemo } from 'react';
 import { useSetAtom } from 'jotai';
 import { visibleNodeIdsAtom, fullNodeMapAtom, lastExpandedIdAtom, filesAtom } from '../../../store/atoms';
 import { useAtomValue } from 'jotai';
-import type { CanvasNode } from '../../../entities/CanvasNode';
-import { extractTemplateComponents, extractTemplateVariables } from '../../../services/tsParser/utils/vueTemplateParser';
-import { useEditorTheme } from '../../../app/theme';
+import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
+import { extractTemplateComponents, extractTemplateVariables } from '@/shared/tsParser/utils/vueTemplateParser';
+import { useEditorTheme } from '../../../app/theme/EditorThemeProvider';
 
 const VueTemplateSection = ({template, node, scriptEndLine }: {
   template: string;

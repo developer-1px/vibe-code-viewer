@@ -71,7 +71,7 @@ export const jetbrainsEditorTheme: EditorTheme = {
   },
   dimensions: {
     lineNumberWidth: 'w-20',      // Wider line number column
-    slotSize: 'w-2 h-2',
-    slotSpacing: 6                // Slightly more spacing
+    slotSize: 'w-1.5 h-1.5',      // Reduced from w-2 h-2 (8px → 6px)
+    slotSpacing: 4                // Reduced spacing for smaller slots
   }
 };

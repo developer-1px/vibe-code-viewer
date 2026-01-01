@@ -21,23 +21,26 @@ const getRelativePoint = (
 };
 
 /**
- * Find output port matching the definition line
+ * Find output port matching the symbol name
+ * Uses symbol name for precise matching instead of line numbers
  */
 const findOutputPort = (
   depEl: HTMLElement,
   nodeId: string,
-  defLine?: number
+  symbolName: string
 ): Element | null => {
-  // Try to find port matching definition line
-  if (defLine) {
-    const matchingPort = depEl.querySelector(
-      `[data-output-port="${nodeId}"][data-output-port-line="${defLine}"]`
-    );
-    if (matchingPort) return matchingPort;
+  // Find port matching nodeId and symbol name
+  const matchingPort = depEl.querySelector(
+    `[data-output-port="${nodeId}"][data-output-port-symbol="${symbolName}"]`
+  );
+
+  if (matchingPort) {
+    return matchingPort;
   }
 
-  // Fallback to any output port
-  return depEl.querySelector(`[data-output-port="${nodeId}"]`);
+  // No match found - log warning
+  console.warn(`[CanvasConnections] No output port found for symbol "${symbolName}" in ${nodeId}`);
+  return null;
 };
 
 const CanvasConnections: React.FC = () => {
@@ -78,20 +81,20 @@ const CanvasConnections: React.FC = () => {
           // Find ALL slots for this dependency (may be used in multiple lines)
           const inputSlots = consEl.querySelectorAll(`[data-input-slot-for="${dependencyNode.id}"]`);
 
-          const endPoints: Array<{x: number, y: number, defLine?: number}> = [];
+          const endPoints: Array<{x: number, y: number, symbolName?: string}> = [];
 
           if (inputSlots.length > 0) {
               inputSlots.forEach(inputSlot => {
                   const slotRect = inputSlot.getBoundingClientRect();
                   const slotRel = getRelativePoint(slotRect, contentRect, transform.k);
 
-                  // Get definition line from slot data attribute
-                  const defLine = (inputSlot as HTMLElement).dataset.inputSlotDefLine;
+                  // Get symbol name from slot data attribute
+                  const symbolName = (inputSlot as HTMLElement).dataset.inputSlotSymbol;
 
                   endPoints.push({
                       x: slotRel.x + (slotRel.w / 2),
                       y: slotRel.y + (slotRel.h / 2),
-                      defLine: defLine ? parseInt(defLine) : undefined
+                      symbolName
                   });
               });
           } else {
@@ -116,23 +119,25 @@ const CanvasConnections: React.FC = () => {
               const endX = endPoint.x;
               const endY = endPoint.y;
 
-              // Find matching output port by definition line
-              const outputPort = findOutputPort(depEl, dependencyNode.id, endPoint.defLine);
-
-              // Calculate start point
-              let startX: number, startY: number;
-              if (outputPort) {
-                  const portRect = outputPort.getBoundingClientRect();
-                  const portRel = getRelativePoint(portRect, contentRect, transform.k);
-                  startX = portRel.x + portRel.w;
-                  startY = portRel.y + (portRel.h / 2);
-              } else {
-                  // Fallback to node center-right
-                  const rect = depEl.getBoundingClientRect();
-                  const rel = getRelativePoint(rect, contentRect, transform.k);
-                  startX = rel.x + rel.w;
-                  startY = rel.y + (rel.h / 2);
+              // Skip if no symbol name (cannot find exact output port)
+              if (!endPoint.symbolName) {
+                  console.warn(`[CanvasConnections] No symbolName for endpoint, skipping connection to ${dependencyNode.id}`);
+                  return;
               }
+
+              // Find matching output port by symbol name
+              const outputPort = findOutputPort(depEl, dependencyNode.id, endPoint.symbolName);
+
+              // Skip connection if no matching output port found
+              if (!outputPort) {
+                  return;
+              }
+
+              // Calculate start point from output port
+              const portRect = outputPort.getBoundingClientRect();
+              const portRel = getRelativePoint(portRect, contentRect, transform.k);
+              const startX = portRel.x + portRel.w;
+              const startY = portRel.y + (portRel.h / 2);
 
               const isHorizontal = Math.abs(startY - endY) < 40;
               const curveStrength = isHorizontal ? 0.15 : 0.4;
@@ -159,13 +164,13 @@ const CanvasConnections: React.FC = () => {
     
         setPaths(newPaths);
 
-    }, [layoutLinks, transform.k, layoutNodes, cardPositions]);
+    }, [layoutLinks, transform.k, transform.x, transform.y, layoutNodes, cardPositions]);
 
     // Draw on zoom/pan transform changes (during manual pan/zoom)
     useEffect(() => {
         const handle = requestAnimationFrame(drawConnections);
         return () => cancelAnimationFrame(handle);
-    }, [drawConnections, transform, layoutNodes]);
+    }, [drawConnections]);
 
     return (
         <svg ref={svgRef} className="absolute top-0 left-0 w-full h-full overflow-visible pointer-events-none z-5">

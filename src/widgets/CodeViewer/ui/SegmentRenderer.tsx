@@ -6,18 +6,16 @@
 
 import React, { useMemo } from 'react';
 import { useAtomValue } from 'jotai';
-import type { CodeSegment, SegmentKind, CodeLine } from '../core/types';
-import type { CanvasNode } from '../../../entities/CanvasNode';
-import { buildSegmentStyle } from '../core';
+import type { CodeSegment, SegmentKind, CodeLine } from '../core/types/codeLine';
+import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
+import { buildSegmentStyle } from '../core/styler/styleBuilder';
 import { visibleNodeIdsAtom, activeLocalVariablesAtom } from '../../../store/atoms';
-import { useEditorTheme } from '../../../app/theme';
-import {
-  StaticSegment,
-  ExpandSegment,
-  ExternalSegment,
-  LocalVariableSegment,
-  DependencyTokenSegment
-} from './segments';
+import { useEditorTheme } from '../../../app/theme/EditorThemeProvider';
+import { StaticSegment } from './segments/StaticSegment';
+import { ExpandSegment } from './segments/ExpandSegment';
+import { ExternalSegment } from './segments/ExternalSegment';
+import { LocalVariableSegment } from '../../../features/FocusMode/ui/LocalVariableSegment';
+import { DependencyTokenSegment } from './segments/DependencyTokenSegment';
 
 // Helper: Identifier 종류인지 체크
 const IDENTIFIER_KINDS: SegmentKind[] = [

@@ -32,12 +32,3 @@ export interface SourceFileNode {
 export interface GraphData {
   nodes: SourceFileNode[];
 }
-
-// Backward compatibility
-export type VariableNode = SourceFileNode;
-
-export interface GraphNode extends VariableNode {
-  x?: number;
-  y?: number;
-  depth?: number;
-}

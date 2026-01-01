@@ -1,14 +1,14 @@
 /**
  * ExternalSegment - 외부 import/closure/function 핸들러
- * - 일반 클릭: Focus mode toggle
- * - Cmd+Click: 노드 열기/닫기
+ * - 일반 클릭: 파일 닫혀있으면 열기
+ * - Cmd+Click: 해당 노드로 시점 이동 (Canvas) 또는 파일 전환 (IDE)
  */
 
 import React from 'react';
 import { useSetAtom, useAtomValue } from 'jotai';
 import type { CodeSegment, SegmentStyle } from '../../core/types';
-import type { CanvasNode } from '../../../../entities/CanvasNode';
-import { visibleNodeIdsAtom, fullNodeMapAtom, activeLocalVariablesAtom, cardPositionsAtom, transformAtom } from '../../../../store/atoms';
+import type { CanvasNode } from '../../../../entities/CanvasNode/model/types';
+import { visibleNodeIdsAtom, fullNodeMapAtom, cardPositionsAtom, transformAtom, viewModeAtom, focusedNodeIdAtom } from '../../../../store/atoms';
 import { pruneDetachedNodes } from '../../../PipelineCanvas/utils';
 
 interface ExternalSegmentProps {
@@ -20,13 +20,15 @@ interface ExternalSegmentProps {
 
 export const ExternalSegment: React.FC<ExternalSegmentProps> = ({ segment, node, style, isFocused }) => {
   const setVisibleNodeIds = useSetAtom(visibleNodeIdsAtom);
-  const setActiveLocalVariables = useSetAtom(activeLocalVariablesAtom);
-  const activeLocalVariables = useAtomValue(activeLocalVariablesAtom);
   const visibleNodeIds = useAtomValue(visibleNodeIdsAtom);
   const fullNodeMap = useAtomValue(fullNodeMapAtom);
   const setCardPositions = useSetAtom(cardPositionsAtom);
   const cardPositions = useAtomValue(cardPositionsAtom);
   const transform = useAtomValue(transformAtom);
+  const setTransform = useSetAtom(transformAtom);
+  const viewMode = useAtomValue(viewModeAtom);
+  const setViewMode = useSetAtom(viewModeAtom);
+  const setFocusedNodeId = useSetAtom(focusedNodeIdAtom);
 
   // Check if active
   const isActive = segment.kinds.includes('external-import') &&
@@ -36,125 +38,78 @@ export const ExternalSegment: React.FC<ExternalSegmentProps> = ({ segment, node,
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    // Cmd+Click: 노드 닫기만
-    if (e.metaKey && segment.definedIn) {
-      if (isActive) {
-        setVisibleNodeIds((prev: Set<string>) => {
-          const next = new Set(prev);
+    if (!segment.definedIn) return;
 
-          // 함수/변수 노드가 열려있으면 제거
-          if (fullNodeMap.has(segment.definedIn!) && next.has(segment.definedIn!)) {
-            next.delete(segment.definedIn!);
-          }
+    // Find target node
+    let targetNode = fullNodeMap.get(segment.definedIn);
+    if (!targetNode) {
+      // Try file node
+      const filePath = segment.definedIn.split('::')[0];
+      targetNode = fullNodeMap.get(filePath);
+    }
 
-          // 파일 노드가 열려있으면 제거
-          const filePath = segment.definedIn!.split('::')[0];
-          if (fullNodeMap.has(filePath) && next.has(filePath)) {
-            next.delete(filePath);
-          }
+    if (!targetNode) {
+      console.warn('[ExternalSegment] Target node not found:', segment.definedIn);
+      return;
+    }
 
-          return pruneDetachedNodes(next, fullNodeMap, null, null);
+    // Cmd+Click: 해당 노드로 시점 이동
+    if (e.metaKey) {
+      if (viewMode === 'canvas') {
+        // Canvas 모드: 카메라 이동
+        const targetX = targetNode.x || 0;
+        const targetY = targetNode.y || 0;
+        const cardOffset = cardPositions.get(targetNode.id) || { x: 0, y: 0 };
+
+        // Center the target node in viewport
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const scale = transform.k;
+
+        setTransform({
+          k: scale,
+          x: -((targetX + cardOffset.x) * scale - viewportWidth / 2),
+          y: -((targetY + cardOffset.y) * scale - viewportHeight / 2)
         });
+      } else {
+        // IDE 모드: 파일 전환
+        setFocusedNodeId(targetNode.id);
       }
       return;
     }
 
-    // 일반 클릭: Focus mode toggle + 노드 열기/닫기
-    // 1. Check if currently focused
-    const nodeVars = activeLocalVariables.get(node.id);
-    const wasFocused = nodeVars?.has(segment.text) || false;
+    // 일반 클릭: 파일 닫혀있으면 열기
+    if (!isActive) {
+      // 노드 열기
+      setVisibleNodeIds((prev: Set<string>) => {
+        const next = new Set(prev);
+        next.add(targetNode!.id);
+        return next;
+      });
 
-    // 2. Focus mode toggle
-    setActiveLocalVariables((prev: Map<string, Set<string>>) => {
-      const next = new Map(prev);
-      const nodeVars = new Set(next.get(node.id) || new Set());
+      // 카드 위치 계산
+      const currentCard = document.getElementById(`node-${node.id}`);
+      if (currentCard) {
+        const cardRect = currentCard.getBoundingClientRect();
+        const currentOffset = cardPositions.get(node.id) || { x: 0, y: 0 };
 
-      // Toggle
-      if (nodeVars.has(segment.text)) {
-        nodeVars.delete(segment.text);
-      } else {
-        nodeVars.add(segment.text);
-      }
+        // Get clicked element's position within the card
+        const clickedElement = e.target as HTMLElement;
+        const clickedRect = clickedElement.getBoundingClientRect();
 
-      if (nodeVars.size > 0) {
-        next.set(node.id, nodeVars);
-      } else {
-        next.delete(node.id);
-      }
+        // Calculate relative Y position of clicked line within the card
+        const relativeY = (clickedRect.top - cardRect.top) / transform.k;
 
-      return next;
-    });
+        // Position new card to the left of current card
+        const HORIZONTAL_SPACING = 600;
+        const newX = node.x + currentOffset.x - HORIZONTAL_SPACING;
+        const newY = node.y + currentOffset.y + relativeY - 100;
 
-    // 3. 노드 열기/닫기
-    if (segment.definedIn) {
-      if (wasFocused && isActive) {
-        // Focus 해제 + 노드 열려있음 → 노드 닫기
-        setVisibleNodeIds((prev: Set<string>) => {
-          const next = new Set(prev);
-
-          // 함수/변수 노드가 열려있으면 제거
-          if (fullNodeMap.has(segment.definedIn!) && next.has(segment.definedIn!)) {
-            next.delete(segment.definedIn!);
-          }
-
-          // 파일 노드가 열려있으면 제거
-          const filePath = segment.definedIn!.split('::')[0];
-          if (fullNodeMap.has(filePath) && next.has(filePath)) {
-            next.delete(filePath);
-          }
-
-          return pruneDetachedNodes(next, fullNodeMap, null, null);
+        setCardPositions(prev => {
+          const next = new Map(prev);
+          next.set(targetNode!.id, { x: newX, y: newY });
+          return next;
         });
-      } else if (!wasFocused && !isActive) {
-        // Focus 추가 + 노드 안 열려있음 → 노드 열기
-        let targetNodeId: string | null = null;
-
-        if (fullNodeMap.has(segment.definedIn)) {
-          targetNodeId = segment.definedIn;
-          setVisibleNodeIds((prev: Set<string>) => {
-            const next = new Set(prev);
-            next.add(segment.definedIn!);
-            return next;
-          });
-        } else {
-          // 파일 노드 열기
-          const filePath = segment.definedIn.split('::')[0];
-          if (fullNodeMap.has(filePath)) {
-            targetNodeId = filePath;
-            setVisibleNodeIds((prev: Set<string>) => {
-              const next = new Set(prev);
-              next.add(filePath);
-              return next;
-            });
-          }
-        }
-
-        // Calculate position for newly opened node
-        if (targetNodeId) {
-          const currentCard = document.getElementById(`node-${node.id}`);
-          if (currentCard) {
-            const cardRect = currentCard.getBoundingClientRect();
-            const currentOffset = cardPositions.get(node.id) || { x: 0, y: 0 };
-
-            // Get clicked element's position within the card
-            const clickedElement = e.target as HTMLElement;
-            const clickedRect = clickedElement.getBoundingClientRect();
-
-            // Calculate relative Y position of clicked line within the card
-            const relativeY = (clickedRect.top - cardRect.top) / transform.k;
-
-            // Position new card to the left of current card
-            const HORIZONTAL_SPACING = 600;
-            const newX = node.x + currentOffset.x - HORIZONTAL_SPACING;
-            const newY = node.y + currentOffset.y + relativeY - 100;
-
-            setCardPositions(prev => {
-              const next = new Map(prev);
-              next.set(targetNodeId!, { x: newX, y: newY });
-              return next;
-            });
-          }
-        }
       }
     }
   };

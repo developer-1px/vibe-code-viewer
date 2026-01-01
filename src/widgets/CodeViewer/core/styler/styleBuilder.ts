@@ -3,7 +3,7 @@
  * 여러 kind를 조합하여 최종 스타일과 동작을 결정
  */
 
-import type { SegmentKind, SegmentStyle } from '../types';
+import type { SegmentKind, SegmentStyle } from '../types/codeLine';
 import type { EditorTheme } from '../../../../app/theme/types';
 
 /**

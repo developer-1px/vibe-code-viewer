@@ -71,7 +71,7 @@ export const defaultEditorTheme: EditorTheme = {
   },
   dimensions: {
     lineNumberWidth: 'w-16',
-    slotSize: 'w-2 h-2',
-    slotSpacing: 5  // Pixels between staggered slots
+    slotSize: 'w-1.5 h-1.5',  // Reduced from w-2 h-2 (8px → 6px)
+    slotSpacing: 4  // Reduced spacing for smaller slots
   }
 };

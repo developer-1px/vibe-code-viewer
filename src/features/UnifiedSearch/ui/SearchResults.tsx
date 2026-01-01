@@ -7,14 +7,11 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import {
   searchResultsAtom,
   searchFocusedIndexAtom,
-  visibleNodeIdsAtom,
   targetLineAtom,
   openedFilesAtom,
   collapsedFoldersAtom,
   focusedPaneAtom,
   activeLocalVariablesAtom,
-  fullNodeMapAtom,
-  lastExpandedIdAtom,
 } from '../../../store/atoms';
 import { SearchResultItem } from './SearchResultItem';
 
@@ -25,14 +22,11 @@ interface SearchResultsProps {
 export const SearchResults: React.FC<SearchResultsProps> = ({ onSelect }) => {
   const results = useAtomValue(searchResultsAtom);
   const focusedIndex = useAtomValue(searchFocusedIndexAtom);
-  const fullNodeMap = useAtomValue(fullNodeMapAtom);
   const [collapsedFolders, setCollapsedFolders] = useAtom(collapsedFoldersAtom);
   const setOpenedFiles = useSetAtom(openedFilesAtom);
-  const setVisibleNodeIds = useSetAtom(visibleNodeIdsAtom);
   const setTargetLine = useSetAtom(targetLineAtom);
   const setFocusedPane = useSetAtom(focusedPaneAtom);
   const setActiveLocalVariables = useSetAtom(activeLocalVariablesAtom);
-  const setLastExpandedId = useSetAtom(lastExpandedIdAtom);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const focusedItemRef = useRef<HTMLDivElement>(null);
@@ -82,7 +76,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ onSelect }) => {
       // Focus sidebar
       setFocusedPane('sidebar');
     } else if (result.type === 'symbol') {
-      console.log('[SearchResults] Symbol selected:', {
+      console.log('[SearchResults] CodeSymbol selected:', {
         name: result.name,
         nodeId: result.nodeId,
         filePath: result.filePath,
@@ -105,68 +99,34 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ onSelect }) => {
         return;
       }
 
-      // For Declaration: open file and try to open node if available
+      // For Declaration: open file and scroll to symbol location
       // Open the file containing this symbol
       setOpenedFiles(prev => new Set([...prev, result.filePath]));
 
-      // Try to open the node containing this symbol (add to canvas)
-      if (result.nodeId) {
-        const targetNode = fullNodeMap.get(result.nodeId);
-        console.log('[SearchResults] Target node:', targetNode);
+      // Activate focus mode for this symbol (using filePath as key)
+      setActiveLocalVariables((prev: Map<string, Set<string>>) => {
+        const next = new Map(prev);
+        const nodeVars = new Set(next.get(result.filePath) || new Set());
+        nodeVars.add(result.name); // Add the symbol name to focus
+        next.set(result.filePath, nodeVars);
+        console.log('[SearchResults] Activated focus mode for:', result.name, 'in file:', result.filePath);
+        return next;
+      });
 
-        if (targetNode) {
-          // Node exists in graph - open it in canvas with focus mode
-          setVisibleNodeIds((prev: Set<string>) => {
-            const next = new Set(prev);
-            next.add(result.nodeId!);
-            console.log('[SearchResults] Added to visibleNodeIds:', result.nodeId);
-            return next;
-          });
+      // Scroll to the definition line
+      setTargetLine({ nodeId: result.filePath, lineNum: result.lineNumber || 0 });
 
-          setLastExpandedId(result.nodeId);
+      // Focus canvas to show the file
+      setFocusedPane('canvas');
 
-          // Activate focus mode for this symbol
-          setActiveLocalVariables((prev: Map<string, Set<string>>) => {
-            const next = new Map(prev);
-            const nodeVars = new Set(next.get(result.nodeId!) || new Set());
-            nodeVars.add(result.name); // Add the symbol name to focus
-            next.set(result.nodeId!, nodeVars);
-            console.log('[SearchResults] Activated focus mode for:', result.name);
-            return next;
-          });
-
-          // Scroll to the definition line
-          setTargetLine({ nodeId: result.nodeId, lineNum: result.lineNumber || 0 });
-
-          // Focus canvas to show the node
-          setFocusedPane('canvas');
-
-          // Clear highlight after 2 seconds
-          setTimeout(() => {
-            setTargetLine(null);
-          }, 2000);
-        } else {
-          // Node not in graph (orphaned) - just scroll to line in file
-          console.log('[SearchResults] Node not in graph, scrolling to line in file');
-          setTargetLine({ nodeId: result.filePath, lineNum: result.lineNumber || 0 });
-
-          setTimeout(() => {
-            setTargetLine(null);
-          }, 2000);
-        }
-      } else {
-        // No nodeId - just scroll to line
-        console.log('[SearchResults] No nodeId, scrolling to line in file');
-        setTargetLine({ nodeId: result.filePath, lineNum: result.lineNumber || 0 });
-
-        setTimeout(() => {
-          setTargetLine(null);
-        }, 2000);
-      }
+      // Clear highlight after 2 seconds
+      setTimeout(() => {
+        setTargetLine(null);
+      }, 2000);
     }
 
     onSelect();
-  }, [setTargetLine, setOpenedFiles, collapsedFolders, setCollapsedFolders, setFocusedPane, setVisibleNodeIds, setActiveLocalVariables, fullNodeMap, onSelect]);
+  }, [setTargetLine, setOpenedFiles, collapsedFolders, setCollapsedFolders, setFocusedPane, setActiveLocalVariables, onSelect]);
 
   // Handle Enter key to select focused result
   useEffect(() => {

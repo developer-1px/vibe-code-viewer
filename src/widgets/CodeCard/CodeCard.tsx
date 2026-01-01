@@ -1,17 +1,19 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { CanvasNode } from '../../entities/CanvasNode';
+import { CanvasNode } from '../../entities/CanvasNode/model/types';
 
 // Lib - Pure Utilities
-import { renderCodeLinesDirect, renderVueFile } from '../CodeViewer/core';
-import type { CodeLine } from '../CodeViewer/core/types';
+import { renderCodeLinesDirect } from '../CodeViewer/core/renderer/renderCodeLinesDirect';
+import { renderVueFile } from '../CodeViewer/core/renderer/renderVueFile';
+import type { CodeLine } from '../CodeViewer/core/types/codeLine';
 import { getNodeBorderColor } from '../../entities/SourceFileNode/lib/styleUtils';
-import { getFoldableLinesByMaxDepth, calculateFoldRanges } from '../../features/CodeFold/lib';
+import { getFoldableLinesByMaxDepth } from '../../features/CodeFold/lib/foldUtils';
 
 // UI Components
 import CodeCardHeader from './ui/CodeCardHeader';
 import CodeCardCopyButton from './ui/CodeCardCopyButton';
-import { CodeViewer, VueTemplateSection } from '../CodeViewer';
+import CodeViewer from '../CodeViewer/CodeViewer';
+import VueTemplateSection from '../CodeViewer/ui/VueTemplateSection';
 
 // Atoms
 import { foldedLinesAtom, cardPositionsAtom, filesAtom } from '../../store/atoms';
@@ -50,13 +52,6 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
     });
   }, [node.id, processedLines, foldedLinesMap, setFoldedLinesMap]);
 
-  // Fold ranges 계산 (CodeCardLine에서 사용)
-  const foldedLines = foldedLinesMap.get(node.id) || new Set<number>();
-
-  const foldRanges = useMemo(() => {
-    return calculateFoldRanges(foldedLines, processedLines);
-  }, [processedLines, foldedLines]);
-
   // Script 영역의 마지막 라인 번호 계산
   const scriptEndLine = useMemo(() => {
     if (processedLines.length === 0) return 0;
@@ -84,7 +79,6 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
         <CodeViewer
           processedLines={processedLines}
           node={node}
-          foldRanges={foldRanges}
         />
       )}
 
