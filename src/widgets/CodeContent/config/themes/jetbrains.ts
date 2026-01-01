@@ -34,6 +34,32 @@ export const jetbrainsTheme: CodeTheme = {
         hoverBg: 'hover:bg-[#214283]/60',
         hoverBorder: 'hover:border-[#4A88C7]/80'
       }
+    },
+    tokens: {
+      // Syntax highlighting (Darcula colors)
+      text: 'text-[#A9B7C6]',           // Default text
+      keyword: 'text-[#CC7832]',        // Orange keywords
+      punctuation: 'text-[#A9B7C6]',    // Same as text
+      string: 'text-[#6A8759]',         // Green strings
+      comment: 'text-[#808080]',        // Gray comments
+      commentFocus: 'text-[#8C8C8C]',
+
+      // Special identifiers
+      self: 'text-[#FFC66D]',           // Yellow for definitions
+      identifier: 'text-[#A9B7C6]',
+      identifierWithDef: 'text-[#9876AA]', // Purple for definitions
+
+      // External dependencies
+      externalImport: 'text-[#6A8759]', // Green imports
+      externalClosure: 'text-[#FFC66D]', // Yellow closure
+      externalFunction: 'text-[#FFC66D]', // Yellow functions
+
+      // Local scope
+      parameter: 'text-[#CC7832]',      // Orange parameters
+      localVariable: 'text-[#9876AA]',  // Purple local vars
+
+      // Focus mode
+      focusGrayscale: 'text-[#606366]', // Muted gray
     }
   },
   spacing: {

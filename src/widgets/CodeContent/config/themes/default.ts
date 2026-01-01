@@ -34,6 +34,32 @@ export const defaultTheme: CodeTheme = {
         hoverBg: 'hover:bg-white/10',
         hoverBorder: 'hover:border-emerald-500/50'
       }
+    },
+    tokens: {
+      // Syntax highlighting
+      text: 'text-slate-300',
+      keyword: 'text-purple-400',
+      punctuation: 'text-slate-400',
+      string: 'text-orange-300',
+      comment: 'text-slate-400/85',
+      commentFocus: 'text-slate-400',
+
+      // Special identifiers
+      self: 'text-vibe-accent',          // Cyan for definitions
+      identifier: 'text-slate-300',
+      identifierWithDef: 'text-sky-300',
+
+      // External dependencies
+      externalImport: 'text-emerald-300',
+      externalClosure: 'text-amber-300',
+      externalFunction: 'text-purple-300',
+
+      // Local scope
+      parameter: 'text-orange-300',
+      localVariable: 'text-cyan-200',
+
+      // Focus mode
+      focusGrayscale: 'text-slate-600',
     }
   },
   spacing: {

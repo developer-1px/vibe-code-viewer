@@ -33,6 +33,32 @@ export interface CodeTheme {
         hoverBorder: string;     // Hover border
       };
     };
+    tokens: {
+      // Syntax highlighting
+      text: string;              // Default text
+      keyword: string;           // Keywords (const, let, function, etc.)
+      punctuation: string;       // Punctuation marks
+      string: string;            // String literals
+      comment: string;           // Comments (normal mode)
+      commentFocus: string;      // Comments (focus mode)
+
+      // Special identifiers
+      self: string;              // Declaration name (definition)
+      identifier: string;        // General identifiers
+      identifierWithDef: string; // Identifiers with definition
+
+      // External dependencies
+      externalImport: string;    // External imports
+      externalClosure: string;   // Closure variables
+      externalFunction: string;  // External functions
+
+      // Local scope
+      parameter: string;         // Function parameters
+      localVariable: string;     // Local variables
+
+      // Focus mode
+      focusGrayscale: string;    // Unfocused elements in focus mode
+    };
   };
   spacing: {
     containerY: string;          // Container vertical padding

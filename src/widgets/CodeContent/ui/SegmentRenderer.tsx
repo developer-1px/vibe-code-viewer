@@ -11,6 +11,7 @@ import type { CanvasNode } from '../../../entities/CanvasNode';
 import type { CodeLine } from '../../../entities/CodeRenderer/model/types';
 import { buildSegmentStyle } from '../../../entities/CodeSegment';
 import { visibleNodeIdsAtom, activeLocalVariablesAtom } from '../../../store/atoms';
+import { useCodeTheme } from '../config';
 import {
   StaticSegment,
   ExpandSegment,
@@ -49,6 +50,7 @@ export const SegmentRenderer = ({
   isFolded?: boolean;
   foldedCount?: number;
 }) => {
+  const theme = useCodeTheme();
   const visibleNodeIds = useAtomValue(visibleNodeIdsAtom);
   const activeLocalVariables = useAtomValue(activeLocalVariablesAtom);
 
@@ -128,7 +130,8 @@ export const SegmentRenderer = ({
     isInReturn: isInReturnStatement,
     isActive: isExternalActive || isLocalActive,
     focusedVariables: lineHasFocusedVariable ? undefined : focusedVariables, // Line이 focused면 normal highlighting
-    segmentText: segment.text
+    segmentText: segment.text,
+    theme: theme  // Pass theme to styleBuilder
   });
 
   // Special case: identifier with nodeId → DependencyTokenSegment

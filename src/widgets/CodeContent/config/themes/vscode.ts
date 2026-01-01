@@ -34,6 +34,32 @@ export const vscodeTheme: CodeTheme = {
         hoverBg: 'hover:bg-[#264F78]/70',
         hoverBorder: 'hover:border-[#007ACC]/80'
       }
+    },
+    tokens: {
+      // Syntax highlighting (Dark+ colors)
+      text: 'text-[#D4D4D4]',           // Default text
+      keyword: 'text-[#569CD6]',        // Blue keywords
+      punctuation: 'text-[#D4D4D4]',    // Same as text
+      string: 'text-[#CE9178]',         // Orange strings
+      comment: 'text-[#6A9955]',        // Green comments
+      commentFocus: 'text-[#7FB070]',
+
+      // Special identifiers
+      self: 'text-[#4FC1FF]',           // Light blue for definitions
+      identifier: 'text-[#D4D4D4]',
+      identifierWithDef: 'text-[#4EC9B0]', // Cyan for definitions
+
+      // External dependencies
+      externalImport: 'text-[#4EC9B0]', // Cyan imports (like types)
+      externalClosure: 'text-[#DCDCAA]', // Yellow closure vars
+      externalFunction: 'text-[#DCDCAA]', // Yellow functions
+
+      // Local scope
+      parameter: 'text-[#9CDCFE]',      // Light blue parameters
+      localVariable: 'text-[#9CDCFE]',  // Light blue local vars
+
+      // Focus mode
+      focusGrayscale: 'text-[#858585]', // Line number gray
     }
   },
   spacing: {

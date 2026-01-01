@@ -54,7 +54,7 @@ const AppContent: React.FC = () => {
       </div>
 
       {/* Jotai DevTools */}
-      <JotaiDevTools />
+      {/*<JotaiDevTools />*/}
 
       {/* Unified Search Modal (Shift+Shift) */}
       <UnifiedSearchModal />
