@@ -9,7 +9,7 @@ export const defaultTheme: CodeTheme = {
   typography: {
     fontSize: 'text-xs',
     fontFamily: 'font-mono',
-    lineHeight: 'leading-[1.15rem]'
+    lineHeight: 'leading-[1rem]'
   },
   colors: {
     background: 'bg-[#0b1221]',

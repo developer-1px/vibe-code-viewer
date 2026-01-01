@@ -61,3 +61,7 @@ export { activeLocalVariablesAtom } from '../features/FocusMode/model/atoms';
 export type FocusedPane = 'sidebar' | 'canvas' | 'search' | null;
 export const focusedPaneAtom = atom<FocusedPane>('sidebar'); // Default to sidebar when it's open
 
+// Theme Settings
+export type ThemeName = 'default' | 'jetbrains' | 'vscode';
+export const currentThemeAtom = atom<ThemeName>('default');
+

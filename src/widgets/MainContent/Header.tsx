@@ -1,8 +1,8 @@
 
-import React, { useMemo } from 'react';
-import { Box as IconBox, AlertCircle as IconAlertCircle, FileCode, X } from 'lucide-react';
-import { useAtomValue, useSetAtom } from 'jotai';
-import { openedFilesAtom, selectedNodeIdsAtom, layoutNodesAtom, parseErrorAtom } from '../../store/atoms';
+import React, { useMemo, useState } from 'react';
+import { Box as IconBox, AlertCircle as IconAlertCircle, FileCode, X, Settings } from 'lucide-react';
+import { useAtomValue, useSetAtom, useAtom } from 'jotai';
+import { openedFilesAtom, selectedNodeIdsAtom, layoutNodesAtom, parseErrorAtom, currentThemeAtom, type ThemeName } from '../../store/atoms';
 
 const Header: React.FC = () => {
   const parseError = useAtomValue(parseErrorAtom);
@@ -10,6 +10,8 @@ const Header: React.FC = () => {
   const setOpenedFiles = useSetAtom(openedFilesAtom);
   const setSelectedNodeIds = useSetAtom(selectedNodeIdsAtom);
   const layoutNodes = useAtomValue(layoutNodesAtom);
+  const [currentTheme, setCurrentTheme] = useAtom(currentThemeAtom);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
 
   // Extract filenames from paths and pair with full paths
   const fileItems = useMemo(() => {
@@ -79,6 +81,46 @@ const Header: React.FC = () => {
             Project Analysis Active
           </span>
         )}
+
+        {/* Theme Settings Button */}
+        <div className="relative">
+          <button
+            onClick={() => setShowThemeMenu(!showThemeMenu)}
+            className="p-1.5 hover:bg-white/5 rounded transition-colors"
+            title="Theme Settings"
+          >
+            <Settings className="w-4 h-4 text-slate-400 hover:text-slate-200" />
+          </button>
+
+          {/* Theme Menu Dropdown */}
+          {showThemeMenu && (
+            <div className="absolute right-0 top-full mt-1 bg-vibe-panel border border-vibe-border rounded-lg shadow-xl z-50 min-w-[160px] overflow-hidden">
+              <div className="px-3 py-2 border-b border-vibe-border">
+                <div className="text-xs font-semibold text-slate-300">Code Theme</div>
+              </div>
+              <div className="py-1">
+                {(['default', 'jetbrains', 'vscode'] as ThemeName[]).map((theme) => (
+                  <button
+                    key={theme}
+                    onClick={() => {
+                      setCurrentTheme(theme);
+                      setShowThemeMenu(false);
+                    }}
+                    className={`w-full px-3 py-2 text-left text-xs transition-colors ${
+                      currentTheme === theme
+                        ? 'bg-vibe-accent/20 text-vibe-accent font-medium'
+                        : 'text-slate-300 hover:bg-white/5 hover:text-slate-100'
+                    }`}
+                  >
+                    {theme === 'default' && 'Default (Dark)'}
+                    {theme === 'jetbrains' && 'JetBrains (Darcula)'}
+                    {theme === 'vscode' && 'VSCode (Dark+)'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
