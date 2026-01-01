@@ -4,10 +4,10 @@
  */
 
 import React, { createContext, useContext } from 'react';
-import { defaultTheme } from './themes/default';
-import type { EditorTheme } from '../types';
+import { defaultEditorTheme } from './default';
+import type { EditorTheme } from './types';
 
-const EditorThemeContext = createContext<EditorTheme>(defaultTheme);
+const EditorThemeContext = createContext<EditorTheme>(defaultEditorTheme);
 
 /**
  * Hook to access current Editor theme
@@ -21,7 +21,7 @@ export const useEditorTheme = () => useContext(EditorThemeContext);
 export const EditorThemeProvider: React.FC<{
   theme?: EditorTheme;
   children: React.ReactNode;
-}> = ({ theme = defaultTheme, children }) => {
+}> = ({ theme = defaultEditorTheme, children }) => {
   return (
     <EditorThemeContext.Provider value={theme}>
       {children}

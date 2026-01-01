@@ -1,11 +1,11 @@
 /**
- * JetBrains New UI / Islands Dark Theme
+ * JetBrains New UI / Islands Dark Editor Theme
  * Based on IntelliJ IDEA's New UI and Islands Dark color scheme
  */
 
-import type { EditorTheme } from '../../types';
+import type { EditorTheme } from '../types';
 
-export const jetbrainsTheme: EditorTheme = {
+export const jetbrainsEditorTheme: EditorTheme = {
   name: 'jetbrains',
   typography: {
     fontSize: 'text-sm',        // Slightly larger than default

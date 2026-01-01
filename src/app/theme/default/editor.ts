@@ -3,9 +3,9 @@
  * Extracts current hardcoded values into a JSON-serializable theme object
  */
 
-import type { EditorTheme } from '../../types';
+import type { EditorTheme } from '../types';
 
-export const defaultTheme: EditorTheme = {
+export const defaultEditorTheme: EditorTheme = {
   name: 'default',
   typography: {
     fontSize: 'text-xs',

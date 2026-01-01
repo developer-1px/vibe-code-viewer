@@ -1,11 +1,11 @@
 /**
- * VSCode Dark+ Theme
+ * VSCode Dark+ Editor Theme
  * Based on Visual Studio Code's Dark+ color scheme
  */
 
-import type { EditorTheme } from '../../types';
+import type { EditorTheme } from '../types';
 
-export const vscodeTheme: EditorTheme = {
+export const vscodeEditorTheme: EditorTheme = {
   name: 'vscode',
   typography: {
     fontSize: 'text-sm',        // VSCode's comfortable reading size

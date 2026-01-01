@@ -6,9 +6,18 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import type { UnifiedTheme, AppTheme, EditorTheme } from './types';
-import type { ThemeName } from './themes';
-import { themes, defaultTheme } from './themes';
-import { EditorThemeProvider } from './editor';
+import { defaultTheme } from './default';
+import { vscodeTheme } from './vscode';
+import { jetbrainsTheme } from './jetbrains';
+import { EditorThemeProvider } from './EditorThemeProvider';
+
+const themes = {
+  default: defaultTheme,
+  vscode: vscodeTheme,
+  jetbrains: jetbrainsTheme,
+} as const;
+
+export type ThemeName = keyof typeof themes;
 
 interface ThemeContextValue {
   theme: UnifiedTheme;
