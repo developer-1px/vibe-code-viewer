@@ -263,6 +263,21 @@ const getSegmentKind = (node: ts.Node): SegmentKind | null => {
     return 'string';
   }
 
+  // Numbers
+  if (ts.isNumericLiteral(node)) {
+    return 'number';
+  }
+
+  // Boolean literals (true, false) - treat as numbers for syntax highlighting
+  if (
+    node.kind === ts.SyntaxKind.TrueKeyword ||
+    node.kind === ts.SyntaxKind.FalseKeyword ||
+    node.kind === ts.SyntaxKind.NullKeyword ||
+    node.kind === ts.SyntaxKind.UndefinedKeyword
+  ) {
+    return 'number';
+  }
+
   return null;
 };
 

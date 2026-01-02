@@ -67,6 +67,8 @@ export interface OutlinePanelProps {
   defaultOpen?: boolean
   /** Callback when a symbol is clicked */
   onSymbolClick?: (line: number) => void
+  /** Outline symbols to display (optional, uses mock data if not provided) */
+  symbols?: OutlineSymbol[]
 }
 
 // Get icon for symbol kind with diverse colors - wrapped in fixed width container
@@ -186,7 +188,7 @@ function renderModifierIcons(modifiers?: SymbolModifier) {
  * - Functions
  * - Classes with methods and properties
  */
-export function OutlinePanel({ defaultOpen = true, onSymbolClick }: OutlinePanelProps) {
+export function OutlinePanel({ defaultOpen = true, onSymbolClick, symbols }: OutlinePanelProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
   const [expandedSymbols, setExpandedSymbols] = useState<Set<string>>(
     new Set(['UserService', 'UserRole', 'ApiConfig'])
@@ -238,8 +240,8 @@ export function OutlinePanel({ defaultOpen = true, onSymbolClick }: OutlinePanel
     setIsResizing(true)
   }
 
-  // Rich mock data with diverse symbol types
-  const outlineData: OutlineSymbol[] = [
+  // Rich mock data with diverse symbol types (fallback if symbols not provided)
+  const mockData: OutlineSymbol[] = [
     // Imports
     {
       kind: 'import',
@@ -433,6 +435,9 @@ export function OutlinePanel({ defaultOpen = true, onSymbolClick }: OutlinePanel
     },
   ]
 
+  // Use provided symbols or fallback to mock data
+  const outlineData = symbols || mockData
+
   const toggleSymbol = (symbolName: string) => {
     const newExpanded = new Set(expandedSymbols)
     if (newExpanded.has(symbolName)) {
@@ -480,40 +485,42 @@ export function OutlinePanel({ defaultOpen = true, onSymbolClick }: OutlinePanel
           {/* 1. Kind Icon (class, interface, function, const, etc) */}
           {getSymbolIcon(symbol.kind, symbol.modifiers)}
 
-          {/* 2. Name + Params (tightly coupled for functions) */}
+          {/* 2. Name (never truncate - always show full name) */}
           <span
-            className={`${getSymbolColor(symbol.kind)} cursor-pointer font-medium flex items-baseline flex-shrink whitespace-nowrap overflow-hidden text-ellipsis min-w-0`}
+            className={`${getSymbolColor(symbol.kind)} cursor-pointer font-medium flex-shrink-0 whitespace-nowrap`}
             onClick={() => handleSymbolClick(symbol.line)}
             title={`${symbol.jsDoc || ''}\nLine ${symbol.line}`}
           >
-            <span className="truncate">{symbol.name}</span>
-            {paramsText && (
-              <span className="text-text-muted/60 text-2xs font-mono flex-shrink-0">
-                {paramsText}
-              </span>
-            )}
+            {symbol.name}
           </span>
+
+          {/* 3. Params (can truncate with ellipsis) */}
+          {paramsText && (
+            <span className="text-text-muted/60 text-2xs font-mono truncate overflow-hidden min-w-0">
+              {paramsText}
+            </span>
+          )}
 
           {/* 4. Modifier Icons (export, async, static, readonly, private) */}
           {renderModifierIcons(symbol.modifiers)}
 
-          {/* 5. Type annotation : Type */}
+          {/* 5. Type annotation : Type (can truncate with ellipsis) */}
           {symbol.type && !symbol.from && (
-            <span className="text-text-tertiary/50 text-2xs font-mono whitespace-nowrap flex-shrink-0">
+            <span className="text-text-tertiary/50 text-2xs font-mono truncate overflow-hidden min-w-0">
               : {symbol.type}
             </span>
           )}
 
-          {/* Value for enums/consts = value */}
+          {/* Value for enums/consts = value (can truncate with ellipsis) */}
           {symbol.value && (
-            <span className="text-text-muted/50 text-2xs whitespace-nowrap flex-shrink-0">
+            <span className="text-text-muted/50 text-2xs truncate overflow-hidden min-w-0">
               = {symbol.value}
             </span>
           )}
 
-          {/* Import path: from 'path' */}
+          {/* Import path: from 'path' (can truncate with ellipsis) */}
           {symbol.from && (
-            <span className="text-text-muted/40 text-2xs italic whitespace-nowrap flex-shrink-0">
+            <span className="text-text-muted/40 text-2xs italic truncate overflow-hidden min-w-0">
               from {symbol.from}
             </span>
           )}

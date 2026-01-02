@@ -41,6 +41,7 @@ const FolderItemView: React.FC<FolderItemViewProps> = ({
   };
 
   const handleChevronClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation(); // Prevent folder focus
     onFolderClick(node.path); // Toggle immediately
   };
@@ -58,17 +59,18 @@ const FolderItemView: React.FC<FolderItemViewProps> = ({
         }`}
         style={{ paddingLeft: `${paddingLeft}px` }}
       >
-        {isCollapsed ? (
-          <ChevronRight
-            className="w-2.5 h-2.5 flex-shrink-0 text-theme-text-tertiary"
-            onClick={handleChevronClick}
-          />
-        ) : (
-          <ChevronDown
-            className="w-2.5 h-2.5 flex-shrink-0 text-theme-text-tertiary"
-            onClick={handleChevronClick}
-          />
-        )}
+        {/* Chevron toggle button - separate clickable area */}
+        <button
+          type="button"
+          onClick={handleChevronClick}
+          className="flex items-center justify-center w-3 h-3 hover:bg-theme-hover rounded-sm transition-colors"
+        >
+          {isCollapsed ? (
+            <ChevronRight className="w-2.5 h-2.5 flex-shrink-0 text-theme-text-tertiary" />
+          ) : (
+            <ChevronDown className="w-2.5 h-2.5 flex-shrink-0 text-theme-text-tertiary" />
+          )}
+        </button>
         {isCollapsed ? (
           <Folder className={`w-2.5 h-2.5 flex-shrink-0 ${isFocused ? 'text-theme-amber' : 'text-theme-amber/70'}`} />
         ) : (

@@ -3,16 +3,18 @@
  * Shows files in tabs like a traditional IDE
  */
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { FileText } from 'lucide-react';
-import { openedTabsAtom, activeTabAtom, viewModeAtom, fullNodeMapAtom, filesAtom } from '../../store/atoms';
+import { openedTabsAtom, activeTabAtom, viewModeAtom, fullNodeMapAtom, filesAtom, outlinePanelOpenAtom } from '../../store/atoms';
 import { renderCodeLinesDirect } from '../CodeViewer/core/renderer/renderCodeLinesDirect';
 import { renderVueFile } from '../CodeViewer/core/renderer/renderVueFile';
 import CodeViewer from '../CodeViewer/CodeViewer';
 import { getFileName } from '../../shared/pathUtils';
 import { TabBar, Tab } from '@/components/ide/TabBar';
+import { OutlinePanel } from '@/components/ide/OutlinePanel';
+import { extractOutlineSymbols } from '../../shared/outlineExtractor';
 
 const IDEView = () => {
   const [openedTabs, setOpenedTabs] = useAtom(openedTabsAtom);
@@ -20,6 +22,10 @@ const IDEView = () => {
   const fullNodeMap = useAtomValue(fullNodeMapAtom);
   const files = useAtomValue(filesAtom);
   const setViewMode = useSetAtom(viewModeAtom);
+  const outlinePanelOpen = useAtomValue(outlinePanelOpenAtom);
+
+  // Ref for scroll container
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Sync activeTab when it changes
   const activeNode = activeTab ? fullNodeMap.get(activeTab) : null;
@@ -68,6 +74,27 @@ const IDEView = () => {
     return renderCodeLinesDirect(activeNode, files);
   }, [activeNode, files]);
 
+  // Extract outline symbols from active node
+  const outlineSymbols = useMemo(() => {
+    if (!activeNode) return [];
+    return extractOutlineSymbols(activeNode);
+  }, [activeNode]);
+
+  // Scroll to line handler for OutlinePanel
+  const handleScrollToLine = (line: number) => {
+    if (!scrollContainerRef.current) return;
+
+    // Find the code line element by data-line-num attribute
+    const lineElement = scrollContainerRef.current.querySelector(`[data-line-num="${line}"]`);
+
+    if (lineElement) {
+      lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      console.log('[IDEView] Scrolled to line:', line);
+    } else {
+      console.warn('[IDEView] Line element not found:', line);
+    }
+  };
+
   if (!activeNode && openedTabs.length === 0) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-bg-elevated text-text-tertiary">
@@ -101,12 +128,24 @@ const IDEView = () => {
         })}
       </TabBar>
 
-      {/* Scrollable code content */}
-      <div className="flex-1 overflow-y-auto">
-        {activeNode && (
-          <CodeViewer
-            processedLines={processedLines}
-            node={activeNode}
+      {/* Main content area with editor and outline panel */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Scrollable code content */}
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+          {activeNode && (
+            <CodeViewer
+              processedLines={processedLines}
+              node={activeNode}
+            />
+          )}
+        </div>
+
+        {/* Outline Panel (right side) */}
+        {outlinePanelOpen && activeNode && (
+          <OutlinePanel
+            defaultOpen={true}
+            symbols={outlineSymbols}
+            onSymbolClick={handleScrollToLine}
           />
         )}
       </div>

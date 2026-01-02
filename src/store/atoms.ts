@@ -84,3 +84,6 @@ export const focusedNodeIdAtom = atom<string | null>(null); // IDE 모드에서 
 export const openedTabsAtom = atom<string[]>([]); // 열린 탭들 (파일 경로)
 export const activeTabAtom = atom<string | null>(null); // 현재 활성 탭 (파일 경로)
 
+// IDE Outline Panel
+export const outlinePanelOpenAtom = atom(true); // Outline Panel 열림/닫힘 상태
+

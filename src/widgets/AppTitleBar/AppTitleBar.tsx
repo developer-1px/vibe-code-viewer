@@ -12,7 +12,7 @@ export function AppTitleBar() {
   const activeTab = useAtomValue(activeTabAtom);
 
   // Get active file name for TitleBar
-  const activeFileName = activeTab || 'vibe-code-viewer';
+  const activeFileName = activeTab || 'untitled';
 
-  return <TitleBar filename={activeFileName} projectName="vibe-code-viewer" />;
+  return <TitleBar filename={activeFileName} projectName="teo.v" />;
 }

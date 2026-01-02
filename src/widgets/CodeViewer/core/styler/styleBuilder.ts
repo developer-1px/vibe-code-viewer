@@ -67,6 +67,15 @@ export function buildSegmentStyle(
     };
   }
 
+  // 숫자 (numeric literals, booleans, null, undefined)
+  if (primaryKind === 'number') {
+    const textColor = hasFocusMode && !isFocused ? 'text-editor-focus-gray' : 'text-editor-number';
+    return {
+      className: `${textColor} select-text ${returnBg}`,
+      clickable: false
+    };
+  }
+
   // 주석
   if (primaryKind === 'comment') {
     // Focus mode일 때는 주석을 더 밝게 표시
@@ -341,6 +350,7 @@ function getPrimaryKind(kinds: SegmentKind[]): SegmentKind {
     'keyword',
     'punctuation',
     'string',
+    'number',
     'comment',
     'self',
     'external-import',

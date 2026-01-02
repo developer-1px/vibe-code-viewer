@@ -10,6 +10,7 @@ export type SegmentKind =
   | 'keyword'
   | 'punctuation'
   | 'string'
+  | 'number'
   | 'comment'
   | 'identifier'
   | 'external-import'

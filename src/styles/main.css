@@ -71,6 +71,34 @@
   }
 }
 
+/* ===== Code Editor Syntax Utilities ===== */
+
+@layer utilities {
+  /* Text colors for code syntax highlighting */
+  .text-editor-keyword { color: var(--code-keyword); }
+  .text-editor-function { color: var(--code-function); }
+  .text-editor-class { color: var(--code-class); }
+  .text-editor-variable { color: var(--code-variable); }
+  .text-editor-string { color: var(--code-string); }
+  .text-editor-number { color: var(--code-number); }
+  .text-editor-comment { color: var(--code-comment); }
+  .text-editor-comment-focus { color: var(--code-comment); opacity: 1; }
+  .text-editor-property { color: var(--code-property); }
+  .text-editor-tag { color: var(--code-tag); }
+  .text-editor-attribute { color: var(--code-attribute); }
+  .text-editor-punctuation { color: var(--code-punctuation); }
+
+  /* Generic text color */
+  .text-editor-text { color: var(--code-variable); }
+
+  /* Identifier colors */
+  .text-editor-identifier { color: var(--code-variable); }
+  .text-editor-identifier-def { color: var(--code-function); text-decoration-color: var(--code-function); }
+
+  /* Focus mode grayscale */
+  .text-editor-focus-gray { color: var(--focus-gray); }
+}
+
 /* ===== Custom Scrollbar ===== */
 
 ::-webkit-scrollbar {
