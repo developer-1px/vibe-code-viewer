@@ -112,32 +112,38 @@ function extractComments(sourceFile: ts.SourceFile, node: ts.Node): OutlineNode[
 }
 
 /**
- * Extract identifiers from a statement
+ * Extract identifiers from a node
  */
-function extractIdentifiers(stmt: ts.Statement, sourceFile: ts.SourceFile): string[] {
+function extractIdentifiers(node: ts.Node, sourceFile: ts.SourceFile): string[] {
   const identifiers: string[] = [];
   const seen = new Set<string>();
 
-  function visit(node: ts.Node) {
-    if (ts.isIdentifier(node)) {
-      const name = node.getText(sourceFile);
+  function visit(n: ts.Node) {
+    if (ts.isIdentifier(n)) {
+      const name = n.getText(sourceFile);
       // Skip common keywords and duplicates
       if (!seen.has(name) && name !== 'undefined' && name !== 'null') {
         seen.add(name);
         identifiers.push(name);
       }
     }
-    ts.forEachChild(node, visit);
+    ts.forEachChild(n, visit);
   }
 
-  visit(stmt);
+  visit(node);
   return identifiers;
 }
 
 /**
  * Get statement kind
  */
-function getStatementKind(stmt: ts.Statement): OutlineNodeKind {
+function getStatementKind(stmt: ts.Node): OutlineNodeKind {
+  // Class members
+  if (ts.isMethodDeclaration(stmt)) return 'method';
+  if (ts.isPropertyDeclaration(stmt)) return 'property';
+  if (ts.isConstructorDeclaration(stmt)) return 'method';
+
+  // Regular statements
   if (ts.isImportDeclaration(stmt)) return 'import';
   if (ts.isVariableStatement(stmt)) {
     const flags = stmt.declarationList.flags;
@@ -169,7 +175,19 @@ function getStatementKind(stmt: ts.Statement): OutlineNodeKind {
 /**
  * Get statement name/summary
  */
-function getStatementName(stmt: ts.Statement, sourceFile: ts.SourceFile): string {
+function getStatementName(stmt: ts.Node, sourceFile: ts.SourceFile): string {
+  // Class members
+  if (ts.isMethodDeclaration(stmt)) {
+    return stmt.name.getText(sourceFile);
+  }
+  if (ts.isPropertyDeclaration(stmt)) {
+    return stmt.name.getText(sourceFile);
+  }
+  if (ts.isConstructorDeclaration(stmt)) {
+    return 'constructor';
+  }
+
+  // Regular statements
   if (ts.isImportDeclaration(stmt)) {
     const from = ts.isStringLiteral(stmt.moduleSpecifier) ? stmt.moduleSpecifier.text : '';
     return `from '${from}'`;
@@ -243,34 +261,106 @@ function getStatementName(stmt: ts.Statement, sourceFile: ts.SourceFile): string
 }
 
 /**
- * Get block from statement (if it has one)
+ * Get child statements from a node (for recursion)
  */
-function getStatementBlock(stmt: ts.Statement): ts.NodeArray<ts.Statement> | ts.Statement | undefined {
-  if (ts.isFunctionDeclaration(stmt) || ts.isClassDeclaration(stmt)) {
-    return stmt.body && ts.isBlock(stmt.body) ? stmt.body.statements : undefined;
+function getChildStatements(node: ts.Node, sourceFile: ts.SourceFile): ts.Node[] {
+  const children: ts.Node[] = [];
+
+  // Function: process body statements
+  if (ts.isFunctionDeclaration(node)) {
+    if (node.body && ts.isBlock(node.body)) {
+      children.push(...node.body.statements);
+    }
   }
-  if (ts.isIfStatement(stmt)) {
-    return stmt.thenStatement && ts.isBlock(stmt.thenStatement) ? stmt.thenStatement.statements : undefined;
+
+  // Method: process body statements
+  else if (ts.isMethodDeclaration(node)) {
+    if (node.body && ts.isBlock(node.body)) {
+      children.push(...node.body.statements);
+    }
   }
-  if (ts.isForStatement(stmt) || ts.isForOfStatement(stmt) || ts.isForInStatement(stmt)) {
-    return stmt.statement && ts.isBlock(stmt.statement) ? stmt.statement.statements : undefined;
+
+  // Constructor: process body statements
+  else if (ts.isConstructorDeclaration(node)) {
+    if (node.body && ts.isBlock(node.body)) {
+      children.push(...node.body.statements);
+    }
   }
-  if (ts.isWhileStatement(stmt) || ts.isDoStatement(stmt)) {
-    return stmt.statement && ts.isBlock(stmt.statement) ? stmt.statement.statements : undefined;
+
+  // Class: process members
+  else if (ts.isClassDeclaration(node)) {
+    node.members.forEach(member => {
+      if (ts.isMethodDeclaration(member) || ts.isPropertyDeclaration(member) || ts.isConstructorDeclaration(member)) {
+        children.push(member);
+      }
+    });
   }
-  if (ts.isTryStatement(stmt)) {
-    return stmt.tryBlock.statements;
+
+  // If: process then and else branches
+  else if (ts.isIfStatement(node)) {
+    if (ts.isBlock(node.thenStatement)) {
+      children.push(...node.thenStatement.statements);
+    } else {
+      children.push(node.thenStatement);
+    }
+
+    if (node.elseStatement) {
+      if (ts.isBlock(node.elseStatement)) {
+        children.push(...node.elseStatement.statements);
+      } else {
+        children.push(node.elseStatement);
+      }
+    }
   }
-  if (ts.isBlock(stmt)) {
-    return stmt.statements;
+
+  // For/While/Do-While: process body
+  else if (ts.isForStatement(node) || ts.isForOfStatement(node) || ts.isForInStatement(node)) {
+    if (ts.isBlock(node.statement)) {
+      children.push(...node.statement.statements);
+    } else {
+      children.push(node.statement);
+    }
   }
-  return undefined;
+  else if (ts.isWhileStatement(node) || ts.isDoStatement(node)) {
+    if (ts.isBlock(node.statement)) {
+      children.push(...node.statement.statements);
+    } else {
+      children.push(node.statement);
+    }
+  }
+
+  // Switch: process cases
+  else if (ts.isSwitchStatement(node)) {
+    node.caseBlock.clauses.forEach(clause => {
+      children.push(...clause.statements);
+    });
+  }
+
+  // Try-Catch-Finally: process all blocks
+  else if (ts.isTryStatement(node)) {
+    children.push(...node.tryBlock.statements);
+
+    if (node.catchClause) {
+      children.push(...node.catchClause.block.statements);
+    }
+
+    if (node.finallyBlock) {
+      children.push(...node.finallyBlock.statements);
+    }
+  }
+
+  // Block: process statements
+  else if (ts.isBlock(node)) {
+    children.push(...node.statements);
+  }
+
+  return children;
 }
 
 /**
- * Visit a statement and create OutlineNode
+ * Visit a node (statement or class member) and create OutlineNode
  */
-function visitStatement(stmt: ts.Statement, sourceFile: ts.SourceFile, processedComments: Set<number>): OutlineNode | null {
+function visitStatement(stmt: ts.Node, sourceFile: ts.SourceFile, processedComments: Set<number>): OutlineNode | null {
   // Extract comments for this statement
   const comments = extractComments(sourceFile, stmt);
   const commentNodes: OutlineNode[] = [];
@@ -302,30 +392,21 @@ function visitStatement(stmt: ts.Statement, sourceFile: ts.SourceFile, processed
     identifiers: identifiers.length > 0 ? identifiers : undefined,
   };
 
-  // Get block statements (children)
-  const block = getStatementBlock(stmt);
-  if (block) {
-    const children: OutlineNode[] = [];
+  // Get child statements (for recursion)
+  const childStatements = getChildStatements(stmt, sourceFile);
+  const children: OutlineNode[] = [];
 
-    // Add comments first
-    commentNodes.forEach(c => children.push(c));
+  // Add comments first
+  commentNodes.forEach(c => children.push(c));
 
-    // Process block statements
-    if (Array.isArray(block)) {
-      block.forEach(childStmt => {
-        const childNode = visitStatement(childStmt, sourceFile, processedComments);
-        if (childNode) children.push(childNode);
-      });
-    }
+  // Process child statements recursively
+  childStatements.forEach(childStmt => {
+    const childNode = visitStatement(childStmt, sourceFile, processedComments);
+    if (childNode) children.push(childNode);
+  });
 
-    if (children.length > 0) {
-      node.children = children;
-    }
-  } else {
-    // No block, but may have comments
-    if (commentNodes.length > 0) {
-      node.children = commentNodes;
-    }
+  if (children.length > 0) {
+    node.children = children;
   }
 
   return node;
