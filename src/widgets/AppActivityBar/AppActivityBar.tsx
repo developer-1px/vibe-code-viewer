@@ -29,15 +29,6 @@ export function AppActivityBar() {
         }}
       />
       <ActivityBarItem
-        icon={Search}
-        label="Search"
-        active={activeView === 1}
-        onClick={() => {
-          setActiveView(1);
-          setSearchModalOpen(true);
-        }}
-      />
-      <ActivityBarItem
         icon={Trash2}
         label="Dead Code"
         active={activeView === 2}
@@ -45,6 +36,15 @@ export function AppActivityBar() {
           setActiveView(2);
           setDeadCodePanelOpen(true);
           setViewMode('ide');
+        }}
+      />
+      <ActivityBarItem
+        icon={Search}
+        label="Search"
+        active={activeView === 1}
+        onClick={() => {
+          setActiveView(1);
+          setSearchModalOpen(true);
         }}
       />
       <ActivityBarItem

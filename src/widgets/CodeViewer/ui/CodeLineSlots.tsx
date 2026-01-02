@@ -35,6 +35,7 @@ export const CodeLineSlots: React.FC<CodeLineSlotsProps> = ({ line }) => {
           depNode={depNode}
           definitionLine={defLine}
           symbolName={seg.text}
+          isDead={seg.isDead} // ✅ Dead identifier 표시
         />
       );
     })

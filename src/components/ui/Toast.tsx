@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/components/lib/utils'
 import { X, CheckCircle2, AlertTriangle, AlertCircle, Info } from 'lucide-react'
 
 export type ToastType = 'success' | 'warning' | 'error' | 'info'

@@ -6,7 +6,7 @@
 import React, { useMemo } from 'react';
 import { useAtomValue } from 'jotai';
 import { CanvasNode } from '../../../entities/CanvasNode/model/types';
-import { activeLocalVariablesAtom, filesAtom } from '../../../store/atoms';
+import { activeLocalVariablesAtom, filesAtom, deadCodeResultsAtom } from '../../../store/atoms';
 import { FocusedIdentifierItem } from './FocusedIdentifierItem';
 import { renderCodeLinesDirect } from '../../../widgets/CodeViewer/core/renderer/renderCodeLinesDirect';
 import { renderVueFile } from '../../../widgets/CodeViewer/core/renderer/renderVueFile';
@@ -24,6 +24,7 @@ export interface IdentifierMetadata {
 export const FocusedIdentifiers: React.FC<FocusedIdentifiersProps> = ({ node }) => {
   const activeLocalVariables = useAtomValue(activeLocalVariablesAtom);
   const files = useAtomValue(filesAtom);
+  const deadCodeResults = useAtomValue(deadCodeResultsAtom);
   const focusedVariables = activeLocalVariables.get(node.id);
 
   // Process code lines to extract metadata (always call hooks)
@@ -31,8 +32,8 @@ export const FocusedIdentifiers: React.FC<FocusedIdentifiersProps> = ({ node }) 
     if (node.filePath.endsWith('.vue')) {
       return renderVueFile(node, files);
     }
-    return renderCodeLinesDirect(node, files);
-  }, [node, files]);
+    return renderCodeLinesDirect(node, files, deadCodeResults);
+  }, [node, files, deadCodeResults]);
 
   // Extract metadata for each focused identifier
   const identifiersWithMetadata = useMemo(() => {

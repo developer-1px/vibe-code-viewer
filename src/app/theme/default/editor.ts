@@ -66,7 +66,7 @@ export const defaultEditorTheme: EditorTheme = {
   spacing: {
     containerY: 'py-2',
     lineX: 'px-3',
-    lineY: 'py-0.5',
+    lineY: '',
     lineNumberX: 'pr-2'
   },
   dimensions: {

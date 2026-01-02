@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/Button'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { Label } from '@/components/ui/Label'
 import { ScrollArea } from '@/components/ui/ScrollArea'
-import { cn } from '@/lib/utils'
+import { cn } from '@/components/lib/utils'
 
 export interface SearchPanelProps {
   className?: string

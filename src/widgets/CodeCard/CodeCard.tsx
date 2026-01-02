@@ -16,10 +16,11 @@ import CodeViewer from '../CodeViewer/CodeViewer';
 import VueTemplateSection from '../CodeViewer/ui/VueTemplateSection';
 
 // Atoms
-import { foldedLinesAtom, cardPositionsAtom, filesAtom } from '../../store/atoms';
+import { foldedLinesAtom, cardPositionsAtom, filesAtom, deadCodeResultsAtom } from '../../store/atoms';
 
 const CodeCard = ({ node }: { node: CanvasNode }) => {
   const files = useAtomValue(filesAtom);
+  const deadCodeResults = useAtomValue(deadCodeResultsAtom);
 
   // Render code lines with syntax highlighting
   const processedLines = useMemo(() => {
@@ -28,8 +29,8 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
       return renderVueFile(node, files);
     }
     // 그 외의 경우 renderCodeLinesDirect 사용
-    return renderCodeLinesDirect(node, files);
-  }, [node, files]);
+    return renderCodeLinesDirect(node, files, deadCodeResults);
+  }, [node, files, deadCodeResults]);
 
   const foldedLinesMap = useAtomValue(foldedLinesAtom);
   const setFoldedLinesMap = useSetAtom(foldedLinesAtom);

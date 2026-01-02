@@ -86,6 +86,7 @@ export function getUsedIdentifiers(node: SourceFileNode): Set<string> {
   return extractUsedIdentifiersFromAST(node.sourceFile);
 }
 
+
 // ========================================
 // Private 구현 함수 (외부에서 직접 호출 금지)
 // ========================================

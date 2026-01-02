@@ -36,6 +36,7 @@ interface SegmentToAdd {
   definedIn?: string;
   isDeclarationName?: boolean;
   tsNode?: ts.Node;
+  isDead?: boolean;
 }
 
 // ===== 순수 함수들 =====
@@ -114,7 +115,8 @@ const addSegmentToLines = (
   lines: CodeLine[],
   sourceFile: ts.SourceFile,
   code: string,
-  segmentToAdd: SegmentToAdd
+  segmentToAdd: SegmentToAdd,
+  deadIdentifiers: Set<string>
 ): CodeLine[] => {
   const { start, end, kinds, nodeId, definedIn, isDeclarationName, tsNode } = segmentToAdd;
 
@@ -129,14 +131,25 @@ const addSegmentToLines = (
     return lines.map((line, idx) => {
       if (idx !== startPos.line) return line;
 
+      const segmentText = code.slice(start, end);
+
+      // ✅ Dead identifier 체크 (identifier, local-variable, self 모두)
+      const isDead = (kinds.includes('identifier') || kinds.includes('local-variable') || kinds.includes('self'))
+        && deadIdentifiers.has(segmentText);
+
+      if (isDead) {
+        console.log(`[addSegmentToLines] Single-line DEAD identifier: "${segmentText}", kinds:`, kinds);
+      }
+
       const newLine = addSegmentToLine(line, {
-        text: code.slice(start, end),
+        text: segmentText,
         kinds,
         nodeId,
         definedIn,
         isDeclarationName,
         position: start,
-        tsNode
+        tsNode,
+        isDead
       });
 
       return shouldMarkInput ? { ...newLine, hasInput: true } : newLine;
@@ -157,14 +170,25 @@ const addSegmentToLines = (
 
     if (segStart >= segEnd) return line;
 
+    const segmentText = code.slice(segStart, segEnd);
+
+    // ✅ Dead identifier 체크 (identifier, local-variable, self 모두)
+    const isDead = (kinds.includes('identifier') || kinds.includes('local-variable') || kinds.includes('self'))
+      && deadIdentifiers.has(segmentText);
+
+    if (isDead) {
+      console.log(`[addSegmentToLines] Multi-line DEAD identifier: "${segmentText}", kinds:`, kinds);
+    }
+
     const newLine = addSegmentToLine(line, {
-      text: code.slice(segStart, segEnd),
+      text: segmentText,
       kinds: [...kinds],
       nodeId,
       definedIn,
       isDeclarationName,
       position: segStart,
-      tsNode
+      tsNode,
+      isDead
     });
 
     return (lineNum === startPos.line && shouldMarkInput)
@@ -288,7 +312,8 @@ const addComments = (
   lines: CodeLine[],
   node: ts.Node,
   sourceFile: ts.SourceFile,
-  code: string
+  code: string,
+  deadIdentifiers: Set<string>
 ): CodeLine[] => {
   let result = lines;
 
@@ -300,7 +325,7 @@ const addComments = (
         start: range.pos,
         end: range.end,
         kinds: ['comment']
-      });
+      }, deadIdentifiers);
     });
   }
 
@@ -312,7 +337,7 @@ const addComments = (
         start: range.pos,
         end: range.end,
         kinds: ['comment']
-      });
+      }, deadIdentifiers);
     });
   }
 
@@ -367,7 +392,11 @@ const enrichWithLanguageService = (
 /**
  * TypeScript 코드를 파싱해서 라인별 segment로 변환 (Functional Single-pass)
  */
-export function renderCodeLinesDirect(node: CanvasNode, files: Record<string, string>): CodeLine[] {
+export function renderCodeLinesDirect(
+  node: CanvasNode,
+  files: Record<string, string>,
+  deadCodeResults?: { unusedImports: Array<{ filePath: string; symbolName: string }>; unusedExports: Array<{ filePath: string; symbolName: string }>; deadFunctions: Array<{ filePath: string; symbolName: string }>; unusedVariables: Array<{ filePath: string; symbolName: string }> } | null
+): CodeLine[] {
   const codeSnippet = node.codeSnippet;
   const startLineNum = node.startLine || 1;
   const nodeId = node.id;
@@ -395,6 +424,24 @@ export function renderCodeLinesDirect(node: CanvasNode, files: Record<string, st
   const dependencyMap = createDependencyMap(dependencies);
   const localIdentifiers = extractLocalIdentifiers(sourceFile);
 
+  // ✅ Dead identifiers 계산 (VSCode처럼 muted 처리할 대상)
+  // deadCodeResults에서 해당 파일의 dead identifiers만 추출
+  const deadIdentifiers = new Set<string>();
+  if (deadCodeResults) {
+    [
+      ...deadCodeResults.unusedImports,
+      ...deadCodeResults.unusedExports,
+      ...deadCodeResults.deadFunctions,
+      ...deadCodeResults.unusedVariables
+    ]
+      .filter(item => item.filePath === filePath)
+      .forEach(item => {
+        deadIdentifiers.add(item.symbolName);
+        console.log(`[renderCodeLinesDirect] ${filePath} - DEAD: ${item.symbolName} (${item.category})`);
+      });
+  }
+  console.log(`[renderCodeLinesDirect] ${filePath} - Total dead identifiers:`, deadIdentifiers.size);
+
   try {
     // 초기 상태
     let currentLines = createInitialLines(lines.length, startLineNum);
@@ -417,7 +464,7 @@ export function renderCodeLinesDirect(node: CanvasNode, files: Record<string, st
         definedIn: typeof isDeclarationNameOrDefinedIn === 'string' ? isDeclarationNameOrDefinedIn : undefined,
         isDeclarationName: isDeclarationNameOrDefinedIn === true,
         tsNode
-      });
+      }, deadIdentifiers);
     };
 
     // AST 순회 함수 (재귀)
@@ -426,7 +473,7 @@ export function renderCodeLinesDirect(node: CanvasNode, files: Record<string, st
       const end = node.getEnd();
 
       // Comments 처리
-      currentLines = addComments(currentLines, node, sourceFile, codeSnippet);
+      currentLines = addComments(currentLines, node, sourceFile, codeSnippet, deadIdentifiers);
 
       // Declaration 노드 처리
       processDeclarationNode(node, sourceFile, currentLines, localIdentifiers, declarationMap, addKind);

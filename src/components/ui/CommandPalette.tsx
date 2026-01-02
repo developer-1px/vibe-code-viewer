@@ -17,7 +17,7 @@ import {
   CodeXml,
   SquareFunction
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn } from '@/components/lib/utils';
 import type { SearchResult } from '../../features/UnifiedSearch/model/types';
 import { getFileName } from '../../shared/pathUtils';
 

@@ -6,7 +6,7 @@ import { getSlotColor } from '../../../entities/SourceFileNode/lib/styleUtils';
 import { targetLineAtom, visibleNodeIdsAtom, lastExpandedIdAtom, layoutLinksAtom } from '../../../store/atoms';
 import { useEditorTheme } from '../../../app/theme/EditorThemeProvider';
 
-const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine, symbolName, isOutputSlot = false }: {
+const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine, symbolName, isOutputSlot = false, isDead = false }: {
   tokenId: string;
   lineNum: number;
   slotIdx: number;
@@ -14,6 +14,7 @@ const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine, symbolNam
   definitionLine?: number;
   symbolName?: string;
   isOutputSlot?: boolean;
+  isDead?: boolean; // ✅ Dead identifier (VSCode-like muted)
 }) => {
   const theme = useEditorTheme();
   const setTargetLine = useSetAtom(targetLineAtom);
@@ -26,9 +27,12 @@ const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine, symbolNam
     return layoutLinks.some(link => link.source === tokenId);
   }, [layoutLinks, tokenId]);
 
-  const slotColorClass = depNode
-    ? getSlotColor(depNode.type)
-    : 'bg-slate-500/60 border-slate-400/80 shadow-slate-500/30 group-hover/line:border-slate-300';
+  // ✅ Dead identifier slot: 회색 + 점선 테두리
+  const slotColorClass = isDead
+    ? 'bg-slate-600/40 border-slate-500/60 shadow-slate-600/20 group-hover/line:border-slate-400 opacity-50'
+    : depNode
+      ? getSlotColor(depNode.type)
+      : 'bg-slate-500/60 border-slate-400/80 shadow-slate-500/30 group-hover/line:border-slate-300';
 
   const handleSlotClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -88,8 +92,12 @@ const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine, symbolNam
         'data-input-slot-unique': `${tokenId}::line${lineNum}`
       };
 
-  // Border only shown when connected
-  const borderClass = hasConnection ? 'border-2' : 'border-0';
+  // Border style: connected (solid) vs dead (dashed) vs none
+  const borderClass = hasConnection
+    ? 'border-2'
+    : isDead
+      ? 'border-2 border-dashed' // ✅ Dead identifier: 점선 테두리
+      : 'border-0';
 
   return (
     <div

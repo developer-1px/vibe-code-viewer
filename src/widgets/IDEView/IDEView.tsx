@@ -7,7 +7,7 @@ import React, { useMemo, useEffect, useRef } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { FileText } from 'lucide-react';
-import { openedTabsAtom, activeTabAtom, viewModeAtom, fullNodeMapAtom, filesAtom, outlinePanelOpenAtom, targetLineAtom } from '../../store/atoms';
+import { openedTabsAtom, activeTabAtom, viewModeAtom, fullNodeMapAtom, filesAtom, outlinePanelOpenAtom, targetLineAtom, deadCodeResultsAtom } from '../../store/atoms';
 import { renderCodeLinesDirect } from '../CodeViewer/core/renderer/renderCodeLinesDirect';
 import { renderVueFile } from '../CodeViewer/core/renderer/renderVueFile';
 import CodeViewer from '../CodeViewer/CodeViewer';
@@ -30,6 +30,7 @@ const IDEView = () => {
   const [activeTab, setActiveTab] = useAtom(activeTabAtom);
   const fullNodeMap = useAtomValue(fullNodeMapAtom);
   const files = useAtomValue(filesAtom);
+  const deadCodeResults = useAtomValue(deadCodeResultsAtom);
   const setViewMode = useSetAtom(viewModeAtom);
   const [outlinePanelOpen, setOutlinePanelOpen] = useAtom(outlinePanelOpenAtom);
   const setTargetLine = useSetAtom(targetLineAtom);
@@ -97,8 +98,8 @@ const IDEView = () => {
     if (activeNode.filePath.endsWith('.vue')) {
       return renderVueFile(activeNode, files);
     }
-    return renderCodeLinesDirect(activeNode, files);
-  }, [activeNode, files]);
+    return renderCodeLinesDirect(activeNode, files, deadCodeResults);
+  }, [activeNode, files, deadCodeResults]);
 
   // Extract outline structure from active node
   const outlineNodes = useMemo(() => {

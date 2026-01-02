@@ -7,7 +7,7 @@ import {
   Maximize as IconMaximize, AlignJustify as IconCompact, Minimize as IconMinimize
 } from 'lucide-react';
 import { CanvasNode } from '../../../entities/CanvasNode/model/types';
-import { visibleNodeIdsAtom, fullNodeMapAtom, activeLocalVariablesAtom, filesAtom, foldedLinesAtom, viewModeAtom, focusedNodeIdAtom } from '../../../store/atoms';
+import { visibleNodeIdsAtom, fullNodeMapAtom, activeLocalVariablesAtom, filesAtom, foldedLinesAtom, viewModeAtom, focusedNodeIdAtom, deadCodeResultsAtom } from '../../../store/atoms';
 import { renderCodeLinesDirect } from '../../CodeViewer/core/renderer/renderCodeLinesDirect';
 import { renderVueFile } from '../../CodeViewer/core/renderer/renderVueFile';
 import { pruneDetachedNodes } from '../../PipelineCanvas/utils';
@@ -20,6 +20,7 @@ const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
   const setActiveLocalVariables = useSetAtom(activeLocalVariablesAtom);
   const activeLocalVariables = useAtomValue(activeLocalVariablesAtom);
   const files = useAtomValue(filesAtom);
+  const deadCodeResults = useAtomValue(deadCodeResultsAtom);
   const [foldedLinesMap, setFoldedLinesMap] = useAtom(foldedLinesAtom);
   const setViewMode = useSetAtom(viewModeAtom);
   const setFocusedNodeId = useSetAtom(focusedNodeIdAtom);
@@ -32,8 +33,8 @@ const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
     if (node.filePath.endsWith('.vue')) {
       return renderVueFile(node, files);
     }
-    return renderCodeLinesDirect(node, files);
-  }, [node, files]);
+    return renderCodeLinesDirect(node, files, deadCodeResults);
+  }, [node, files, deadCodeResults]);
 
   // Extract metadata for each focused identifier
   const identifiersWithMetadata = useMemo(() => {

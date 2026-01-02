@@ -24,7 +24,7 @@ import {
   Type,
   BookA,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/components/lib/utils'
 import type { OutlineNode, OutlineNodeKind } from '../../shared/outlineExtractor'
 
 interface OutlinePanelItemProps {

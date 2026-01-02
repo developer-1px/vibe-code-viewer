@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/components/lib/utils'
 import { X, LucideIcon } from 'lucide-react'
 import { Indicator } from '@/components/ui/Indicator'
 

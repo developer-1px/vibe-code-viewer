@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Switch } from '@/components/ui/Switch'
 import { ScrollArea } from '@/components/ui/ScrollArea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs'
-import { cn } from '@/lib/utils'
+import { cn } from '@/components/lib/utils'
 
 export interface ExtensionsPanelProps {
   className?: string

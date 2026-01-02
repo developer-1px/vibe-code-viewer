@@ -22,6 +22,7 @@ export function buildSegmentStyle(
     focusedVariables?: Set<string>; // Focus mode용 활성화된 변수들
     segmentText?: string; // 현재 segment의 텍스트 (focus 확인용)
     theme?: EditorTheme; // Theme for token colors
+    isDead?: boolean; // Dead identifier (VSCode-like muted)
   }
 ): SegmentStyle {
   const primaryKind = getPrimaryKind(kinds);
@@ -30,6 +31,9 @@ export function buildSegmentStyle(
   // Focus mode: 활성화된 변수가 있고, 현재 segment가 focus 대상이 아니면 grayscale
   const hasFocusMode = options.focusedVariables && options.focusedVariables.size > 0;
   const isFocused = hasFocusMode && options.segmentText && options.focusedVariables?.has(options.segmentText);
+
+  // ✅ Dead identifier: VSCode처럼 muted 처리 (opacity + grayscale)
+  const deadStyle = options.isDead ? 'opacity-50 text-slate-500' : '';
 
   // 기본 텍스트
   if (primaryKind === 'text') {
@@ -88,6 +92,16 @@ export function buildSegmentStyle(
 
   // Self reference (Declaration name)
   if (primaryKind === 'self') {
+    // Dead identifier: 최우선 처리 - muted 스타일 적용
+    if (options.isDead) {
+      console.log(`[styleBuilder] DEAD self identifier "${options.segmentText}"`);
+      return {
+        className: 'inline-block px-0.5 rounded text-slate-500 opacity-50 select-text',
+        clickable: false,
+        title: 'Unused (Dead Code)'
+      };
+    }
+
     // Focus mode && Focused: 최대 강조
     if (hasFocusMode && isFocused) {
       return {
@@ -308,7 +322,12 @@ export function buildSegmentStyle(
 
   // Identifier with nodeId (dependency slot)
   if (primaryKind === 'identifier' && options.hasNodeId) {
-    const textColor = hasFocusMode && !isFocused ? 'text-editor-focus-gray' : '';
+    // ✅ Dead identifier: muted style
+    const textColor = options.isDead
+      ? 'text-slate-500 opacity-50'
+      : hasFocusMode && !isFocused
+        ? 'text-editor-focus-gray'
+        : '';
     return {
       className: `${textColor} select-text ${returnBg}`,
       clickable: true,
@@ -318,16 +337,25 @@ export function buildSegmentStyle(
 
   // Identifier with Language Service
   if (primaryKind === 'identifier' && (options.hasHoverInfo || options.hasDefinition)) {
-    const baseColor = hasFocusMode && !isFocused
-      ? 'text-editor-focus-gray'
-      : options.hasDefinition
-        ? 'text-editor-identifier-def'
-        : 'text-editor-identifier';
-    const decoration = options.hasDefinition && !(hasFocusMode && !isFocused) ? 'underline decoration-dotted decoration-sky-300/40' : '';
-    const hover = options.hasDefinition && !(hasFocusMode && !isFocused) ? 'cursor-pointer hover:bg-sky-400/15' : '';
+    // ✅ Dead identifier: override baseColor to ensure muted style
+    const baseColor = options.isDead
+      ? 'text-slate-500 opacity-50'
+      : hasFocusMode && !isFocused
+        ? 'text-editor-focus-gray'
+        : options.hasDefinition
+          ? 'text-editor-identifier-def'
+          : 'text-editor-identifier';
+    const decoration = options.hasDefinition && !(hasFocusMode && !isFocused) && !options.isDead ? 'underline decoration-dotted decoration-sky-300/40' : '';
+    const hover = options.hasDefinition && !(hasFocusMode && !isFocused) && !options.isDead ? 'cursor-pointer hover:bg-sky-400/15' : '';
+
+    const finalClassName = `relative inline-block px-0.5 rounded transition-colors select-text ${baseColor} ${decoration} ${hover} ${returnBg}`;
+
+    if (options.isDead && options.segmentText) {
+      console.log(`[styleBuilder] DEAD identifier "${options.segmentText}" - className:`, finalClassName);
+    }
 
     return {
-      className: `relative inline-block px-0.5 rounded transition-colors select-text ${baseColor} ${decoration} ${hover} ${returnBg}`,
+      className: finalClassName,
       clickable: !!options.hasDefinition,
       clickType: 'definition',
       hoverTooltip: !!options.hasHoverInfo
@@ -335,7 +363,11 @@ export function buildSegmentStyle(
   }
 
   // Fallback
-  const textColor = hasFocusMode && !isFocused ? 'text-editor-focus-gray' : 'text-editor-text';
+  const textColor = options.isDead
+    ? 'text-slate-500 opacity-50'
+    : hasFocusMode && !isFocused
+      ? 'text-editor-focus-gray'
+      : 'text-editor-text';
   return {
     className: `${textColor} select-text ${returnBg}`,
     clickable: false

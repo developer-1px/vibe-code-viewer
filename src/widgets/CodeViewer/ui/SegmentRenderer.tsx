@@ -128,7 +128,8 @@ export const SegmentRenderer = ({
     isActive: isExternalActive || isLocalActive,
     focusedVariables: lineHasFocusedVariable ? undefined : focusedVariables, // Line이 focused면 normal highlighting
     segmentText: segment.text,
-    theme: theme  // Pass theme to styleBuilder
+    theme: theme,  // Pass theme to styleBuilder
+    isDead: segment.isDead  // ✅ VSCode-like muted styling for dead identifiers
   });
 
   // Special case: identifier with nodeId → DependencyTokenSegment

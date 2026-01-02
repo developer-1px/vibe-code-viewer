@@ -44,4 +44,5 @@ export interface CodeSegment {
   hoverInfo?: string; // Quick info from Language Service
   definitionLocation?: DefinitionLocation; // Definition location from Language Service
   tsNode?: any; // ts.Node reference for type queries (avoid circular dependency)
+  isDead?: boolean; // Whether this identifier is declared but never used (VSCode-like muted styling)
 }

@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/Button'
 import { ScrollArea } from '@/components/ui/ScrollArea'
 import { Indicator } from '@/components/ui/Indicator'
-import { cn } from '@/lib/utils'
+import { cn } from '@/components/lib/utils'
 
 export interface TerminalPanelProps {
   className?: string

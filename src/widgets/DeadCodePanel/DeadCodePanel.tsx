@@ -211,9 +211,9 @@ export function DeadCodePanel({ className }: DeadCodePanelProps) {
               const fileName = item.filePath.split('/').pop() || item.filePath;
 
               return (
-                <button
+                <div
                   key={idx}
-                  className="w-full flex items-center gap-2 px-2 py-1 hover:bg-white/5 transition-colors text-left rounded group"
+                  className="w-full flex items-center gap-2 px-2 py-1 hover:bg-white/5 transition-colors text-left rounded group cursor-pointer"
                   onClick={() => handleItemClick(item)}
                 >
                   <Checkbox
@@ -234,7 +234,7 @@ export function DeadCodePanel({ className }: DeadCodePanelProps) {
                       from "{item.from}"
                     </span>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>

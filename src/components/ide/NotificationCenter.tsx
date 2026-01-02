@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/Badge'
 import { ScrollArea } from '@/components/ui/ScrollArea'
 import { Separator } from '@/components/ui/Separator'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
-import { cn } from '@/lib/utils'
+import { cn } from '@/components/lib/utils'
 
 export interface NotificationCenterProps {
   className?: string
