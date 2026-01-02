@@ -135,6 +135,16 @@ export function buildSegmentStyle(
   if (primaryKind === 'external-import') {
     const isActive = options.isActive;
 
+    // ✅ Dead code: VSCode-like muted style
+    if (options.isDead) {
+      return {
+        className: `inline-block px-1 rounded bg-slate-500/8 text-slate-400/60 border border-slate-500/15 line-through decoration-slate-500/40 select-text cursor-default`,
+        clickable: false,
+        clickType: 'none',
+        title: 'Unused import (Dead code)'
+      };
+    }
+
     // Focus mode && Focused: 최대 강조 (Green - success)
     if (hasFocusMode && isFocused) {
       return {

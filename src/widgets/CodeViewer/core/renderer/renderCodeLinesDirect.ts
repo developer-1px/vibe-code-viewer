@@ -133,12 +133,20 @@ const addSegmentToLines = (
 
       const segmentText = code.slice(start, end);
 
-      // ✅ Dead identifier 체크 (identifier, local-variable, self, dependency 모두)
-      const isDead = (kinds.includes('identifier') || kinds.includes('local-variable') || kinds.includes('self') || kinds.includes('dependency'))
-        && deadIdentifiers.has(segmentText);
+      // ✅ Dead identifier 체크 (identifier, local-variable, self, external-* 모두)
+      const isDead = (
+        kinds.includes('identifier') ||
+        kinds.includes('local-variable') ||
+        kinds.includes('self') ||
+        kinds.includes('external-import') ||
+        kinds.includes('external-closure') ||
+        kinds.includes('external-function')
+      ) && deadIdentifiers.has(segmentText);
 
       if (isDead) {
-        console.log(`[addSegmentToLines] Single-line DEAD identifier: "${segmentText}", kinds:`, kinds);
+        console.log(`[addSegmentToLines] ✅ Single-line DEAD identifier: "${segmentText}", kinds:`, JSON.stringify(kinds), 'isDead:', isDead);
+      } else if (deadIdentifiers.has(segmentText)) {
+        console.log(`[addSegmentToLines] ❌ Dead identifier NOT marked: "${segmentText}", kinds:`, JSON.stringify(kinds), 'has identifier:', kinds.includes('identifier'), 'has external-import:', kinds.includes('external-import'));
       }
 
       const newLine = addSegmentToLine(line, {
@@ -172,12 +180,20 @@ const addSegmentToLines = (
 
     const segmentText = code.slice(segStart, segEnd);
 
-    // ✅ Dead identifier 체크 (identifier, local-variable, self, dependency 모두)
-    const isDead = (kinds.includes('identifier') || kinds.includes('local-variable') || kinds.includes('self') || kinds.includes('dependency'))
-      && deadIdentifiers.has(segmentText);
+    // ✅ Dead identifier 체크 (identifier, local-variable, self, external-* 모두)
+    const isDead = (
+      kinds.includes('identifier') ||
+      kinds.includes('local-variable') ||
+      kinds.includes('self') ||
+      kinds.includes('external-import') ||
+      kinds.includes('external-closure') ||
+      kinds.includes('external-function')
+    ) && deadIdentifiers.has(segmentText);
 
     if (isDead) {
-      console.log(`[addSegmentToLines] Multi-line DEAD identifier: "${segmentText}", kinds:`, kinds);
+      console.log(`[addSegmentToLines] ✅ Multi-line DEAD identifier: "${segmentText}", kinds:`, kinds, 'isDead:', isDead);
+    } else if (deadIdentifiers.has(segmentText)) {
+      console.log(`[addSegmentToLines] ❌ Dead identifier NOT marked: "${segmentText}", kinds:`, kinds, 'has identifier:', kinds.includes('identifier'), 'has external-import:', kinds.includes('external-import'));
     }
 
     const newLine = addSegmentToLine(line, {
