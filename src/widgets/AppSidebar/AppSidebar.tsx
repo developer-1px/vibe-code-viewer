@@ -7,7 +7,7 @@ import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useAtomValue } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { Sidebar } from '@/components/ide/Sidebar';
-import { filesAtom, isSidebarOpenAtom, viewModeAtom, activeTabAtom } from '../../store/atoms';
+import { filesAtom, isSidebarOpenAtom, activeTabAtom } from '../../store/atoms';
 import { useOpenFile } from '../../features/Files/lib/useOpenFile';
 import UploadFolderButton from '../../features/UploadFolderButton';
 import { getInitialCollapsedFolders } from './lib/getInitialCollapsedFolders';
@@ -26,7 +26,6 @@ const SIDEBAR_HOTKEYS = {
 export const AppSidebar: React.FC = () => {
   const files = useAtomValue(filesAtom);
   const isSidebarOpen = useAtomValue(isSidebarOpenAtom);
-  const viewMode = useAtomValue(viewModeAtom);
   const activeTab = useAtomValue(activeTabAtom);
   const [focusedIndex, setFocusedIndex] = useState(0);
   const { openFile } = useOpenFile();
@@ -123,12 +122,8 @@ export const AppSidebar: React.FC = () => {
     return null;
   }
 
-  // IDE mode: relative positioning, Canvas mode: absolute floating
-  const positionClass =
-    viewMode === 'ide' ? 'relative' : 'absolute top-0 left-0 z-50 h-full';
-
   return (
-    <div ref={sidebarRef} tabIndex={-1} className={`${positionClass} focus:outline-none`}>
+    <div ref={sidebarRef} tabIndex={-1} className="relative focus:outline-none">
       <Sidebar
         resizable
         defaultWidth={300}
