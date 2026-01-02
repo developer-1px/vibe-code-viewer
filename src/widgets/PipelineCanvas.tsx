@@ -167,7 +167,7 @@ const PipelineCanvas: React.FC = () => {
 
   return (
     <div
-      className="w-full h-full relative overflow-hidden bg-vibe-dark select-none"
+      className="w-full h-full relative overflow-hidden bg-vibe-dark"
       ref={containerRef}
       onClick={handleCanvasClick}
     >

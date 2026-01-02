@@ -240,7 +240,7 @@ const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
 
   return (
     <div
-      className="px-3 py-1.5 border-b border-white/5 flex justify-between items-center bg-black/20 cursor-pointer select-none"
+      className="px-3 py-1.5 border-b border-white/5 flex justify-between items-center bg-black/20 cursor-pointer"
       onDoubleClick={handleDoubleClick}
       title="더블클릭하여 IDE 뷰로 전환"
     >

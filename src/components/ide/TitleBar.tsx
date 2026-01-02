@@ -13,7 +13,6 @@ const TitleBar = React.forwardRef<HTMLDivElement, TitleBarProps>(
         ref={ref}
         className={cn(
           'flex h-[var(--limn-titlebar-height)] items-center justify-between border-b border-border-DEFAULT bg-bg-elevated px-3',
-          'select-none',
           className
         )}
         style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}

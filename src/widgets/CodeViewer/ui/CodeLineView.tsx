@@ -119,7 +119,7 @@ const CodeLineView = ({
       data-line-num={line.num}
     >
       {/* Line Number Column: Aligned text-right, fixed leading/padding to match code */}
-      <div className={`flex-none ${theme.dimensions.lineNumberWidth} ${theme.spacing.lineNumberX} text-right select-none ${theme.colors.lineNumber.text} border-r ${theme.colors.lineNumber.border} ${theme.colors.lineNumber.background} ${theme.spacing.lineY}`}>
+      <div className={`flex-none ${theme.dimensions.lineNumberWidth} ${theme.spacing.lineNumberX} text-right ${theme.colors.lineNumber.text} border-r ${theme.colors.lineNumber.border} ${theme.colors.lineNumber.background} ${theme.spacing.lineY}`}>
         <div className="relative inline-block w-full flex items-center justify-end gap-1">
           {/* Render input slots for each dependency token in this line */}
           <CodeLineSlots line={line} />

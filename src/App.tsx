@@ -38,7 +38,7 @@ const AppContent: React.FC = () => {
   }, [files, setGraphData, setParseError]);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-bg-deep text-text-primary">
+    <div className="flex h-screen flex-col overflow-hidden bg-bg-deep text-text-primary select-none">
       {/* Workspace persistence (save/restore state) */}
       {/*<WorkspacePersistence />*/}
 
