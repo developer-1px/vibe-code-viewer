@@ -160,7 +160,7 @@ export function OutlinePanel({ defaultOpen = true, onNodeClick, nodes = [] }: Ou
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto p-2 font-mono">
         {nodes.length === 0 ? (
           <div className="flex items-center justify-center h-full text-text-tertiary text-xs">
             No structure found

@@ -173,18 +173,39 @@ function getStatementKind(stmt: ts.Node): OutlineNodeKind {
 }
 
 /**
+ * Format function parameters
+ */
+function formatParameters(params: ts.NodeArray<ts.ParameterDeclaration>, sourceFile: ts.SourceFile): string {
+  if (params.length === 0) return '()';
+
+  const paramNames = params.map(p => {
+    const name = p.name.getText(sourceFile);
+    // Optional parameter
+    if (p.questionToken) return `${name}?`;
+    // Rest parameter
+    if (p.dotDotDotToken) return `...${name}`;
+    return name;
+  });
+
+  return `(${paramNames.join(', ')})`;
+}
+
+/**
  * Get statement name/summary
  */
 function getStatementName(stmt: ts.Node, sourceFile: ts.SourceFile): string {
   // Class members
   if (ts.isMethodDeclaration(stmt)) {
-    return stmt.name.getText(sourceFile);
+    const name = stmt.name.getText(sourceFile);
+    const params = formatParameters(stmt.parameters, sourceFile);
+    return `${name}${params}`;
   }
   if (ts.isPropertyDeclaration(stmt)) {
     return stmt.name.getText(sourceFile);
   }
   if (ts.isConstructorDeclaration(stmt)) {
-    return 'constructor';
+    const params = formatParameters(stmt.parameters, sourceFile);
+    return `constructor${params}`;
   }
 
   // Regular statements
@@ -199,7 +220,9 @@ function getStatementName(stmt: ts.Node, sourceFile: ts.SourceFile): string {
     return names;
   }
   if (ts.isFunctionDeclaration(stmt)) {
-    return stmt.name?.text || 'anonymous';
+    const name = stmt.name?.text || 'anonymous';
+    const params = formatParameters(stmt.parameters, sourceFile);
+    return `${name}${params}`;
   }
   if (ts.isClassDeclaration(stmt)) {
     return stmt.name?.text || 'anonymous';
