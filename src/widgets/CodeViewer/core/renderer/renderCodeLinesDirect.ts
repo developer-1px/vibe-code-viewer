@@ -133,8 +133,8 @@ const addSegmentToLines = (
 
       const segmentText = code.slice(start, end);
 
-      // ✅ Dead identifier 체크 (identifier인 경우만)
-      const isDead = (kinds.includes('identifier') || kinds.includes('local-variable'))
+      // ✅ Dead identifier 체크 (identifier, local-variable, self 모두)
+      const isDead = (kinds.includes('identifier') || kinds.includes('local-variable') || kinds.includes('self'))
         && deadIdentifiers.has(segmentText);
 
       if (isDead) {
@@ -172,8 +172,8 @@ const addSegmentToLines = (
 
     const segmentText = code.slice(segStart, segEnd);
 
-    // ✅ Dead identifier 체크 (identifier인 경우만)
-    const isDead = (kinds.includes('identifier') || kinds.includes('local-variable'))
+    // ✅ Dead identifier 체크 (identifier, local-variable, self 모두)
+    const isDead = (kinds.includes('identifier') || kinds.includes('local-variable') || kinds.includes('self'))
       && deadIdentifiers.has(segmentText);
 
     if (isDead) {
