@@ -410,16 +410,17 @@ function getChildStatements(node: ts.Node, sourceFile: ts.SourceFile): ts.Node[]
 
 /**
  * Visit a node (statement or class member) and create OutlineNode
+ * Returns array: [leading comments, statement node]
  */
-function visitStatement(stmt: ts.Node, sourceFile: ts.SourceFile, processedComments: Set<number>): OutlineNode | null {
-  // Extract comments for this statement
-  const comments = extractComments(sourceFile, stmt);
-  const commentNodes: OutlineNode[] = [];
+function visitStatement(stmt: ts.Node, sourceFile: ts.SourceFile, processedComments: Set<number>): OutlineNode[] {
+  const result: OutlineNode[] = [];
 
+  // Extract leading comments for this statement (add to result first)
+  const comments = extractComments(sourceFile, stmt);
   comments.forEach(comment => {
     if (!processedComments.has(comment.line)) {
       processedComments.add(comment.line);
-      commentNodes.push(comment);
+      result.push(comment);
     }
   });
 
@@ -447,20 +448,18 @@ function visitStatement(stmt: ts.Node, sourceFile: ts.SourceFile, processedComme
   const childStatements = getChildStatements(stmt, sourceFile);
   const children: OutlineNode[] = [];
 
-  // Add comments first
-  commentNodes.forEach(c => children.push(c));
-
   // Process child statements recursively
   childStatements.forEach(childStmt => {
-    const childNode = visitStatement(childStmt, sourceFile, processedComments);
-    if (childNode) children.push(childNode);
+    const childNodes = visitStatement(childStmt, sourceFile, processedComments);
+    children.push(...childNodes); // Spread to include comments and statement
   });
 
   if (children.length > 0) {
     node.children = children;
   }
 
-  return node;
+  result.push(node);
+  return result;
 }
 
 /**
@@ -481,14 +480,14 @@ export function extractOutlineStructure(node: SourceFileNode): OutlineNode[] {
   sourceFile.statements.forEach(stmt => {
     // Collect imports separately
     if (ts.isImportDeclaration(stmt)) {
-      const importNode = visitStatement(stmt, sourceFile, processedComments);
-      if (importNode) imports.push(importNode);
+      const importNodes = visitStatement(stmt, sourceFile, processedComments);
+      imports.push(...importNodes);
       return;
     }
 
     // Process other statements
-    const stmtNode = visitStatement(stmt, sourceFile, processedComments);
-    if (stmtNode) nodes.push(stmtNode);
+    const stmtNodes = visitStatement(stmt, sourceFile, processedComments);
+    nodes.push(...stmtNodes); // Spread to include comments and statement
   });
 
   // Group imports at the beginning
