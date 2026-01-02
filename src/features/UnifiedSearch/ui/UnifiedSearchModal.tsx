@@ -17,7 +17,7 @@ import {
   collapsedFoldersAtom,
   focusedPaneAtom,
 } from '../../../store/atoms';
-import { extractAllSearchableItems } from '../lib/symbolExtractor';
+import { getAllSearchableItems } from '../lib/symbolExtractor';
 import { searchResultsFuzzy } from '../lib/searchService';
 import { useOpenFile } from '../../Files/lib/useOpenFile';
 import { CommandPalette } from '@/components/ui/CommandPalette';
@@ -37,9 +37,9 @@ export const UnifiedSearchModal: React.FC = () => {
 
   const { openFile } = useOpenFile();
 
-  // Extract all searchable items (files + folders + symbols + usages) from single source
+  // Get all searchable items (files + folders + symbols + usages) from single source
   const allSearchableItems = useMemo(() => {
-    return extractAllSearchableItems(fullNodeMap, symbolMetadata, files);
+    return getAllSearchableItems(fullNodeMap, symbolMetadata, files);
   }, [fullNodeMap, symbolMetadata, files]);
 
   // Perform fuzzy search only

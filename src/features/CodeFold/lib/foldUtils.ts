@@ -5,9 +5,9 @@
 import type { CodeLine } from '../../../widgets/CodeViewer/core/types/codeLine';
 
 /**
- * Extract foldable import lines from processed lines
+ * Get foldable import lines from processed lines
  */
-export function extractImportFoldLines(lines: CodeLine[]): number[] {
+export function getImportFoldLines(lines: CodeLine[]): number[] {
   return lines
     .filter(line => line.foldInfo?.isFoldable && line.foldInfo.foldType === 'import-block')
     .map(line => line.num);

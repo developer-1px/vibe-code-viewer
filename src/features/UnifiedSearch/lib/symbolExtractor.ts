@@ -30,9 +30,9 @@ function getFileDisplayName(filePath: string): string {
 }
 
 /**
- * Extract all identifiers (usages) from a parsed source file
+ * Get all identifiers (usages) from a parsed source file
  */
-function extractIdentifiers(
+function getIdentifiers(
   filePath: string,
   sourceFile: ts.SourceFile,
   lines: string[],
@@ -72,10 +72,10 @@ function extractIdentifiers(
 }
 
 /**
- * Extract export information from source file using TypeScript AST
+ * Get export information from source file using TypeScript AST
  * ✅ 개선: fullNodeMap의 sourceFile 재사용 (재파싱 제거)
  */
-function extractExportMap(fullNodeMap: Map<string, SourceFileNode>): Map<string, boolean> {
+function getExportMap(fullNodeMap: Map<string, SourceFileNode>): Map<string, boolean> {
   const exportMap = new Map<string, boolean>();
 
   // ✅ type === 'file' 노드만 사용 (이미 파싱된 sourceFile 재사용)
@@ -108,10 +108,10 @@ function extractExportMap(fullNodeMap: Map<string, SourceFileNode>): Map<string,
 }
 
 /**
- * Extract all searchable items (files + symbols + usages) from the node map
+ * Get all searchable items (files + symbols + usages) from the node map
  * Parse each file only once
  */
-export function extractAllSearchableItems(
+export function getAllSearchableItems(
   fullNodeMap: Map<string, SourceFileNode>,
   symbolMetadata: Map<string, CodeSymbolMetadata>,
   files: Record<string, string>
@@ -121,7 +121,7 @@ export function extractAllSearchableItems(
 
   // Extract export information from all files using TypeScript AST
   // ✅ fullNodeMap의 sourceFile 재사용 (재파싱 제거)
-  const exportMap = extractExportMap(fullNodeMap);
+  const exportMap = getExportMap(fullNodeMap);
 
   // 1. Extract declarations from fullNodeMap and collect symbol names
   fullNodeMap.forEach((node) => {
@@ -224,7 +224,7 @@ export function extractAllSearchableItems(
       const { sourceFile, filePath, codeSnippet } = node;
       const lines = codeSnippet.split('\n');
 
-      const usages = extractIdentifiers(filePath, sourceFile, lines, declaredSymbols);
+      const usages = getIdentifiers(filePath, sourceFile, lines, declaredSymbols);
       results.push(...usages);
     } catch (e) {
       console.warn(`[symbolExtractor] Failed to extract usages from ${node.filePath}:`, e);
