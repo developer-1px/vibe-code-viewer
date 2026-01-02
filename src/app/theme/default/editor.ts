@@ -8,7 +8,7 @@ import type { EditorTheme } from '../types';
 export const defaultEditorTheme: EditorTheme = {
   name: 'default',
   typography: {
-    fontSize: 'text-xs',
+    fontSize: 'text-[10px]',
     fontFamily: 'font-mono',
     lineHeight: 'leading-[1rem]'
   },

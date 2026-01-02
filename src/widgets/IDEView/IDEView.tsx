@@ -14,7 +14,7 @@ import CodeViewer from '../CodeViewer/CodeViewer';
 import { getFileName } from '../../shared/pathUtils';
 import { TabBar, Tab } from '@/components/ide/TabBar';
 import { OutlinePanel } from '@/components/ide/OutlinePanel';
-import { extractOutlineSymbols } from '../../shared/outlineExtractor';
+import { extractOutlineStructure } from '../../shared/outlineExtractor';
 
 const IDEView = () => {
   const [openedTabs, setOpenedTabs] = useAtom(openedTabsAtom);
@@ -74,10 +74,10 @@ const IDEView = () => {
     return renderCodeLinesDirect(activeNode, files);
   }, [activeNode, files]);
 
-  // Extract outline symbols from active node
-  const outlineSymbols = useMemo(() => {
+  // Extract outline structure from active node
+  const outlineNodes = useMemo(() => {
     if (!activeNode) return [];
-    return extractOutlineSymbols(activeNode);
+    return extractOutlineStructure(activeNode);
   }, [activeNode]);
 
   // Scroll to line handler for OutlinePanel
@@ -144,8 +144,8 @@ const IDEView = () => {
         {outlinePanelOpen && activeNode && (
           <OutlinePanel
             defaultOpen={true}
-            symbols={outlineSymbols}
-            onSymbolClick={handleScrollToLine}
+            nodes={outlineNodes}
+            onNodeClick={handleScrollToLine}
           />
         )}
       </div>

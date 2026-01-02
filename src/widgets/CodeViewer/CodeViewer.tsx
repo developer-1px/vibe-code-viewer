@@ -44,7 +44,7 @@ const CodeViewer = ({ processedLines, node }: CodeViewerProps) => {
 
   return (
     <EditorThemeProvider theme={theme}>
-      <div className={`flex flex-col h-full ${theme.colors.background} ${theme.spacing.containerY}`}>
+      <div className={`flex flex-col h-full ${theme.colors.background} ${theme.spacing.containerY} ${theme.typography.fontSize} ${theme.typography.fontFamily} ${theme.typography.lineHeight}`}>
         {processedLines.map((line) => {
           // Check for duplicate line numbers
           const duplicates = processedLines.filter(l => l.num === line.num);

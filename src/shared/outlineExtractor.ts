@@ -1,369 +1,473 @@
 /**
- * Outline Symbol Extractor
- * Extracts code structure (symbols) from TypeScript AST for Outline Panel
+ * Outline Structure Extractor
+ * Extracts complete code structure (blocks, identifiers, comments) as a tree
+ * Purpose: Visualize code flow and structure in Outline Panel with fold/expand
  */
 
 import ts from 'typescript';
 import type { SourceFileNode } from '../entities/SourceFileNode/model/types';
 
-// Re-export OutlinePanel types (from LIMN component)
-export type SymbolKind =
+// Outline node types - comprehensive code structure
+export type OutlineNodeKind =
+  // Comments
+  | 'comment'
+  // Blocks and control flow
+  | 'block'
+  | 'if'
+  | 'else'
+  | 'for'
+  | 'while'
+  | 'do-while'
+  | 'switch'
+  | 'case'
+  | 'try'
+  | 'catch'
+  | 'finally'
+  // Declarations
   | 'import'
   | 'type'
   | 'interface'
   | 'enum'
   | 'const'
   | 'let'
+  | 'var'
   | 'function'
+  | 'arrow-function'
   | 'class'
   | 'method'
-  | 'property';
+  | 'property'
+  // Expressions
+  | 'call'
+  | 'return'
+  | 'throw'
+  | 'assignment'
+  // JSX
+  | 'jsx-element'
+  | 'jsx-fragment';
 
-export interface SymbolModifier {
-  export?: boolean;
-  async?: boolean;
-  static?: boolean;
-  readonly?: boolean;
-  private?: boolean;
-  public?: boolean;
-}
-
-export interface SymbolParam {
-  name: string;
-  type: string;
-  defaultValue?: string;
-  optional?: boolean;
-}
-
-export interface OutlineSymbol {
-  kind: SymbolKind;
+export interface OutlineNode {
+  kind: OutlineNodeKind;
   name: string;
   line: number;
-  modifiers?: SymbolModifier;
-  type?: string;
-  params?: SymbolParam[];
-  jsDoc?: string;
-  children?: OutlineSymbol[];
-  value?: string;
-  from?: string;
+  endLine?: number; // For blocks
+  text?: string; // Actual code/comment text
+  children?: OutlineNode[];
 }
 
 /**
  * Get line number from AST node
  */
 function getLineNumber(sourceFile: ts.SourceFile, node: ts.Node): number {
-  const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart());
-  return line + 1; // Convert to 1-based
+  const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile, true));
+  return line + 1;
 }
 
 /**
- * Extract modifiers from AST node
+ * Get end line number from AST node
  */
-function extractModifiers(node: ts.Node): SymbolModifier {
-  const modifiers: SymbolModifier = {};
+function getEndLineNumber(sourceFile: ts.SourceFile, node: ts.Node): number {
+  const { line } = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
+  return line + 1;
+}
 
-  if (ts.canHaveModifiers(node)) {
-    const nodeModifiers = ts.getModifiers(node);
-    if (nodeModifiers) {
-      nodeModifiers.forEach((modifier) => {
-        switch (modifier.kind) {
-          case ts.SyntaxKind.ExportKeyword:
-            modifiers.export = true;
-            break;
-          case ts.SyntaxKind.AsyncKeyword:
-            modifiers.async = true;
-            break;
-          case ts.SyntaxKind.StaticKeyword:
-            modifiers.static = true;
-            break;
-          case ts.SyntaxKind.ReadonlyKeyword:
-            modifiers.readonly = true;
-            break;
-          case ts.SyntaxKind.PrivateKeyword:
-            modifiers.private = true;
-            break;
-          case ts.SyntaxKind.PublicKeyword:
-            modifiers.public = true;
-            break;
-        }
+/**
+ * Extract comments from node
+ */
+function extractComments(sourceFile: ts.SourceFile, node: ts.Node): OutlineNode[] {
+  const comments: OutlineNode[] = [];
+  const fullText = sourceFile.text;
+
+  // Leading comments
+  const leadingCommentRanges = ts.getLeadingCommentRanges(fullText, node.getFullStart());
+  if (leadingCommentRanges) {
+    leadingCommentRanges.forEach((range) => {
+      const text = fullText.slice(range.pos, range.end);
+      const { line } = sourceFile.getLineAndCharacterOfPosition(range.pos);
+      comments.push({
+        kind: 'comment',
+        name: text.startsWith('//') ? 'Line comment' : 'Block comment',
+        line: line + 1,
+        text: text.trim(),
       });
-    }
+    });
   }
 
-  return modifiers;
+  // Trailing comments
+  const trailingCommentRanges = ts.getTrailingCommentRanges(fullText, node.getEnd());
+  if (trailingCommentRanges) {
+    trailingCommentRanges.forEach((range) => {
+      const text = fullText.slice(range.pos, range.end);
+      const { line } = sourceFile.getLineAndCharacterOfPosition(range.pos);
+      comments.push({
+        kind: 'comment',
+        name: text.startsWith('//') ? 'Line comment' : 'Block comment',
+        line: line + 1,
+        text: text.trim(),
+      });
+    });
+  }
+
+  return comments;
 }
 
 /**
- * Extract parameters from function/method
+ * Extract outline structure from SourceFileNode
  */
-function extractParameters(node: ts.FunctionLikeDeclaration): SymbolParam[] {
-  return node.parameters.map((param) => {
-    const name = param.name.getText();
-    const type = param.type ? param.type.getText() : 'any';
-    const optional = !!param.questionToken;
-    const defaultValue = param.initializer ? param.initializer.getText() : undefined;
-
-    return { name, type, optional, defaultValue };
-  });
-}
-
-/**
- * Extract type annotation from node
- */
-function extractType(node: ts.Node): string | undefined {
-  if (ts.isVariableDeclaration(node) && node.type) {
-    return node.type.getText();
-  }
-  if (ts.isFunctionDeclaration(node) && node.type) {
-    return node.type.getText();
-  }
-  if (ts.isMethodDeclaration(node) && node.type) {
-    return node.type.getText();
-  }
-  if (ts.isPropertyDeclaration(node) && node.type) {
-    return node.type.getText();
-  }
-  if (ts.isTypeAliasDeclaration(node) && node.type) {
-    return node.type.getText();
-  }
-  return undefined;
-}
-
-/**
- * Extract JSDoc comment
- */
-function extractJsDoc(node: ts.Node): string | undefined {
-  const jsDocTags = (node as any).jsDoc;
-  if (jsDocTags && jsDocTags.length > 0) {
-    const comment = jsDocTags[0].comment;
-    if (typeof comment === 'string') {
-      return comment;
-    }
-  }
-  return undefined;
-}
-
-/**
- * Extract outline symbols from SourceFileNode
- */
-export function extractOutlineSymbols(node: SourceFileNode): OutlineSymbol[] {
+export function extractOutlineStructure(node: SourceFileNode): OutlineNode[] {
   if (!node.sourceFile) {
     console.warn('[outlineExtractor] No sourceFile available for:', node.filePath);
     return [];
   }
 
   const sourceFile = node.sourceFile;
-  const symbols: OutlineSymbol[] = [];
+  const nodes: OutlineNode[] = [];
+  const imports: OutlineNode[] = []; // Collect all imports
+  const processedComments = new Set<number>(); // Track comment positions to avoid duplicates
 
-  function visit(astNode: ts.Node) {
-    // Import Declarations
-    if (ts.isImportDeclaration(astNode)) {
-      const importClause = astNode.importClause;
-      if (importClause) {
-        let importName = '';
-
-        // Default import: import React from 'react'
-        if (importClause.name) {
-          importName = importClause.name.text;
-        }
-        // Named imports: import { useState } from 'react'
-        else if (importClause.namedBindings) {
-          if (ts.isNamedImports(importClause.namedBindings)) {
-            const names = importClause.namedBindings.elements.map(e => e.name.text);
-            importName = `{ ${names.join(', ')} }`;
-          }
-          // Namespace import: import * as React from 'react'
-          else if (ts.isNamespaceImport(importClause.namedBindings)) {
-            importName = `* as ${importClause.namedBindings.name.text}`;
-          }
-        }
-
-        const moduleSpecifier = astNode.moduleSpecifier;
-        const from = ts.isStringLiteral(moduleSpecifier) ? moduleSpecifier.text : '';
-
-        symbols.push({
-          kind: 'import',
-          name: importName || 'import',
-          line: getLineNumber(sourceFile, astNode),
-          from,
-        });
+  function visit(astNode: ts.Node, parentNodes: OutlineNode[] = nodes): void {
+    // Extract comments first (avoid duplicates)
+    const comments = extractComments(sourceFile, astNode);
+    comments.forEach(comment => {
+      // Use line number as unique key
+      if (!processedComments.has(comment.line)) {
+        processedComments.add(comment.line);
+        parentNodes.push(comment);
       }
+    });
+
+    let currentNode: OutlineNode | null = null;
+
+    // Import Declarations - collect separately to group later
+    if (ts.isImportDeclaration(astNode)) {
+      const moduleSpecifier = astNode.moduleSpecifier;
+      const from = ts.isStringLiteral(moduleSpecifier) ? moduleSpecifier.text : '';
+
+      imports.push({
+        kind: 'import',
+        name: `from '${from}'`,
+        line: getLineNumber(sourceFile, astNode),
+        text: astNode.getText(sourceFile),
+      });
+
+      // Don't add to main tree, we'll group them later
+      ts.forEachChild(astNode, (child) => visit(child, parentNodes));
+      return;
     }
 
-    // Type Alias Declarations
-    if (ts.isTypeAliasDeclaration(astNode)) {
-      symbols.push({
+    // Comments (already handled above, but we can skip them in traversal)
+    // Comments are extracted separately, so we don't need to handle them here
+
+    // Type Alias
+    else if (ts.isTypeAliasDeclaration(astNode)) {
+      currentNode = {
         kind: 'type',
         name: astNode.name.text,
         line: getLineNumber(sourceFile, astNode),
-        modifiers: extractModifiers(astNode),
-        type: extractType(astNode),
-        jsDoc: extractJsDoc(astNode),
-      });
+        endLine: getEndLineNumber(sourceFile, astNode),
+      };
     }
 
-    // Interface Declarations
-    if (ts.isInterfaceDeclaration(astNode)) {
-      const children: OutlineSymbol[] = [];
-
-      astNode.members.forEach((member) => {
-        if (ts.isPropertySignature(member) && member.name) {
-          children.push({
-            kind: 'property',
-            name: member.name.getText(),
-            line: getLineNumber(sourceFile, member),
-            type: member.type ? member.type.getText() : undefined,
-          });
-        }
-        if (ts.isMethodSignature(member) && member.name) {
-          children.push({
-            kind: 'method',
-            name: member.name.getText(),
-            line: getLineNumber(sourceFile, member),
-            type: member.type ? member.type.getText() : undefined,
-            params: extractParameters(member as ts.FunctionLikeDeclaration),
-          });
-        }
-      });
-
-      symbols.push({
+    // Interface
+    else if (ts.isInterfaceDeclaration(astNode)) {
+      currentNode = {
         kind: 'interface',
         name: astNode.name.text,
         line: getLineNumber(sourceFile, astNode),
-        modifiers: extractModifiers(astNode),
-        jsDoc: extractJsDoc(astNode),
-        children: children.length > 0 ? children : undefined,
-      });
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
     }
 
-    // Enum Declarations
-    if (ts.isEnumDeclaration(astNode)) {
-      const children: OutlineSymbol[] = [];
-
-      astNode.members.forEach((member) => {
-        children.push({
-          kind: 'property',
-          name: member.name.getText(),
-          line: getLineNumber(sourceFile, member),
-          value: member.initializer ? member.initializer.getText() : undefined,
-        });
-      });
-
-      symbols.push({
+    // Enum
+    else if (ts.isEnumDeclaration(astNode)) {
+      currentNode = {
         kind: 'enum',
         name: astNode.name.text,
         line: getLineNumber(sourceFile, astNode),
-        modifiers: extractModifiers(astNode),
-        children: children.length > 0 ? children : undefined,
-      });
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
     }
 
-    // Variable Statements (const, let, var)
-    if (ts.isVariableStatement(astNode)) {
-      const modifiers = extractModifiers(astNode);
+    // Variable Statement (const, let, var)
+    else if (ts.isVariableStatement(astNode)) {
+      const declaration = astNode.declarationList.declarations[0];
+      if (declaration && ts.isIdentifier(declaration.name)) {
+        const isConst = (astNode.declarationList.flags & ts.NodeFlags.Const) !== 0;
+        const isLet = (astNode.declarationList.flags & ts.NodeFlags.Let) !== 0;
 
-      astNode.declarationList.declarations.forEach((declaration) => {
-        if (ts.isIdentifier(declaration.name)) {
-          const isConst = (astNode.declarationList.flags & ts.NodeFlags.Const) !== 0;
-          const isLet = (astNode.declarationList.flags & ts.NodeFlags.Let) !== 0;
-
-          // Check if it's an object literal with properties
-          let children: OutlineSymbol[] | undefined = undefined;
-          if (declaration.initializer && ts.isObjectLiteralExpression(declaration.initializer)) {
-            children = [];
-            declaration.initializer.properties.forEach((prop) => {
-              if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name)) {
-                children!.push({
-                  kind: 'property',
-                  name: prop.name.text,
-                  line: getLineNumber(sourceFile, prop),
-                  value: prop.initializer.getText(),
-                });
-              }
-            });
-          }
-
-          symbols.push({
-            kind: isConst ? 'const' : isLet ? 'let' : 'let',
-            name: declaration.name.text,
-            line: getLineNumber(sourceFile, declaration),
-            modifiers,
-            type: extractType(declaration),
-            children: children && children.length > 0 ? children : undefined,
-          });
-        }
-      });
+        currentNode = {
+          kind: isConst ? 'const' : isLet ? 'let' : 'var',
+          name: declaration.name.text,
+          line: getLineNumber(sourceFile, astNode),
+          text: astNode.getText(sourceFile).split('\n')[0], // First line only
+          children: [],
+        };
+      }
     }
 
-    // Function Declarations
-    if (ts.isFunctionDeclaration(astNode) && astNode.name) {
-      symbols.push({
+    // Function Declaration
+    else if (ts.isFunctionDeclaration(astNode)) {
+      const name = astNode.name?.text || 'anonymous';
+      currentNode = {
         kind: 'function',
-        name: astNode.name.text,
+        name,
         line: getLineNumber(sourceFile, astNode),
-        modifiers: extractModifiers(astNode),
-        type: extractType(astNode),
-        params: extractParameters(astNode),
-        jsDoc: extractJsDoc(astNode),
-      });
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
     }
 
-    // Class Declarations
-    if (ts.isClassDeclaration(astNode) && astNode.name) {
-      const children: OutlineSymbol[] = [];
+    // Arrow Function
+    else if (ts.isArrowFunction(astNode)) {
+      currentNode = {
+        kind: 'arrow-function',
+        name: '(arrow function)',
+        line: getLineNumber(sourceFile, astNode),
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
 
-      astNode.members.forEach((member) => {
-        // Constructor
-        if (ts.isConstructorDeclaration(member)) {
-          children.push({
-            kind: 'method',
-            name: 'constructor',
-            line: getLineNumber(sourceFile, member),
-            params: extractParameters(member),
-            type: 'void',
-          });
-        }
-
-        // Methods
-        if (ts.isMethodDeclaration(member) && member.name) {
-          children.push({
-            kind: 'method',
-            name: member.name.getText(),
-            line: getLineNumber(sourceFile, member),
-            modifiers: extractModifiers(member),
-            type: extractType(member),
-            params: extractParameters(member),
-            jsDoc: extractJsDoc(member),
-          });
-        }
-
-        // Properties
-        if (ts.isPropertyDeclaration(member) && member.name) {
-          children.push({
-            kind: 'property',
-            name: member.name.getText(),
-            line: getLineNumber(sourceFile, member),
-            modifiers: extractModifiers(member),
-            type: extractType(member),
-          });
-        }
-      });
-
-      symbols.push({
+    // Class Declaration
+    else if (ts.isClassDeclaration(astNode)) {
+      const name = astNode.name?.text || 'anonymous';
+      currentNode = {
         kind: 'class',
-        name: astNode.name.text,
+        name,
         line: getLineNumber(sourceFile, astNode),
-        modifiers: extractModifiers(astNode),
-        jsDoc: extractJsDoc(astNode),
-        children: children.length > 0 ? children : undefined,
-      });
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
     }
 
-    ts.forEachChild(astNode, visit);
+    // Method Declaration
+    else if (ts.isMethodDeclaration(astNode)) {
+      const name = astNode.name.getText(sourceFile);
+      currentNode = {
+        kind: 'method',
+        name,
+        line: getLineNumber(sourceFile, astNode),
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
+
+    // Property Declaration
+    else if (ts.isPropertyDeclaration(astNode)) {
+      const name = astNode.name.getText(sourceFile);
+      currentNode = {
+        kind: 'property',
+        name,
+        line: getLineNumber(sourceFile, astNode),
+        text: astNode.getText(sourceFile).split('\n')[0],
+      };
+    }
+
+    // If Statement
+    else if (ts.isIfStatement(astNode)) {
+      const condition = astNode.expression.getText(sourceFile);
+      currentNode = {
+        kind: 'if',
+        name: `if (${condition.length > 30 ? condition.slice(0, 30) + '...' : condition})`,
+        line: getLineNumber(sourceFile, astNode),
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
+
+    // For Statement
+    else if (ts.isForStatement(astNode)) {
+      currentNode = {
+        kind: 'for',
+        name: 'for loop',
+        line: getLineNumber(sourceFile, astNode),
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
+
+    // For-Of Statement
+    else if (ts.isForOfStatement(astNode)) {
+      const variable = astNode.initializer.getText(sourceFile);
+      const iterable = astNode.expression.getText(sourceFile);
+      currentNode = {
+        kind: 'for',
+        name: `for (${variable} of ${iterable})`,
+        line: getLineNumber(sourceFile, astNode),
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
+
+    // For-In Statement
+    else if (ts.isForInStatement(astNode)) {
+      const variable = astNode.initializer.getText(sourceFile);
+      const object = astNode.expression.getText(sourceFile);
+      currentNode = {
+        kind: 'for',
+        name: `for (${variable} in ${object})`,
+        line: getLineNumber(sourceFile, astNode),
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
+
+    // While Statement
+    else if (ts.isWhileStatement(astNode)) {
+      const condition = astNode.expression.getText(sourceFile);
+      currentNode = {
+        kind: 'while',
+        name: `while (${condition.length > 30 ? condition.slice(0, 30) + '...' : condition})`,
+        line: getLineNumber(sourceFile, astNode),
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
+
+    // Do-While Statement
+    else if (ts.isDoStatement(astNode)) {
+      const condition = astNode.expression.getText(sourceFile);
+      currentNode = {
+        kind: 'do-while',
+        name: `do...while (${condition})`,
+        line: getLineNumber(sourceFile, astNode),
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
+
+    // Switch Statement
+    else if (ts.isSwitchStatement(astNode)) {
+      const expression = astNode.expression.getText(sourceFile);
+      currentNode = {
+        kind: 'switch',
+        name: `switch (${expression})`,
+        line: getLineNumber(sourceFile, astNode),
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
+
+    // Case Clause
+    else if (ts.isCaseClause(astNode)) {
+      const expression = astNode.expression.getText(sourceFile);
+      currentNode = {
+        kind: 'case',
+        name: `case ${expression}:`,
+        line: getLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
+
+    // Try Statement
+    else if (ts.isTryStatement(astNode)) {
+      currentNode = {
+        kind: 'try',
+        name: 'try',
+        line: getLineNumber(sourceFile, astNode),
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
+
+    // Catch Clause
+    else if (ts.isCatchClause(astNode)) {
+      const variable = astNode.variableDeclaration?.name.getText(sourceFile) || 'error';
+      currentNode = {
+        kind: 'catch',
+        name: `catch (${variable})`,
+        line: getLineNumber(sourceFile, astNode),
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
+
+    // Return Statement
+    else if (ts.isReturnStatement(astNode)) {
+      const returnValue = astNode.expression?.getText(sourceFile) || '';
+      currentNode = {
+        kind: 'return',
+        name: `return ${returnValue.length > 30 ? returnValue.slice(0, 30) + '...' : returnValue}`,
+        line: getLineNumber(sourceFile, astNode),
+        text: astNode.getText(sourceFile),
+      };
+    }
+
+    // Call Expression (function calls)
+    else if (ts.isCallExpression(astNode)) {
+      const expression = astNode.expression.getText(sourceFile);
+      currentNode = {
+        kind: 'call',
+        name: `${expression}()`,
+        line: getLineNumber(sourceFile, astNode),
+        text: astNode.getText(sourceFile).split('\n')[0],
+      };
+    }
+
+    // Block Statement
+    else if (ts.isBlock(astNode)) {
+      currentNode = {
+        kind: 'block',
+        name: '{ block }',
+        line: getLineNumber(sourceFile, astNode),
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
+
+    // JSX Element
+    else if (ts.isJsxElement(astNode)) {
+      const tagName = astNode.openingElement.tagName.getText(sourceFile);
+      currentNode = {
+        kind: 'jsx-element',
+        name: `<${tagName}>`,
+        line: getLineNumber(sourceFile, astNode),
+        endLine: getEndLineNumber(sourceFile, astNode),
+        children: [],
+      };
+    }
+
+    // JSX Self-Closing Element
+    else if (ts.isJsxSelfClosingElement(astNode)) {
+      const tagName = astNode.tagName.getText(sourceFile);
+      currentNode = {
+        kind: 'jsx-element',
+        name: `<${tagName} />`,
+        line: getLineNumber(sourceFile, astNode),
+      };
+    }
+
+    // Add current node to parent
+    if (currentNode) {
+      parentNodes.push(currentNode);
+
+      // If node has children, traverse them
+      if (currentNode.children) {
+        ts.forEachChild(astNode, (child) => visit(child, currentNode.children!));
+      }
+    } else {
+      // No specific node created, continue traversal
+      ts.forEachChild(astNode, (child) => visit(child, parentNodes));
+    }
   }
 
   visit(sourceFile);
 
-  console.log('[outlineExtractor] Extracted symbols:', symbols.length, 'from', node.filePath);
-  return symbols;
+  // Add imports as a single collapsed block at the beginning
+  if (imports.length > 0) {
+    const firstImportLine = imports[0].line;
+    const lastImportLine = imports[imports.length - 1].line;
+
+    nodes.unshift({
+      kind: 'block',
+      name: `Imports (${imports.length})`,
+      line: firstImportLine,
+      endLine: lastImportLine,
+      children: imports,
+    });
+  }
+
+  console.log('[outlineExtractor] Extracted structure nodes:', nodes.length, 'from', node.filePath);
+  return nodes;
 }

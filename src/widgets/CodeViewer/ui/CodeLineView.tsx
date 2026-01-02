@@ -119,7 +119,7 @@ const CodeLineView = ({
       data-line-num={line.num}
     >
       {/* Line Number Column: Aligned text-right, fixed leading/padding to match code */}
-      <div className={`flex-none ${theme.dimensions.lineNumberWidth} ${theme.spacing.lineNumberX} text-right select-none ${theme.typography.fontSize} ${theme.typography.fontFamily} ${theme.colors.lineNumber.text} border-r ${theme.colors.lineNumber.border} ${theme.colors.lineNumber.background} ${theme.typography.lineHeight} ${theme.spacing.lineY}`}>
+      <div className={`flex-none ${theme.dimensions.lineNumberWidth} ${theme.spacing.lineNumberX} text-right select-none ${theme.colors.lineNumber.text} border-r ${theme.colors.lineNumber.border} ${theme.colors.lineNumber.background} ${theme.spacing.lineY}`}>
         <div className="relative inline-block w-full flex items-center justify-end gap-1">
           {/* Render input slots for each dependency token in this line */}
           <CodeLineSlots line={line} />
@@ -139,7 +139,7 @@ const CodeLineView = ({
       </div>
 
       {/* Code Content Column */}
-      <div className={`flex-1 ${theme.spacing.lineX} ${theme.spacing.lineY} ${theme.typography.fontFamily} ${theme.typography.fontSize} ${theme.typography.lineHeight} overflow-x-auto whitespace-pre-wrap break-words`}>
+      <div className={`flex-1 ${theme.spacing.lineX} ${theme.spacing.lineY} overflow-x-auto whitespace-pre-wrap break-words`}>
         {line.segments.map((segment, segIdx) => (
           <CodeLineSegment
             key={segIdx}
