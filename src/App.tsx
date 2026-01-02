@@ -4,14 +4,15 @@ import { Provider, useAtomValue, useSetAtom } from 'jotai';
 import { HotkeysProvider } from 'react-hotkeys-hook';
 import { ThemeProvider } from './app/theme/ThemeProvider';
 import Sidebar from './widgets/Sidebar/Sidebar';
-import Header from './widgets/MainContent/Header.tsx';
 import PipelineCanvas from './widgets/PipelineCanvas.tsx';
 import IDEView from './widgets/IDEView/IDEView';
-import LeftSideToolbar from './widgets/LeftSideToolbar/LeftSideToolbar';
 import JotaiDevTools from './widgets/JotaiDevTools/JotaiDevTools';
 import { UnifiedSearchModal } from './features/UnifiedSearch/ui/UnifiedSearchModal';
 import { KeyboardShortcuts } from './features/KeyboardShortcuts/KeyboardShortcuts';
 import { WorkspacePersistence } from './features/WorkspacePersistence/WorkspacePersistence';
+import { AppTitleBar } from './widgets/AppTitleBar/AppTitleBar';
+import { AppActivityBar } from './widgets/AppActivityBar/AppActivityBar';
+import { AppStatusBar } from './widgets/AppStatusBar/AppStatusBar';
 import { store } from './store/store';
 import { filesAtom, graphDataAtom, parseErrorAtom, viewModeAtom } from './store/atoms';
 import { parseProject } from '@/shared/codeParser';
@@ -35,43 +36,45 @@ const AppContent: React.FC = () => {
   }, [files, setGraphData, setParseError]);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-theme-background text-theme-text-primary font-sans">
+    <div className="flex h-screen flex-col overflow-hidden bg-bg-deep text-text-primary">
       {/* Workspace persistence (save/restore state) */}
       {/*<WorkspacePersistence />*/}
 
       {/* 키보드 단축키 관리 */}
       <KeyboardShortcuts />
 
-      {/* Left Icon Tab Bar */}
-      <LeftSideToolbar />
+      {/* Title Bar */}
+      <AppTitleBar />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        <Header />
+      <div className="flex flex-1 overflow-hidden">
+        {/* Activity Bar */}
+        <AppActivityBar />
 
-        {/* Main Layout: Canvas with Floating Sidebar OR IDE View with Sidebar */}
-        <div className="flex-1 relative overflow-hidden bg-theme-background">
-          {viewMode === 'canvas' ? (
-            <>
-              {/* Canvas Area */}
+        {viewMode === 'canvas' ? (
+          /* Canvas Mode */
+          <>
+            {/* Canvas Area */}
+            <div className="flex-1 relative overflow-hidden">
               <PipelineCanvas />
-
-              {/* Floating Sidebar */}
-              <Sidebar />
-            </>
-          ) : (
-            /* IDE View with Sidebar */
-            <div className="flex h-full w-full">
-              {/* Sidebar (fixed on left) */}
-              <Sidebar />
-
-              {/* IDE View (main content) */}
-              <IDEView />
             </div>
-          )}
-        </div>
+
+            {/* Floating Sidebar */}
+            <Sidebar />
+          </>
+        ) : (
+          /* IDE Mode */
+          <>
+            {/* Sidebar */}
+            <Sidebar />
+
+            {/* Main Content Area */}
+            <IDEView />
+          </>
+        )}
       </div>
+
+      {/* Status Bar */}
+      <AppStatusBar />
 
       {/* Jotai DevTools */}
       {/*<JotaiDevTools />*/}

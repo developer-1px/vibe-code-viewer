@@ -1,251 +1,92 @@
 /**
- * Tailwind CSS v4 - Main Entry
- * Theme switching with @theme inline pattern (2025 standard)
+ * Vibe Code Viewer - Main Styles
+ *
+ * Structure:
+ * 1. Tailwind CSS base
+ * 2. Import LIMN Design System (from design-system/styles/globals.css)
+ * 3. Vibe-specific customizations (code themes, focus mode)
  */
 
+/* ===== 1. Tailwind CSS ===== */
 @import "tailwindcss";
 
-/* =============================================================================
-   TAILWIND UTILITIES - Map CSS variables to utility classes
-   ============================================================================= */
+/* ===== 2. LIMN Design System Base ===== */
+@import "./limn.css";
 
-@theme inline {
-  /* Backgrounds - generates bg-theme-* utilities */
-  --color-theme-background: var(--background);
-  --color-theme-canvas: var(--canvas);
-  --color-theme-sidebar: var(--sidebar);
-  --color-theme-header: var(--header);
-  --color-theme-panel: var(--panel);
-
-  /* Borders - generates border-theme-* utilities */
-  --color-theme-border: var(--border);
-  --color-theme-border-subtle: var(--border-subtle);
-  --color-theme-border-strong: var(--border-strong);
-
-  /* Text - generates text-theme-text-* utilities */
-  --color-theme-text-primary: var(--text-primary);
-  --color-theme-text-secondary: var(--text-secondary);
-  --color-theme-text-tertiary: var(--text-tertiary);
-  --color-theme-text-accent: var(--text-accent);
-
-  /* Status colors */
-  --color-theme-success: var(--success);
-  --color-theme-warning: var(--warning);
-  --color-theme-error: var(--error);
-  --color-theme-info: var(--info);
-
-  /* Special colors */
-  --color-theme-purple: var(--purple);
-  --color-theme-amber: var(--amber);
-  --color-theme-emerald: var(--emerald);
-
-  /* Interactive states */
-  --color-theme-hover: var(--hover);
-  --color-theme-active: var(--active);
-  --color-theme-focus: var(--focus);
-
-  /* Legacy vibe-* tokens for backward compatibility */
-  --color-vibe-dark: var(--background);
-  --color-vibe-panel: var(--panel);
-  --color-vibe-border: var(--border);
-  --color-vibe-accent: var(--text-accent);
-  --color-vibe-success: var(--success);
-  --color-vibe-purple: var(--purple);
-
-  /* Editor syntax tokens - generates text-editor-* utilities */
-  --color-editor-text: var(--editor-text);
-  --color-editor-keyword: var(--editor-keyword);
-  --color-editor-punctuation: var(--editor-punctuation);
-  --color-editor-string: var(--editor-string);
-  --color-editor-comment: var(--editor-comment);
-  --color-editor-comment-focus: var(--editor-comment-focus);
-  --color-editor-self: var(--editor-self);
-  --color-editor-identifier: var(--editor-identifier);
-  --color-editor-identifier-def: var(--editor-identifier-def);
-  --color-editor-import: var(--editor-import);
-  --color-editor-closure: var(--editor-closure);
-  --color-editor-function: var(--editor-function);
-  --color-editor-parameter: var(--editor-parameter);
-  --color-editor-local: var(--editor-local);
-  --color-editor-focus-gray: var(--editor-focus-gray);
-}
-
-/* =============================================================================
-   THEME VARIABLES - Define actual color values
-   ============================================================================= */
+/* ===== 3. Vibe Code Viewer Customizations ===== */
 
 @layer base {
-  /* Default Theme - Figma Dark inspired */
   :root {
-    /* Backgrounds */
-    --background: #0e0e0e;
-    --canvas: #1e1e1e;
-    --sidebar: #1e1e1e;
-    --header: #181818;
-    --panel: #2c2c2c;
+    /* Code Editor Syntax - Default Theme (LIMN Warm) */
+    --code-keyword: #ffcc99;
+    --code-function: #ffd699;
+    --code-class: #e5c07b;
+    --code-variable: #e2e8f0;
+    --code-string: #d4a574;
+    --code-number: #cbd5e1;
+    --code-comment: rgb(255 250 245 / 0.35);
+    --code-property: #d4d4d8;
+    --code-tag: #ffb366;
+    --code-attribute: #cbd5e1;
+    --code-punctuation: rgb(255 250 245 / 0.6);
 
-    /* Borders */
-    --border: #333333;
-    --border-subtle: #282828;
-    --border-strong: #444444;
-
-    /* Text */
-    --text-primary: #f5f5f5;
-    --text-secondary: #b3b3b3;
-    --text-tertiary: #8c8c8c;
-    --text-accent: #22d3ee;
-
-    /* Status colors */
-    --success: #5fb76b;
-    --warning: #f5a623;
-    --error: #f24822;
-    --info: #18a0fb;
-
-    /* Special colors */
-    --purple: #b58bf7;
-    --amber: #f5a623;
-    --emerald: #5fb76b;
-
-    /* Interactive states */
-    --hover: rgb(255 255 255 / 0.06);
-    --active: rgb(255 255 255 / 0.10);
-    --focus: rgb(255 255 255 / 0.12);
-
-    /* Editor syntax tokens */
-    --editor-text: #d4d4d4;
-    --editor-keyword: #a78bfa;
-    --editor-punctuation: #9ca3af;
-    --editor-string: #fde68a;
-    --editor-comment: #9ca3af;
-    --editor-comment-focus: #9ca3af;
-    --editor-self: #22d3ee;
-    --editor-identifier: #d4d4d4;
-    --editor-identifier-def: #7dd3fc;
-    --editor-import: #6ee7b7;
-    --editor-closure: #fcd34d;
-    --editor-function: #d8b4fe;
-    --editor-parameter: #fde68a;
-    --editor-local: #a5f3fc;
-    --editor-focus-gray: #52525b;
+    /* Focus Mode & Interactive Colors - LIMN Warm Palette */
+    --focus-self: var(--color-warm-300);          /* Definition (warm orange) */
+    --focus-import: #4ade80;                      /* External import (green) */
+    --focus-closure: var(--color-status-warning); /* Closure (yellow) */
+    --focus-function: #a78bfa;                    /* External function (purple) */
+    --focus-parameter: #fb923c;                   /* Parameter (orange) */
+    --focus-local: var(--color-warm-400);         /* Local variable (warm) */
+    --focus-gray: rgb(51 65 85);                  /* Unfocused grayscale - darker for strong tone down */
   }
 
-  /* VSCode Theme */
+  /* VSCode Theme - Code Editor Syntax Only */
   [data-theme="vscode"] {
-    --background: #1e1e1e;
-    --canvas: #252526;
-    --sidebar: #252526;
-    --header: #1e1e1e;
-    --panel: #2d2d30;
-
-    --border: #3e3e42;
-    --border-subtle: #2b2b2b;
-    --border-strong: #4d4d50;
-
-    --text-primary: #cccccc;
-    --text-secondary: #969696;
-    --text-tertiary: #6e6e6e;
-    --text-accent: #4ec9b0;
-
-    --success: #89d185;
-    --warning: #dcdcaa;
-    --error: #f48771;
-    --info: #4ec9b0;
-
-    --hover: rgb(255 255 255 / 0.05);
-    --active: rgb(255 255 255 / 0.08);
-    --focus: rgb(255 255 255 / 0.10);
-
-    /* Editor syntax tokens - VSCode Dark+ */
-    --editor-text: #cccccc;
-    --editor-keyword: #569CD6;
-    --editor-punctuation: #cccccc;
-    --editor-string: #CE9178;
-    --editor-comment: #6A9955;
-    --editor-comment-focus: #7FB070;
-    --editor-self: #4FC1FF;
-    --editor-identifier: #cccccc;
-    --editor-identifier-def: #4EC9B0;
-    --editor-import: #4EC9B0;
-    --editor-closure: #DCDCAA;
-    --editor-function: #DCDCAA;
-    --editor-parameter: #9CDCFE;
-    --editor-local: #9CDCFE;
-    --editor-focus-gray: #6b6b6b;
+    --code-keyword: #569CD6;
+    --code-function: #DCDCAA;
+    --code-class: #4EC9B0;
+    --code-variable: #9CDCFE;
+    --code-string: #CE9178;
+    --code-number: #B5CEA8;
+    --code-comment: #6A9955;
+    --code-property: #9CDCFE;
+    --code-tag: #569CD6;
+    --code-attribute: #9CDCFE;
+    --code-punctuation: #cccccc;
   }
 
-  /* JetBrains New UI / Islands Dark Theme */
+  /* JetBrains Theme - Code Editor Syntax Only */
   [data-theme="jetbrains"] {
-    --background: #191a1c;
-    --canvas: #1e1f22;
-    --sidebar: #1e1f22;
-    --header: #191a1c;
-    --panel: #25262b;
-
-    --border: #2b2b2b;
-    --border-subtle: #232428;
-    --border-strong: #3d3f43;
-
-    --text-primary: #bcbec4;
-    --text-secondary: #868a91;
-    --text-tertiary: #6c6e75;
-    --text-accent: #56a8f5;
-
-    --success: #6aab73;
-    --warning: #e8a85b;
-    --error: #e66779;
-    --info: #56a8f5;
-
-    --purple: #9a7ecc;
-    --amber: #e8a85b;
-    --emerald: #6aab73;
-
-    --hover: rgb(255 255 255 / 0.04);
-    --active: rgb(255 255 255 / 0.07);
-    --focus: rgb(255 255 255 / 0.09);
-
-    /* Editor syntax tokens - Islands Dark */
-    --editor-text: #bcbec4;
-    --editor-keyword: #cf8e6d;
-    --editor-punctuation: #bcbec4;
-    --editor-string: #6aab73;
-    --editor-comment: #7a7e85;
-    --editor-comment-focus: #868a91;
-    --editor-self: #cf8e6d;
-    --editor-identifier: #bcbec4;
-    --editor-identifier-def: #9a7ecc;
-    --editor-import: #6aab73;
-    --editor-closure: #cf8e6d;
-    --editor-function: #56a8f5;
-    --editor-parameter: #cf8e6d;
-    --editor-local: #9a7ecc;
-    --editor-focus-gray: #52545a;
+    --code-keyword: #cf8e6d;
+    --code-function: #56a8f5;
+    --code-class: #9a7ecc;
+    --code-variable: #bcbec4;
+    --code-string: #6aab73;
+    --code-number: #6aab73;
+    --code-comment: #7a7e85;
+    --code-property: #bcbec4;
+    --code-tag: #cf8e6d;
+    --code-attribute: #bcbec4;
+    --code-punctuation: #bcbec4;
   }
 }
 
-/* =============================================================================
-   GLOBAL STYLES
-   ============================================================================= */
+/* ===== Custom Scrollbar ===== */
 
-body {
-  background-color: var(--color-theme-background);
-  color: var(--color-theme-text-primary);
-}
-
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-theme-canvas);
+  background: var(--color-bg-base);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-theme-border-strong);
+  background: var(--color-border-medium);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555555;
+  background: var(--color-border-warm);
 }

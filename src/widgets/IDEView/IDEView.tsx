@@ -6,12 +6,13 @@
 import React, { useMemo, useEffect } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { X, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { openedTabsAtom, activeTabAtom, viewModeAtom, fullNodeMapAtom, filesAtom } from '../../store/atoms';
 import { renderCodeLinesDirect } from '../CodeViewer/core/renderer/renderCodeLinesDirect';
 import { renderVueFile } from '../CodeViewer/core/renderer/renderVueFile';
 import CodeViewer from '../CodeViewer/CodeViewer';
 import { getFileName } from '../../shared/pathUtils';
+import { TabBar, Tab } from '@/components/ide/TabBar';
 
 const IDEView = () => {
   const [openedTabs, setOpenedTabs] = useAtom(openedTabsAtom);
@@ -39,9 +40,7 @@ const IDEView = () => {
   useHotkeys('esc', handleBackToCanvas, { enableOnFormTags: true });
 
   // Close tab
-  const handleCloseTab = (e: React.MouseEvent, tabPath: string) => {
-    e.stopPropagation();
-
+  const handleCloseTab = (tabPath: string) => {
     const tabIndex = openedTabs.indexOf(tabPath);
     const newTabs = openedTabs.filter(t => t !== tabPath);
 
@@ -71,66 +70,36 @@ const IDEView = () => {
 
   if (!activeNode && openedTabs.length === 0) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-vibe-panel text-slate-400">
+      <div className="w-full h-full flex items-center justify-center bg-bg-elevated text-text-tertiary">
         <p>No files open. Use search (Shift+Shift) or click a file in the sidebar to open.</p>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 h-full flex flex-col bg-vibe-panel overflow-hidden">
-      {/* Tab Bar */}
-      <div className="flex-none border-b border-white/10 bg-black/20">
-        <div className="flex items-center gap-0 overflow-x-auto">
-          {openedTabs.map((tabPath) => {
-            const tabNode = fullNodeMap.get(tabPath);
-            if (!tabNode) return null;
+    <div className="flex-1 h-full flex flex-col bg-bg-elevated overflow-hidden">
+      {/* LIMN TabBar */}
+      <TabBar>
+        {openedTabs.map((tabPath) => {
+          const tabNode = fullNodeMap.get(tabPath);
+          if (!tabNode) return null;
 
-            const fileName = getFileName(tabNode.filePath);
-            const isActive = tabPath === activeTab;
+          const fileName = getFileName(tabNode.filePath);
+          const isActive = tabPath === activeTab;
 
-            return (
-              <div
-                key={tabPath}
-                onClick={() => setActiveTab(tabPath)}
-                className={`
-                  group relative flex items-center gap-2 px-3 py-2 cursor-pointer
-                  border-r border-white/10 transition-colors select-none
-                  ${isActive
-                    ? 'bg-vibe-panel text-slate-100'
-                    : 'bg-black/20 text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                  }
-                `}
-              >
-                <FileText className="w-3 h-3 flex-shrink-0" />
-                <span className="text-[11px] font-mono font-medium whitespace-nowrap">
-                  {fileName}
-                </span>
-
-                {/* Close button */}
-                <button
-                  onClick={(e) => handleCloseTab(e, tabPath)}
-                  className={`
-                    ml-1 p-0.5 rounded transition-colors
-                    ${isActive
-                      ? 'text-slate-400 hover:bg-white/10 hover:text-slate-100'
-                      : 'text-slate-500 hover:bg-white/10 hover:text-slate-200 opacity-0 group-hover:opacity-100'
-                    }
-                  `}
-                  title="Close tab (Cmd+W)"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-
-                {/* Active indicator */}
-                {isActive && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-vibe-accent" />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+          return (
+            <Tab
+              key={tabPath}
+              icon={FileText}
+              label={fileName}
+              active={isActive}
+              dirty={false}
+              onClick={() => setActiveTab(tabPath)}
+              onClose={() => handleCloseTab(tabPath)}
+            />
+          );
+        })}
+      </TabBar>
 
       {/* Scrollable code content */}
       <div className="flex-1 overflow-y-auto">

@@ -9,6 +9,7 @@
 ```
 src/
 ├── app/              # Application initialization
+├── components/       # LIMN Design System (shadcn/ui style)
 ├── entities/         # Business entities (domain models)
 ├── features/         # User features (business logic units)
 ├── widgets/          # Complex UI components
@@ -19,6 +20,15 @@ src/
 ```
 
 ### Layer Rules
+
+#### components/
+- **LIMN 디자인 시스템 컴포넌트 (shadcn/ui 방식)**
+- 디자인팀에서 제공받은 컴포넌트를 복사하여 사용
+- **직접 수정 가능** (프로젝트 요구사항에 맞게)
+- 수정사항은 디자인팀에 피드백하여 LIMN에 반영
+- `ui/` - 기본 UI 컴포넌트 (Button, Badge, Input 등)
+- `ide/` - IDE 특화 컴포넌트 (ActivityBar, StatusBar, TabBar 등)
+- 예: `components/ui/CommandPalette.tsx`, `components/ide/ActivityBar.tsx`
 
 #### entities/
 - **순수한 도메인 로직만 포함**
@@ -71,10 +81,15 @@ import { FoldInfo } from '../../../features/CodeFold/lib/types';
 
 2. **상대 경로 사용**: 가능한 상대 경로 사용
    ```typescript
-   // ✅
+   // ✅ 일반적인 경우 - 상대 경로
    import { atom } from '../../../store/atoms';
+   import { CodeFold } from '../../../features/CodeFold/ui/CodeFold';
 
-   // ❌ (path alias 사용 안 함)
+   // ✅ components/ 예외 - @/ alias 허용
+   import { ActivityBar } from '@/components/ide/ActivityBar';
+   import { Button } from '@/components/ui/Button';
+
+   // ❌ components 외에는 path alias 사용 안 함
    import { atom } from '@/store/atoms';
    ```
 

@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+@theme {
+  /* ===== LIMN Color Theme for Tailwind Utilities ===== */
+
+  /* Background Colors */
+  --color-bg-deep: #0d0d12;
+  --color-bg-base: #0f0f16;
+  --color-bg-surface: rgb(20 20 28 / 0.95);
+  --color-bg-elevated: #14141c;
+  --color-bg-overlay: rgb(0 0 0 / 0.6);
+
+  /* Warm Accent */
+  --color-warm-50: #fffaf5;
+  --color-warm-100: #fff8f0;
+  --color-warm-200: #ffeedd;
+  --color-warm-300: #ffcc99;
+  --color-warm-400: rgb(255 200 150 / 0.9);
+  --color-warm-500: rgb(255 180 120 / 0.8);
+  --color-warm-glow: rgb(255 180 120 / 0.15);
+  --color-warm-active-bg: rgb(255 200 150 / 0.08);
+  --color-warm-active-hover: rgb(255 200 150 / 0.12);
+  --color-warm-active-border: rgb(255 200 150 / 0.15);
+
+  /* Text */
+  --color-text-primary: rgb(255 240 220 / 0.95);
+  --color-text-secondary: rgb(255 250 245 / 0.7);
+  --color-text-tertiary: rgb(255 250 245 / 0.5);
+  --color-text-muted: rgb(255 250 245 / 0.35);
+  --color-text-faint: rgb(255 250 245 / 0.2);
+
+  /* Status */
+  --color-status-success: #4ade80;
+  --color-status-success-bg: rgb(74 222 128 / 0.1);
+  --color-status-warning: #fbbf24;
+  --color-status-warning-bg: rgb(251 191 36 / 0.1);
+  --color-status-error: #f87171;
+  --color-status-error-bg: rgb(248 113 113 / 0.1);
+  --color-status-info: #60a5fa;
+
+  /* Border */
+  --color-border-subtle: rgb(255 255 255 / 0.04);
+  --color-border-DEFAULT: rgb(255 255 255 / 0.06);
+  --color-border-light: rgb(255 255 255 / 0.08);
+  --color-border-medium: rgb(255 255 255 / 0.1);
+  --color-border-warm: rgb(255 200 150 / 0.2);
+  --color-border-active: rgb(255 200 150 / 0.3);
+
+  /* Font Sizes */
+  /*--text-xs: 9px;*/
+  /*--text-sm: 10px;*/
+  /*--text-base: 12px;*/
+  /*--text-md: 14px;*/
+  /*--text-lg: 15px;*/
+  /*--text-xl: 18px;*/
+  /*--text-2xl: 20px;*/
+
+  /* Font Families */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', sans-serif;
+  --font-mono: 'Geist Mono', 'Fira Code', 'SF Mono', 'JetBrains Mono', 'Consolas', monospace;
+}
+
+@layer base {
+  :root {
+    /* LIMN-specific layout dimensions */
+    --limn-titlebar-height: 32px;
+    --limn-statusbar-height: 22px;
+    --limn-activity-bar-width: 44px;
+    --limn-activity-bar-icon: 32px;
+    --limn-sidebar-width: 240px;
+    --limn-sidebar-min: 180px;
+    --limn-sidebar-max: 360px;
+    --limn-tab-height: 32px;
+    --limn-file-item-height: 24px;
+    --limn-breadcrumb-height: 28px;
+    --limn-indent: 12px;
+
+    /* Radius */
+    --limn-radius-xs: 2px;
+    --limn-radius-sm: 4px;
+    --limn-radius-md: 6px;
+    --limn-radius-lg: 8px;
+    --limn-radius-xl: 10px;
+    --limn-radius-2xl: 12px;
+    --limn-radius-3xl: 14px;
+    --limn-radius-4xl: 16px;
+    --limn-radius-full: 9999px;
+
+    /* Command Palette & UI Sizes */
+    --limn-command-input-height: 52px;
+    --limn-command-list-height: 320px;
+    --limn-command-dialog-width: 560px;
+    --limn-notification-panel-height: 500px;
+    --limn-tab-min-width: 100px;
+    --limn-tab-max-width: 180px;
+
+    /* Command & Code Editor Sizes */
+    --limn-command-icon-size: 18px;
+    --limn-code-indent-1: 48px;
+    --limn-code-indent-2: 60px;
+
+    /* Code syntax colors */
+    --code-keyword: #ffcc99;
+    --code-function: #ffd699;
+    --code-class: #e5c07b;
+    --code-variable: #e2e8f0;
+    --code-string: #d4a574;
+    --code-number: #cbd5e1;
+    --code-comment: rgb(255 250 245 / 0.35);
+    --code-property: #d4d4d8;
+    --code-tag: #ffb366;
+    --code-attribute: #cbd5e1;
+    --code-punctuation: rgb(255 250 245 / 0.6);
+  }
+
+  * {
+    border-color: rgb(255 255 255 / 0.06);
+  }
+
+  body {
+    background-color: #0d0d12;
+    color: rgb(255 250 245 / 0.7);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', sans-serif;
+    font-size: 12px;
+    line-height: 1.5;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgb(255 180 120 / 0.2); }
+    50% { box-shadow: 0 0 30px rgb(255 180 120 / 0.4); }
+  }
+}
+
+/* Custom utility classes */
+.label {
+  font-size: 10px;
+  line-height: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgb(255 250 245 / 0.35);
+}
+
+.active-glow {
+  background: linear-gradient(
+    145deg,
+    rgb(255 200 150 / 0.12) 0%,
+    rgb(255 180 120 / 0.06) 100%
+  );
+  border: 1px solid rgb(255 200 150 / 0.3);
+  box-shadow: 0 0 40px rgb(255 180 120 / 0.1);
+}
+
+.code-variable-highlight {
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid rgb(255 200 150 / 0.3);
+}
+
+.code-function-highlight {
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid rgb(251 191 36 / 0.4);
+}
+
+/* Syntax highlighting utility classes */
+.code-keyword { color: var(--code-keyword); }
+.code-function { color: var(--code-function); }
+.code-class { color: var(--code-class); }
+.code-variable { color: var(--code-variable); }
+.code-string { color: var(--code-string); }
+.code-number { color: var(--code-number); }
+.code-comment { color: var(--code-comment); }
+.code-property { color: var(--code-property); }
+.code-tag { color: var(--code-tag); }
+.code-attribute { color: var(--code-attribute); }
+.code-punctuation { color: var(--code-punctuation); }

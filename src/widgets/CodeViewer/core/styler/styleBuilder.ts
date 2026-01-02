@@ -82,7 +82,7 @@ export function buildSegmentStyle(
     // Focus mode && Focused: 최대 강조
     if (hasFocusMode && isFocused) {
       return {
-        className: 'inline-block px-0.5 rounded bg-vibe-accent/30 text-vibe-accent font-bold cursor-pointer hover:bg-vibe-accent/40 transition-colors select-text',
+        className: 'inline-block px-0.5 rounded bg-warm-300/30 text-warm-100 font-bold cursor-pointer hover:bg-warm-300/40 border border-warm-300/60 transition-colors select-text',
         clickable: true,
         clickType: 'definition',
         title: 'Definition (Focused)'
@@ -92,7 +92,7 @@ export function buildSegmentStyle(
     // Focus mode && Not focused: grayscale
     if (hasFocusMode && !isFocused) {
       return {
-        className: 'inline-block px-0.5 rounded text-slate-600 cursor-pointer hover:bg-vibe-accent/10 hover:text-vibe-accent/60 transition-colors select-text',
+        className: 'inline-block px-0.5 rounded text-[var(--focus-gray)] cursor-pointer hover:bg-warm-glow hover:text-warm-300/60 transition-colors select-text',
         clickable: true,
         clickType: 'definition',
         title: 'Definition'
@@ -101,7 +101,7 @@ export function buildSegmentStyle(
 
     // Normal mode
     return {
-      className: `inline-block px-0.5 rounded bg-vibe-accent/10 text-vibe-accent font-bold cursor-pointer hover:bg-vibe-accent/25 hover:text-vibe-accent transition-colors select-text`,
+      className: `inline-block px-0.5 rounded bg-warm-glow text-warm-300 font-bold cursor-pointer hover:bg-warm-300/25 hover:text-warm-200 transition-colors select-text`,
       clickable: true,
       clickType: 'definition',
       title: 'Definition'
@@ -112,10 +112,10 @@ export function buildSegmentStyle(
   if (primaryKind === 'external-import') {
     const isActive = options.isActive;
 
-    // Focus mode && Focused: 최대 강조
+    // Focus mode && Focused: 최대 강조 (Green - success)
     if (hasFocusMode && isFocused) {
       return {
-        className: `inline-block px-1 rounded bg-emerald-400/30 text-emerald-100 font-bold border border-emerald-300/60 shadow-[0_0_12px_rgba(16,185,129,0.6)] hover:bg-emerald-400/40 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
+        className: `inline-block px-1 rounded bg-status-success/30 text-status-success font-bold border border-status-success/60 shadow-glow-success hover:bg-status-success/40 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
         clickable: true,
         clickType: 'external',
         title: 'Click to deactivate highlight (Focus mode)'
@@ -125,7 +125,7 @@ export function buildSegmentStyle(
     // Focus mode && Not focused: grayscale
     if (hasFocusMode && !isFocused) {
       return {
-        className: `inline-block px-1 rounded text-slate-600 border border-slate-700 hover:bg-emerald-500/10 hover:text-emerald-400 transition-all select-text cursor-pointer`,
+        className: `inline-block px-1 rounded text-[var(--focus-gray)] border border-border-medium hover:bg-status-success/10 hover:text-status-success transition-all select-text cursor-pointer`,
         clickable: true,
         clickType: 'external',
         title: 'Click to activate highlight'
@@ -135,7 +135,7 @@ export function buildSegmentStyle(
     // Active 상태: 강조 스타일
     if (isActive) {
       return {
-        className: `inline-block px-1 rounded bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/30 hover:bg-emerald-500/25 hover:border-emerald-400/50 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
+        className: `inline-block px-1 rounded bg-status-success-bg text-status-success font-semibold border border-status-success/30 hover:bg-status-success/25 hover:border-status-success/50 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
         clickable: !!options.hasDefinedIn,
         clickType: 'external',
         title: options.hasDefinedIn ? 'Cmd+Click to close' : 'External Import (Active)'
@@ -144,19 +144,19 @@ export function buildSegmentStyle(
 
     // Inactive 상태: 코드와 어울리는 적당한 강도
     return {
-      className: `inline-block px-1 rounded bg-emerald-500/12 text-emerald-300/90 border border-emerald-500/25 hover:bg-emerald-500/15 hover:text-emerald-300 hover:border-emerald-500/30 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
+      className: `inline-block px-1 rounded bg-status-success/12 text-status-success/90 border border-status-success/25 hover:bg-status-success/15 hover:text-status-success hover:border-status-success/30 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
       clickable: !!options.hasDefinedIn,
       clickType: 'external',
       title: options.hasDefinedIn ? 'Cmd+Click to show import source' : 'External Import'
     };
   }
 
-  // External Closure (강조된 토큰 스타일)
+  // External Closure (강조된 토큰 스타일) - Warning Yellow
   if (primaryKind === 'external-closure') {
     // Focus mode && Focused: 최대 강조
     if (hasFocusMode && isFocused) {
       return {
-        className: `inline-block px-1 py-0.5 rounded bg-amber-400/30 text-amber-100 font-bold border border-amber-300/60 shadow-[0_0_12px_rgba(245,158,11,0.6)] hover:bg-amber-400/40 transition-all select-text cursor-pointer`,
+        className: `inline-block px-1 py-0.5 rounded bg-status-warning/30 text-status-warning font-bold border border-status-warning/60 shadow-glow-warning hover:bg-status-warning/40 transition-all select-text cursor-pointer`,
         clickable: true,
         clickType: 'external',
         title: 'Click to deactivate highlight (Focus mode)'
@@ -166,7 +166,7 @@ export function buildSegmentStyle(
     // Focus mode && Not focused: grayscale
     if (hasFocusMode && !isFocused) {
       return {
-        className: `inline-block px-1 py-0.5 rounded text-slate-600 border border-slate-700 hover:bg-amber-500/10 hover:text-amber-400 transition-all select-text cursor-pointer`,
+        className: `inline-block px-1 py-0.5 rounded text-[var(--focus-gray)] border border-border-medium hover:bg-status-warning/10 hover:text-status-warning transition-all select-text cursor-pointer`,
         clickable: true,
         clickType: 'external',
         title: 'Click to activate highlight'
@@ -174,19 +174,19 @@ export function buildSegmentStyle(
     }
 
     return {
-      className: `inline-block px-1 py-0.5 rounded bg-amber-500/15 text-amber-300 font-semibold border border-amber-500/30 hover:bg-amber-500/25 hover:border-amber-400/50 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
+      className: `inline-block px-1 py-0.5 rounded bg-status-warning-bg text-status-warning font-semibold border border-status-warning/30 hover:bg-status-warning/25 hover:border-status-warning/50 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
       clickable: !!options.hasDefinedIn,
       clickType: 'external',
       title: options.hasDefinedIn ? 'Cmd+Click to show closure variable' : 'Closure Variable'
     };
   }
 
-  // External Function (강조된 토큰 스타일)
+  // External Function (강조된 토큰 스타일) - Purple
   if (primaryKind === 'external-function') {
     // Focus mode && Focused: 최대 강조
     if (hasFocusMode && isFocused) {
       return {
-        className: `inline-block px-1 py-0.5 rounded bg-purple-400/30 text-purple-100 font-bold border border-purple-300/60 shadow-[0_0_12px_rgba(168,85,247,0.6)] hover:bg-purple-400/40 transition-all select-text cursor-pointer`,
+        className: `inline-block px-1 py-0.5 rounded bg-[#a78bfa]/30 text-[#a78bfa] font-bold border border-[#a78bfa]/60 shadow-[0_0_8px_rgba(167,139,250,0.5)] hover:bg-[#a78bfa]/40 transition-all select-text cursor-pointer`,
         clickable: true,
         clickType: 'external',
         title: 'Click to deactivate highlight (Focus mode)'
@@ -196,7 +196,7 @@ export function buildSegmentStyle(
     // Focus mode && Not focused: grayscale
     if (hasFocusMode && !isFocused) {
       return {
-        className: `inline-block px-1 py-0.5 rounded text-slate-600 border border-slate-700 hover:bg-purple-500/10 hover:text-purple-400 transition-all select-text cursor-pointer`,
+        className: `inline-block px-1 py-0.5 rounded text-[var(--focus-gray)] border border-border-medium hover:bg-[#a78bfa]/10 hover:text-[#a78bfa] transition-all select-text cursor-pointer`,
         clickable: true,
         clickType: 'external',
         title: 'Click to activate highlight'
@@ -204,21 +204,21 @@ export function buildSegmentStyle(
     }
 
     return {
-      className: `inline-block px-1 py-0.5 rounded bg-purple-500/15 text-purple-300 font-semibold border border-purple-500/30 hover:bg-purple-500/25 hover:border-purple-400/50 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
+      className: `inline-block px-1 py-0.5 rounded bg-[#a78bfa]/15 text-[#a78bfa] font-semibold border border-[#a78bfa]/30 hover:bg-[#a78bfa]/25 hover:border-[#a78bfa]/50 transition-all select-text ${options.hasDefinedIn ? 'cursor-pointer' : 'cursor-default'}`,
       clickable: !!options.hasDefinedIn,
       clickType: 'external',
       title: options.hasDefinedIn ? 'Cmd+Click to show function' : 'Function Variable'
     };
   }
 
-  // Parameter (클릭하여 하이라이트 가능한 파라미터)
+  // Parameter (클릭하여 하이라이트 가능한 파라미터) - Orange
   if (primaryKind === 'parameter') {
     const isActive = options.isActive;
 
     // Active 상태 && Focus mode: 최대 강조
     if (isActive && isFocused) {
       return {
-        className: 'inline-block px-1 py-0.5 rounded bg-orange-400/30 text-orange-100 font-bold border border-orange-300/60 shadow-[0_0_12px_rgba(251,146,60,0.6)] hover:bg-orange-400/40 transition-all cursor-pointer select-text',
+        className: 'inline-block px-1 py-0.5 rounded bg-[#fb923c]/30 text-[#fb923c] font-bold border border-[#fb923c]/60 shadow-[0_0_8px_rgba(251,146,60,0.5)] hover:bg-[#fb923c]/40 transition-all cursor-pointer select-text',
         clickable: true,
         clickType: 'local-variable',
         title: 'Click to deactivate highlight (Focus mode) - Parameter'
@@ -228,7 +228,7 @@ export function buildSegmentStyle(
     // Active 상태: 강조 하이라이트
     if (isActive) {
       return {
-        className: 'inline-block px-1 py-0.5 rounded bg-orange-500/20 text-orange-200 font-semibold border border-orange-400/40 hover:bg-orange-500/30 hover:border-orange-300/60 transition-all cursor-pointer select-text',
+        className: 'inline-block px-1 py-0.5 rounded bg-[#fb923c]/20 text-[#fb923c] font-semibold border border-[#fb923c]/40 hover:bg-[#fb923c]/30 hover:border-[#fb923c]/60 transition-all cursor-pointer select-text',
         clickable: true,
         clickType: 'local-variable',
         title: 'Click to deactivate highlight - Parameter'
@@ -238,7 +238,7 @@ export function buildSegmentStyle(
     // Focus mode에서 다른 변수가 활성화된 경우: grayscale
     if (hasFocusMode) {
       return {
-        className: 'inline-block px-1 py-0.5 rounded text-slate-600 border border-slate-700 hover:text-orange-400 hover:border-orange-600 transition-all cursor-pointer select-text',
+        className: 'inline-block px-1 py-0.5 rounded text-[var(--focus-gray)] border border-border-medium hover:text-[#fb923c] hover:border-[#fb923c]/60 transition-all cursor-pointer select-text',
         clickable: true,
         clickType: 'local-variable',
         title: 'Click to activate highlight - Parameter'
@@ -247,21 +247,21 @@ export function buildSegmentStyle(
 
     // 기본 상태: 클릭 가능 (orange 계열)
     return {
-      className: 'inline-block px-1 py-0.5 rounded bg-orange-500/15 text-orange-300 font-semibold border border-orange-500/30 hover:bg-orange-500/25 hover:border-orange-400/50 transition-all cursor-pointer select-text',
+      className: 'inline-block px-1 py-0.5 rounded bg-[#fb923c]/15 text-[#fb923c] font-semibold border border-[#fb923c]/30 hover:bg-[#fb923c]/25 hover:border-[#fb923c]/50 transition-all cursor-pointer select-text',
       clickable: true,
       clickType: 'local-variable',
       title: 'Click to activate highlight - Parameter'
     };
   }
 
-  // Local Variable (토글 가능한 하이라이트)
+  // Local Variable (토글 가능한 하이라이트) - Warm
   if (primaryKind === 'local-variable') {
     const isActive = options.isActive;
 
     // Active 상태 && Focus mode: 최대 강조
     if (isActive && isFocused) {
       return {
-        className: 'inline-block px-1 py-0.5 rounded bg-cyan-400/30 text-cyan-100 font-bold border border-cyan-300/60 shadow-[0_0_12px_rgba(34,211,238,0.6)] hover:bg-cyan-400/40 transition-all cursor-pointer select-text',
+        className: 'inline-block px-1 py-0.5 rounded bg-warm-400/30 text-warm-100 font-bold border border-warm-400/60 shadow-glow-md hover:bg-warm-400/40 transition-all cursor-pointer select-text',
         clickable: true,
         clickType: 'local-variable',
         title: 'Click to deactivate highlight (Focus mode)'
@@ -271,7 +271,7 @@ export function buildSegmentStyle(
     // Active 상태: 강조 하이라이트
     if (isActive) {
       return {
-        className: 'inline-block px-1 py-0.5 rounded bg-cyan-500/20 text-cyan-200 font-semibold border border-cyan-400/40 hover:bg-cyan-500/30 hover:border-cyan-300/60 transition-all cursor-pointer select-text',
+        className: 'inline-block px-1 py-0.5 rounded bg-warm-400/20 text-warm-200 font-semibold border border-warm-400/40 hover:bg-warm-400/30 hover:border-warm-300/60 transition-all cursor-pointer select-text',
         clickable: true,
         clickType: 'local-variable',
         title: 'Click to deactivate highlight'
@@ -281,7 +281,7 @@ export function buildSegmentStyle(
     // Inactive 상태 + Focus mode: grayscale
     if (hasFocusMode && !isFocused) {
       return {
-        className: 'inline-block px-0.5 rounded text-slate-600 hover:bg-cyan-500/10 hover:text-cyan-400 transition-all cursor-pointer select-text',
+        className: 'inline-block px-0.5 rounded text-[var(--focus-gray)] hover:bg-warm-glow hover:text-warm-400 transition-all cursor-pointer select-text',
         clickable: true,
         clickType: 'local-variable',
         title: 'Click to activate highlight'
@@ -290,7 +290,7 @@ export function buildSegmentStyle(
 
     // Inactive 상태: 기본 스타일 (하이라이트 없음, 클릭 가능)
     return {
-      className: 'inline-block px-0.5 rounded text-slate-300 hover:bg-cyan-500/10 hover:text-cyan-300 transition-all cursor-pointer select-text',
+      className: 'inline-block px-0.5 rounded text-text-secondary hover:bg-warm-glow hover:text-warm-300 transition-all cursor-pointer select-text',
       clickable: true,
       clickType: 'local-variable',
       title: 'Click to activate highlight'
