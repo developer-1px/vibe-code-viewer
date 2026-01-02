@@ -153,14 +153,14 @@ export function DeadCodePanel({ className }: DeadCodePanelProps) {
 
   const renderCategoryIcon = (category: string) => {
     switch (category) {
-      case 'unusedExports':
-        return <Package size={14} className="text-warm-300" />;
       case 'unusedImports':
-        return <Package size={14} className="text-cyan-300" />;
-      case 'deadFunctions':
-        return <FunctionSquare size={14} className="text-purple-300" />;
+        return <Package size={14} className="text-emerald-300" />; // 가장 안전 - 초록
       case 'unusedVariables':
-        return <Box size={14} className="text-amber-300" />;
+        return <Box size={14} className="text-cyan-300" />; // 안전 - 청록
+      case 'deadFunctions':
+        return <FunctionSquare size={14} className="text-amber-300" />; // 주의 - 노랑
+      case 'unusedExports':
+        return <Package size={14} className="text-orange-400" />; // 위험 - 주황/빨강
       default:
         return <AlertTriangle size={14} className="text-text-muted" />;
     }
@@ -347,10 +347,11 @@ export function DeadCodePanel({ className }: DeadCodePanelProps) {
         <div className="p-2 space-y-2">
           {deadCodeResults && !isAnalyzing && (
             <>
-              {renderCategory('Unused Exports', deadCodeResults.unusedExports, 'unusedExports')}
+              {/* 삭제해도 안전한 순서대로 정렬 */}
               {renderCategory('Unused Imports', deadCodeResults.unusedImports, 'unusedImports')}
-              {renderCategory('Dead Functions', deadCodeResults.deadFunctions, 'deadFunctions')}
               {renderCategory('Unused Variables', deadCodeResults.unusedVariables, 'unusedVariables')}
+              {renderCategory('Dead Functions', deadCodeResults.deadFunctions, 'deadFunctions')}
+              {renderCategory('Unused Exports', deadCodeResults.unusedExports, 'unusedExports')}
             </>
           )}
         </div>
