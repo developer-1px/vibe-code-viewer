@@ -24,6 +24,7 @@ import {
   Type,
   BookA,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { OutlineNode, OutlineNodeKind } from '../../shared/outlineExtractor'
 
 interface OutlinePanelItemProps {
@@ -179,7 +180,7 @@ export function OutlinePanelItem({
     : node.name
 
   return (
-    <div className={hasGapBefore ? 'mb-0.5 mt-3' : 'mb-0.5'}>
+    <div className={hasGapBefore ? 'mt-6' : ''}>
       {/* Node Header */}
       <div
         className="flex flex-nowrap items-center gap-1 rounded px-1.5 py-0.5 hover:bg-white/5 transition-colors group overflow-hidden"
@@ -228,7 +229,7 @@ export function OutlinePanelItem({
 
       {/* Children */}
       {isExpanded && hasChildren && (
-        <div className="mt-0.5">
+        <div className="border-l-2 border-slate-600/60 ml-3 pl-1">
           {node.children!.map((child, idx) => {
             const prevChild = idx > 0 ? node.children![idx - 1] : null
             return (

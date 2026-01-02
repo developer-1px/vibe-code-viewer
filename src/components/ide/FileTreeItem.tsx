@@ -69,7 +69,7 @@ export const FileTreeItem = React.forwardRef<HTMLDivElement, FileTreeItemProps>(
       <div
         ref={ref}
         className={cn(
-          'group flex flex-nowrap h-[var(--limn-file-item-height)] items-center gap-1 border-l-2 px-2 text-xs transition-all duration-normal cursor-pointer',
+          'group flex flex-nowrap h-[var(--limn-file-item-height)] items-center gap-1 border-l-2 px-2 text-xs cursor-pointer',
           active
             ? 'border-warm-300 bg-warm-active-bg text-text-primary'
             : focused

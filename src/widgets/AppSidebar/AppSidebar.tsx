@@ -73,7 +73,7 @@ export const AppSidebar: React.FC = () => {
     if (focusedElement) {
       focusedElement.scrollIntoView({
         block: 'nearest',
-        behavior: 'smooth',
+        behavior: 'auto',
       });
     }
   }, [focusedIndex]);

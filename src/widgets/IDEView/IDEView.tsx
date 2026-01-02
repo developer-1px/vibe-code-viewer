@@ -15,6 +15,7 @@ import { getFileName } from '../../shared/pathUtils';
 import { TabBar, Tab } from '@/components/ide/TabBar';
 import { OutlinePanel } from '@/components/ide/OutlinePanel';
 import { extractOutlineStructure } from '../../shared/outlineExtractor';
+import { extractDefinitions } from '../../shared/definitionExtractor';
 import { useTabNavigation } from '../../features/File/useTabNavigation';
 
 const IDE_HOTKEYS = {
@@ -105,6 +106,12 @@ const IDEView = () => {
     return extractOutlineStructure(activeNode);
   }, [activeNode]);
 
+  // Extract definitions from active node (already hierarchical by block scope)
+  const definitions = useMemo(() => {
+    if (!activeNode) return [];
+    return extractDefinitions(activeNode, files);
+  }, [activeNode, files]);
+
   // Scroll to line handler for OutlinePanel
   const handleScrollToLine = (line: number) => {
     if (!activeNode) return;
@@ -122,7 +129,7 @@ const IDEView = () => {
       const lineElement = scrollContainerRef.current.querySelector(`[data-line-num="${line}"]`);
 
       if (lineElement) {
-        lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        lineElement.scrollIntoView({ behavior: 'auto', block: 'center' });
         console.log('[IDEView] Scrolled to line:', line);
       } else {
         console.warn('[IDEView] Line element not found:', line);
@@ -176,6 +183,7 @@ const IDEView = () => {
               key={activeNode.filePath}
               defaultOpen={true}
               nodes={outlineNodes}
+              definitions={definitions}
               onNodeClick={handleScrollToLine}
             />
           )
