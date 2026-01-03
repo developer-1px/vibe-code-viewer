@@ -3,12 +3,11 @@
  * 순수 함수와 선언적 스타일로 구현
  */
 
-import * as ts from 'typescript'
-import type {CanvasNode} from '../../../../entities/CanvasNode/model/types'
-import {findDefinitionLocation, getQuickInfoAtPosition} from './tsLanguageService'
-import type {CodeLine, CodeSegment, SegmentKind} from '../types/codeLine'
-import {getImportSource} from '../../../../entities/SourceFileNode/lib/getters'
-import {resolvePath} from '@/shared/tsParser/utils/pathResolver'
+import * as ts from 'typescript';
+import type { CodeLine, SegmentKind } from '../types/codeLine';
+import type { SourceFileNode } from '../../../../entities/SourceFileNode/model/types';
+import { getImportSource } from '../../../../entities/SourceFileNode/lib/getters';
+import { resolvePath } from '../../../../shared/tsParser/utils/pathResolver';
 import {
   extractShortId,
   createDependencyMap,
@@ -16,392 +15,24 @@ import {
   extractLocalIdentifiers,
   shouldSkipIdentifier,
   extractParametersFromAST
-} from './segmentUtils'
+} from './segmentUtils';
 import {
   processDeclarationNode,
   processTemplateLiteral,
   processIdentifier,
   processExportDeclaration,
   processExportDefault
-} from './astHooks'
-import { collectFoldMetadata } from '@/features/Code/CodeFold/lib/collectFoldMetadata'
+} from './astHooks';
+import { collectFoldMetadata } from '@/features/Code/CodeFold/lib/collectFoldMetadata';
 
-// ===== 타입 정의 =====
+// Refactored pure functions
+import { createInitialLines, addSegmentToLines, finalizeAllLines } from './lib/segmentBuilders';
+import { getSegmentKind, addComments } from './lib/astAnalyzers';
+import { enrichWithLanguageService } from './lib/languageServiceEnrichers';
+import { extractDeadIdentifiers } from './lib/deadCodeHelpers';
 
-interface SegmentToAdd {
-  start: number;
-  end: number;
-  kinds: SegmentKind[];
-  nodeId?: string;
-  definedIn?: string;
-  isDeclarationName?: boolean;
-  tsNode?: ts.Node;
-  isDead?: boolean;
-}
-
-// ===== 순수 함수들 =====
-
-/**
- * 초기 라인 상태 생성
- */
-const createInitialLines = (lineCount: number, startLineNum: number): CodeLine[] => {
-  return Array.from({ length: lineCount }, (_, idx) => ({
-    num: startLineNum + idx,
-    segments: [],
-    hasInput: false
-  }));
-};
-
-/**
- * 위치를 라인 번호와 오프셋으로 변환
- */
-const getLinePosition = (
-  position: number,
-  sourceFile: ts.SourceFile
-): { line: number; character: number } => {
-  return sourceFile.getLineAndCharacterOfPosition(position);
-};
-
-/**
- * Segment를 라인에 추가 (불변 방식)
- */
-const addSegmentToLine = (
-  line: CodeLine,
-  segment: CodeSegment
-): CodeLine => {
-  // Segment 중복 방지: 같은 위치에 같은 텍스트가 있으면 kinds만 병합
-  const existing = line.segments.find(
-    seg => seg.position === segment.position && seg.text === segment.text
-  );
-
-  if (existing) {
-    // kinds 병합
-    const mergedKinds = [...existing.kinds];
-    segment.kinds.forEach(kind => {
-      if (!mergedKinds.includes(kind)) {
-        mergedKinds.push(kind);
-      }
-    });
-
-    // 업데이트된 segment로 교체
-    return {
-      ...line,
-      segments: line.segments.map(seg =>
-        seg === existing
-          ? {
-              ...existing,
-              kinds: mergedKinds,
-              nodeId: segment.nodeId || existing.nodeId,
-              definedIn: segment.definedIn || existing.definedIn,
-              isDeclarationName: segment.isDeclarationName || existing.isDeclarationName,
-              tsNode: segment.tsNode || existing.tsNode
-            }
-          : seg
-      )
-    };
-  }
-
-  // 새 segment 추가
-  return {
-    ...line,
-    segments: [...line.segments, segment]
-  };
-};
-
-/**
- * Segment를 여러 라인에 추가 (단일/멀티라인 처리)
- */
-const addSegmentToLines = (
-  lines: CodeLine[],
-  sourceFile: ts.SourceFile,
-  code: string,
-  segmentToAdd: SegmentToAdd,
-  deadIdentifiers: Set<string>
-): CodeLine[] => {
-  const { start, end, kinds, nodeId, definedIn, isDeclarationName, tsNode } = segmentToAdd;
-
-  const startPos = getLinePosition(start, sourceFile);
-  const endPos = getLinePosition(end, sourceFile);
-
-  // hasInput 체크
-  const shouldMarkInput = !kinds.includes('local-variable') && !kinds.includes('parameter');
-
-  if (startPos.line === endPos.line) {
-    // 단일 라인
-    return lines.map((line, idx) => {
-      if (idx !== startPos.line) return line;
-
-      const segmentText = code.slice(start, end);
-
-      // ✅ Dead identifier 체크 (identifier, local-variable, self, external-* 모두)
-      const isDead = (
-        kinds.includes('identifier') ||
-        kinds.includes('local-variable') ||
-        kinds.includes('self') ||
-        kinds.includes('external-import') ||
-        kinds.includes('external-closure') ||
-        kinds.includes('external-function')
-      ) && deadIdentifiers.has(segmentText);
-
-      if (isDead) {
-        console.log(`[addSegmentToLines] ✅ Single-line DEAD identifier: "${segmentText}", kinds:`, JSON.stringify(kinds), 'isDead:', isDead);
-      } else if (deadIdentifiers.has(segmentText)) {
-        console.log(`[addSegmentToLines] ❌ Dead identifier NOT marked: "${segmentText}", kinds:`, JSON.stringify(kinds), 'has identifier:', kinds.includes('identifier'), 'has external-import:', kinds.includes('external-import'));
-      }
-
-      const newLine = addSegmentToLine(line, {
-        text: segmentText,
-        kinds,
-        nodeId,
-        definedIn,
-        isDeclarationName,
-        position: start,
-        tsNode,
-        isDead
-      });
-
-      return shouldMarkInput ? { ...newLine, hasInput: true } : newLine;
-    });
-  }
-
-  // 멀티라인
-  return lines.map((line, lineNum) => {
-    if (lineNum < startPos.line || lineNum > endPos.line) return line;
-
-    const lineStart = sourceFile.getPositionOfLineAndCharacter(lineNum, 0);
-    const nextLineStart = lineNum < lines.length - 1
-      ? sourceFile.getPositionOfLineAndCharacter(lineNum + 1, 0)
-      : code.length;
-
-    const segStart = Math.max(start, lineStart);
-    const segEnd = Math.min(end, nextLineStart - 1);
-
-    if (segStart >= segEnd) return line;
-
-    const segmentText = code.slice(segStart, segEnd);
-
-    // ✅ Dead identifier 체크 (identifier, local-variable, self, external-* 모두)
-    const isDead = (
-      kinds.includes('identifier') ||
-      kinds.includes('local-variable') ||
-      kinds.includes('self') ||
-      kinds.includes('external-import') ||
-      kinds.includes('external-closure') ||
-      kinds.includes('external-function')
-    ) && deadIdentifiers.has(segmentText);
-
-    if (isDead) {
-      console.log(`[addSegmentToLines] ✅ Multi-line DEAD identifier: "${segmentText}", kinds:`, kinds, 'isDead:', isDead);
-    } else if (deadIdentifiers.has(segmentText)) {
-      console.log(`[addSegmentToLines] ❌ Dead identifier NOT marked: "${segmentText}", kinds:`, kinds, 'has identifier:', kinds.includes('identifier'), 'has external-import:', kinds.includes('external-import'));
-    }
-
-    const newLine = addSegmentToLine(line, {
-      text: segmentText,
-      kinds: [...kinds],
-      nodeId,
-      definedIn,
-      isDeclarationName,
-      position: segStart,
-      tsNode,
-      isDead
-    });
-
-    return (lineNum === startPos.line && shouldMarkInput)
-      ? { ...newLine, hasInput: true }
-      : newLine;
-  });
-};
-
-
-
-/**
- * 라인의 segments를 정렬하고 빈 공간을 'text'로 채우기
- */
-const fillLineGaps = (
-  line: CodeLine,
-  lineText: string,
-  sourceFile: ts.SourceFile
-): CodeLine => {
-  // Segments를 position 기준으로 정렬
-  const sortedSegments = [...line.segments].sort(
-    (a, b) => (a.position || 0) - (b.position || 0)
-  );
-
-  // 빈 공간을 'text' segment로 채우기
-  const filledSegments: CodeSegment[] = [];
-  let cursor = 0;
-
-  sortedSegments.forEach(seg => {
-    const segPos = getLinePosition(seg.position || 0, sourceFile);
-    const segOffset = segPos.character;
-
-    if (segOffset > cursor) {
-      // 앞의 빈 공간
-      filledSegments.push({
-        text: lineText.slice(cursor, segOffset),
-        kinds: ['text']
-      });
-    }
-
-    filledSegments.push(seg);
-    cursor = segOffset + seg.text.length;
-  });
-
-  // 남은 텍스트
-  if (cursor < lineText.length) {
-    filledSegments.push({
-      text: lineText.slice(cursor),
-      kinds: ['text']
-    });
-  }
-
-  // Segments가 없으면 전체 라인을 text로
-  return {
-    ...line,
-    segments: filledSegments.length > 0
-      ? filledSegments
-      : [{ text: lineText, kinds: ['text'] }]
-  };
-};
-
-/**
- * 모든 라인의 빈 공간 채우기
- */
-const finalizeAllLines = (
-  lines: CodeLine[],
-  lineTexts: string[],
-  sourceFile: ts.SourceFile
-): CodeLine[] => {
-  return lines.map((line, idx) =>
-    fillLineGaps(line, lineTexts[idx], sourceFile)
-  );
-};
-
-/**
- * AST에서 segment kind를 결정
- */
-const getSegmentKind = (node: ts.Node): SegmentKind | null => {
-  // Keywords
-  if (node.kind >= ts.SyntaxKind.FirstKeyword && node.kind <= ts.SyntaxKind.LastKeyword) {
-    return 'keyword';
-  }
-
-  // Punctuation
-  if (node.kind >= ts.SyntaxKind.FirstPunctuation && node.kind <= ts.SyntaxKind.LastPunctuation) {
-    return 'punctuation';
-  }
-
-  // Strings
-  if (
-    ts.isStringLiteral(node) ||
-    ts.isNoSubstitutionTemplateLiteral(node) ||
-    ts.isTemplateHead(node) ||
-    ts.isTemplateMiddle(node) ||
-    ts.isTemplateTail(node)
-  ) {
-    return 'string';
-  }
-
-  // Numbers
-  if (ts.isNumericLiteral(node)) {
-    return 'number';
-  }
-
-  // Boolean literals (true, false) - treat as numbers for syntax highlighting
-  if (
-    node.kind === ts.SyntaxKind.TrueKeyword ||
-    node.kind === ts.SyntaxKind.FalseKeyword ||
-    node.kind === ts.SyntaxKind.NullKeyword ||
-    node.kind === ts.SyntaxKind.UndefinedKeyword
-  ) {
-    return 'number';
-  }
-
-  return null;
-};
-
-/**
- * Comments 추가
- */
-const addComments = (
-  lines: CodeLine[],
-  node: ts.Node,
-  sourceFile: ts.SourceFile,
-  code: string,
-  deadIdentifiers: Set<string>
-): CodeLine[] => {
-  let result = lines;
-
-  // Leading comments
-  const leadingCommentRanges = ts.getLeadingCommentRanges(sourceFile.text, node.getFullStart());
-  if (leadingCommentRanges) {
-    leadingCommentRanges.forEach(range => {
-      result = addSegmentToLines(result, sourceFile, code, {
-        start: range.pos,
-        end: range.end,
-        kinds: ['comment']
-      }, deadIdentifiers);
-    });
-  }
-
-  // Trailing comments
-  const trailingCommentRanges = ts.getTrailingCommentRanges(sourceFile.text, node.getEnd());
-  if (trailingCommentRanges) {
-    trailingCommentRanges.forEach(range => {
-      result = addSegmentToLines(result, sourceFile, code, {
-        start: range.pos,
-        end: range.end,
-        kinds: ['comment']
-      }, deadIdentifiers);
-    });
-  }
-
-  return result;
-};
-
-/**
- * Language Service로 정의 위치 및 hover 정보 추가
- */
-const enrichWithLanguageService = (
-  lines: CodeLine[],
-  codeSnippet: string,
-  filePath: string,
-  isTsx: boolean
-): CodeLine[] => {
-  return lines.map(line => ({
-    ...line,
-    segments: line.segments.map(segment => {
-      if (
-        segment.position !== undefined &&
-        (segment.kinds.includes('identifier') ||
-         segment.kinds.includes('external-import') ||
-         segment.kinds.includes('external-closure') ||
-         segment.kinds.includes('external-function') ||
-         segment.kinds.includes('local-variable') ||
-         segment.kinds.includes('parameter'))
-      ) {
-        const defLocation = findDefinitionLocation(codeSnippet, filePath || '', segment.position, isTsx);
-        const hoverInfo = !segment.nodeId
-          ? getQuickInfoAtPosition(codeSnippet, filePath || '', segment.position, isTsx)
-          : undefined;
-
-        return {
-          ...segment,
-          definitionLocation: defLocation
-            ? {
-                filePath: defLocation.filePath,
-                line: defLocation.line,
-                character: defLocation.character,
-              }
-            : undefined,
-          hoverInfo
-        };
-      }
-      return segment;
-    })
-  }));
-};
+// Development mode flag (Vite injects this at build time)
+const __DEV__ = import.meta.env.DEV;
 
 // ===== Main 렌더링 함수 =====
 
@@ -409,9 +40,14 @@ const enrichWithLanguageService = (
  * TypeScript 코드를 파싱해서 라인별 segment로 변환 (Functional Single-pass)
  */
 export function renderCodeLinesDirect(
-  node: CanvasNode,
+  node: SourceFileNode,
   files: Record<string, string>,
-  deadCodeResults?: { unusedImports: Array<{ filePath: string; symbolName: string }>; unusedExports: Array<{ filePath: string; symbolName: string }>; deadFunctions: Array<{ filePath: string; symbolName: string }>; unusedVariables: Array<{ filePath: string; symbolName: string }> } | null
+  deadCodeResults?: {
+    unusedImports: Array<{ filePath: string; symbolName: string }>;
+    unusedExports: Array<{ filePath: string; symbolName: string }>;
+    deadFunctions: Array<{ filePath: string; symbolName: string }>;
+    unusedVariables: Array<{ filePath: string; symbolName: string }>
+  } | null
 ): CodeLine[] {
   const codeSnippet = node.codeSnippet;
   const startLineNum = node.startLine || 1;
@@ -427,7 +63,9 @@ export function renderCodeLinesDirect(
 
   if (!sourceFile) {
     // Fallback: 단순 텍스트 렌더링 (orphaned files without AST)
-    console.log(`[renderCodeLinesDirect] No sourceFile for ${node.id}, using fallback text rendering`);
+    if (__DEV__) {
+      console.log(`[renderCodeLinesDirect] No sourceFile for ${node.id}, using fallback text rendering`);
+    }
     return lines.map((lineText, idx) => ({
       num: startLineNum + idx,
       segments: [{ text: lineText, kinds: ['text'] }],
@@ -441,29 +79,17 @@ export function renderCodeLinesDirect(
   const localIdentifiers = extractLocalIdentifiers(sourceFile);
 
   // ✅ Dead identifiers 계산 (VSCode처럼 muted 처리할 대상)
-  // deadCodeResults에서 해당 파일의 dead identifiers만 추출
-  const deadIdentifiers = new Set<string>();
-  if (deadCodeResults) {
-    [
-      ...deadCodeResults.unusedImports,
-      ...deadCodeResults.unusedExports,
-      ...deadCodeResults.deadFunctions,
-      ...deadCodeResults.unusedVariables
-    ]
-      .filter(item => item.filePath === filePath)
-      .forEach(item => {
-        deadIdentifiers.add(item.symbolName);
-        console.log(`[renderCodeLinesDirect] ${filePath} - DEAD: ${item.symbolName} (${item.category})`);
-      });
-  }
-  console.log(`[renderCodeLinesDirect] ${filePath} - Total dead identifiers:`, deadIdentifiers.size);
+  const deadIdentifiers = extractDeadIdentifiers(deadCodeResults, filePath);
 
   try {
     // 초기 상태
     let currentLines = createInitialLines(lines.length, startLineNum);
     const declarationMap = new Map<string, number>(); // name → line index
 
-    // Helper: segment 추가 함수
+    // Phase 1-2: Reuse empty Set instead of creating new Set() for each identifier
+    const emptyLocalVars = new Set<string>();
+
+    // Helper: segment 추가 함수 (Phase 1-3: No assignment needed, mutates in-place)
     const addKind = (
       start: number,
       end: number,
@@ -472,7 +98,7 @@ export function renderCodeLinesDirect(
       isDeclarationNameOrDefinedIn?: boolean | string,
       tsNode?: ts.Node
     ): void => {
-      currentLines = addSegmentToLines(currentLines, sourceFile, codeSnippet, {
+      addSegmentToLines(currentLines, sourceFile, codeSnippet, {
         start,
         end,
         kinds: [kind],
@@ -488,8 +114,8 @@ export function renderCodeLinesDirect(
       const start = node.getStart(sourceFile);
       const end = node.getEnd();
 
-      // Comments 처리
-      currentLines = addComments(currentLines, node, sourceFile, codeSnippet, deadIdentifiers);
+      // Comments 처리 (Phase 1-3: Mutates in-place, no assignment needed)
+      addComments(currentLines, node, sourceFile, codeSnippet, deadIdentifiers);
 
       // Declaration 노드 처리
       processDeclarationNode(node, sourceFile, currentLines, localIdentifiers, declarationMap, addKind);
@@ -531,7 +157,7 @@ export function renderCodeLinesDirect(
           nodeId,
           filePath,
           parameters,
-          new Set(),
+          emptyLocalVars,  // Phase 1-2: Reuse instead of new Set()
           localIdentifiers,
           dependencyMap,
           files,
