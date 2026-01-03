@@ -27,38 +27,40 @@ export function getDeadCodeFlatList(
     itemsByFile.set(item.filePath, existing);
   });
 
-  function traverse(nodes: FolderNode[]) {
-    nodes.forEach((node) => {
-      // Add folder node
-      if (node.type === 'folder') {
+  // Match FileTreeRenderer's exact recursion order
+  function traverseNode(node: FolderNode) {
+    // Process folder
+    if (node.type === 'folder') {
+      result.push({
+        type: 'folder',
+        path: node.path,
+      });
+
+      // If folder is open and has children, recursively traverse them
+      const isCollapsed = collapsedFolders.has(node.path);
+      if (!isCollapsed && node.children && node.children.length > 0) {
+        node.children.forEach(child => traverseNode(child));
+      }
+    }
+
+    // Process file and its dead code items
+    if (node.type === 'file' && node.filePath) {
+      const items = itemsByFile.get(node.filePath) || [];
+
+      // Add each dead code item in order
+      items.forEach(item => {
         result.push({
-          type: 'folder',
-          path: node.path,
+          type: 'dead-code-item',
+          path: `${item.filePath}:${item.line}:${item.symbolName}`,
+          filePath: item.filePath,
+          deadCodeItem: item,
         });
-
-        // If folder is open and has children, traverse them
-        if (!collapsedFolders.has(node.path) && node.children) {
-          traverse(node.children);
-        }
-      }
-
-      // Add file node and its dead code items
-      if (node.type === 'file' && node.filePath) {
-        const items = itemsByFile.get(node.filePath) || [];
-
-        // Add each dead code item
-        items.forEach(item => {
-          result.push({
-            type: 'dead-code-item',
-            path: `${item.filePath}:${item.line}:${item.symbolName}`,
-            filePath: item.filePath,
-            deadCodeItem: item,
-          });
-        });
-      }
-    });
+      });
+    }
   }
 
-  traverse(tree);
+  // Traverse all top-level nodes
+  tree.forEach(node => traverseNode(node));
+
   return result;
 }

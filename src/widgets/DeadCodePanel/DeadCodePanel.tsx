@@ -383,14 +383,20 @@ export function DeadCodePanel({ className }: DeadCodePanelProps) {
                   : undefined;
                 const fileIcon = getFileIcon(node.name);
 
+                // Find the starting index of this file's dead code items in flatItemList
+                // Since getDeadCodeFlatList matches rendering order exactly,
+                // we can find the first item and calculate subsequent indices
+                const firstItemKey = itemsByFile[0] ? `${itemsByFile[0].filePath}:${itemsByFile[0].line}:${itemsByFile[0].symbolName}` : '';
+                const startIndex = firstItemKey ? flatItemList.findIndex(
+                  (flatItem) => flatItem.type === 'dead-code-item' && flatItem.path === firstItemKey
+                ) : -1;
+
                 return (
                   <div>
                     {itemsByFile.map((item, idx) => {
                       const isSelected = selectedItems.has(getItemKey(item));
-                      const itemKey = `${item.filePath}:${item.line}:${item.symbolName}`;
-                      const itemIndex = flatItemList.findIndex(
-                        (flatItem) => flatItem.type === 'dead-code-item' && flatItem.path === itemKey
-                      );
+                      // Calculate exact index: startIndex + offset
+                      const itemIndex = startIndex >= 0 ? startIndex + idx : -1;
                       const itemFocused = focusedIndex === itemIndex;
 
                       return (

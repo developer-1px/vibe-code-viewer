@@ -9,19 +9,23 @@ export function getFlatItemList(
 ): FlatItem[] {
   const items: FlatItem[] = [];
 
-  const traverse = (nodes: FolderNode[]) => {
-    nodes.forEach((node) => {
-      if (node.type === 'folder') {
-        items.push({ type: 'folder', path: node.path });
-        if (!collapsedFolders.has(node.path) && node.children) {
-          traverse(node.children);
-        }
-      } else if (node.type === 'file' && node.filePath) {
-        items.push({ type: 'file', path: node.path, filePath: node.filePath });
+  // Match FileTreeRenderer's exact recursion order
+  const traverseNode = (node: FolderNode) => {
+    if (node.type === 'folder') {
+      items.push({ type: 'folder', path: node.path });
+
+      // If folder is open and has children, recursively traverse them
+      const isCollapsed = collapsedFolders.has(node.path);
+      if (!isCollapsed && node.children && node.children.length > 0) {
+        node.children.forEach(child => traverseNode(child));
       }
-    });
+    } else if (node.type === 'file' && node.filePath) {
+      items.push({ type: 'file', path: node.path, filePath: node.filePath });
+    }
   };
 
-  traverse(fileTree);
+  // Traverse all top-level nodes
+  fileTree.forEach(node => traverseNode(node));
+
   return items;
 }
