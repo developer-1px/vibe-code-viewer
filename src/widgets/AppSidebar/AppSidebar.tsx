@@ -75,7 +75,7 @@ export const AppSidebar: React.FC = () => {
   }
 
   return (
-    <div ref={containerRef} tabIndex={-1} className="relative focus:outline-none">
+    <div ref={containerRef} tabIndex={0} className="relative focus:outline-none">
       <Sidebar
         resizable
         defaultWidth={300}

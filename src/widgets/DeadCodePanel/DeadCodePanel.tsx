@@ -450,7 +450,7 @@ export function DeadCodePanel({ className }: DeadCodePanelProps) {
   };
 
   return (
-    <div ref={containerRef} tabIndex={-1} className={cn('flex h-full flex-col bg-bg-surface border-r border-border-DEFAULT focus:outline-none', className)}>
+    <div ref={containerRef} tabIndex={0} className={cn('flex h-full flex-col bg-bg-surface border-r border-border-DEFAULT focus:outline-none', className)}>
       {/* Header */}
       <div className="p-3 space-y-2 border-b border-border-DEFAULT">
         <div className="flex items-center justify-between">
