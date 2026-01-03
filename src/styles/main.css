@@ -129,14 +129,14 @@
 
   /* Identifier colors */
   .text-editor-identifier {
-    color: var(--code-variable);
+    color: #ffffff;
     background-color: var(--color-warm-glow);
     padding: 0 2px;
     border-radius: 2px;
   }
   .text-editor-identifier-def {
-    color: var(--code-function);
-    text-decoration-color: var(--code-function);
+    color: #ffffff;
+    text-decoration-color: #ffffff;
     background-color: var(--color-warm-glow);
     padding: 0 2px;
     border-radius: 2px;
