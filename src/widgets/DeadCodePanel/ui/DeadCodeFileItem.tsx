@@ -8,7 +8,7 @@ import { targetLineAtom, viewModeAtom } from '../../../store/atoms';
 import { focusedIndexAtom } from '../../../features/DeadCodeAnalyzer/model/atoms';
 import { useDeadCodeSelection } from '../../../features/DeadCodeSelection/lib/useDeadCodeSelection';
 import { useOpenFile } from '../../../features/Files/lib/useOpenFile';
-import { getFileIcon } from '../../AppSidebar/lib/getFileIcon';
+import { getFileIcon } from '../../FileExplorer/lib/getFileIcon';
 import type { DeadCodeItem } from '../../../shared/deadCodeAnalyzer';
 
 export function DeadCodeFileItem({
