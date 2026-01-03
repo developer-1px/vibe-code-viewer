@@ -1,5 +1,5 @@
 /**
- * AppSidebar - Type Definitions
+ * FileExplorer - Type Definitions
  */
 
 export interface FolderNode {

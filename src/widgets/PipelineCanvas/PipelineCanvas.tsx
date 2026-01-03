@@ -3,17 +3,17 @@ import { useAtomValue, useSetAtom, useAtom } from 'jotai';
 import { useHotkeys } from 'react-hotkeys-hook';
 
 // Hooks & Sub-components
-import { useCanvasLayout } from './PipelineCanvas/useCanvasLayout.ts';
-import D3ZoomContainer from './PipelineCanvas/D3ZoomContainer.tsx';
-import CanvasConnections from './PipelineCanvas/CanvasConnections.tsx';
-import CanvasBackground from './PipelineCanvas/CanvasBackground.tsx';
-import { CanvasCodeCard } from './PipelineCanvas/CanvasCodeCard.tsx';
-import CopyAllCodeButton from '../features/CopyAllCodeButton.tsx';
-import ResetViewButton from '../features/ResetViewButton.tsx';
+import { useCanvasLayout } from './useCanvasLayout.ts';
+import D3ZoomContainer from './D3ZoomContainer.tsx';
+import CanvasConnections from './CanvasConnections.tsx';
+import CanvasBackground from './CanvasBackground.tsx';
+import { CanvasCodeCard } from './CanvasCodeCard.tsx';
+import CopyAllCodeButton from '../../features/CopyAllCodeButton.tsx';
+import ResetViewButton from '../../features/ResetViewButton.tsx';
 
 // Atoms & Hooks
-import { visibleNodeIdsAtom, selectedNodeIdsAtom, openedFilesAtom, fullNodeMapAtom, symbolMetadataAtom, filesAtom, focusedPaneAtom, graphDataAtom } from '../store/atoms';
-import { extractSymbolMetadata } from '@/shared/symbolMetadataExtractor';
+import { visibleNodeIdsAtom, selectedNodeIdsAtom, openedFilesAtom, fullNodeMapAtom, symbolMetadataAtom, filesAtom, focusedPaneAtom, graphDataAtom } from '../../store/atoms.ts';
+import { extractSymbolMetadata } from '@/shared/symbolMetadataExtractor.ts';
 
 const PipelineCanvas: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);

@@ -4,7 +4,7 @@ import { Provider, useAtomValue, useSetAtom } from 'jotai';
 import { HotkeysProvider } from 'react-hotkeys-hook';
 import { ThemeProvider } from './app/theme/ThemeProvider';
 import AppSidebar from '@/widgets/AppSidebar/AppSidebar';
-import PipelineCanvas from './widgets/PipelineCanvas.tsx';
+import PipelineCanvas from './widgets/PipelineCanvas/PipelineCanvas.tsx';
 import IDEView from './widgets/IDEView/IDEView';
 import JotaiDevTools from './widgets/JotaiDevTools/JotaiDevTools';
 import { UnifiedSearchModal } from './features/UnifiedSearch/ui/UnifiedSearchModal';
