@@ -14,7 +14,8 @@ import {
   isTsxFile,
   extractLocalIdentifiers,
   shouldSkipIdentifier,
-  extractParametersFromAST
+  extractParametersFromAST,
+  extractASTMetadata
 } from './segmentUtils';
 import {
   processDeclarationNode,
@@ -75,9 +76,9 @@ export function renderCodeLinesDirect(
   }
 
   const nodeShortId = extractShortId(nodeId);
-  const parameters = extractParametersFromAST(sourceFile);
+  // Phase 3-A: Combined metadata extraction (2 traversals → 1)
+  const { parameters, localIdentifiers } = extractASTMetadata(sourceFile);
   const dependencyMap = createDependencyMap(dependencies);
-  const localIdentifiers = extractLocalIdentifiers(sourceFile);
 
   // ✅ Dead identifiers 계산 (VSCode처럼 muted 처리할 대상)
   const deadIdentifiers = extractDeadIdentifiers(deadCodeResults, filePath);

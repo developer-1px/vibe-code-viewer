@@ -188,6 +188,7 @@ export function shouldSkipIdentifier(node: ts.Node, parent: ts.Node): boolean {
 
 /**
  * SourceFile에서 모든 함수 파라미터 추출 (destructuring 지원)
+ * @deprecated Use extractASTMetadata() instead for better performance (Phase 3-A)
  */
 export function extractParametersFromAST(sourceFile: ts.SourceFile): Set<string> {
   const parameters = new Set<string>();
@@ -212,4 +213,68 @@ export function extractParametersFromAST(sourceFile: ts.SourceFile): Set<string>
 
   visit(sourceFile);
   return parameters;
+}
+
+/**
+ * Phase 3-A: Combined metadata extraction (2 traversals → 1 traversal)
+ * Extracts both parameters and local identifiers in a single AST pass
+ * Performance: ~50% faster than calling extractParametersFromAST + extractLocalIdentifiers separately
+ */
+export interface ASTMetadata {
+  parameters: Set<string>;
+  localIdentifiers: Set<string>;
+}
+
+export function extractASTMetadata(sourceFile: ts.SourceFile): ASTMetadata {
+  const parameters = new Set<string>();
+  const localIdentifiers = new Set<string>();
+
+  function visit(node: ts.Node) {
+    // Extract parameters from function-like nodes
+    if (
+      ts.isFunctionDeclaration(node) ||
+      ts.isFunctionExpression(node) ||
+      ts.isArrowFunction(node) ||
+      ts.isMethodDeclaration(node) ||
+      ts.isConstructorDeclaration(node)
+    ) {
+      node.parameters.forEach(param => {
+        extractBindingIdentifiers(param.name, parameters);
+      });
+    }
+
+    // Extract local identifiers from declarations
+    if (
+      ts.isVariableStatement(node) ||
+      ts.isFunctionDeclaration(node) ||
+      ts.isInterfaceDeclaration(node) ||
+      ts.isTypeAliasDeclaration(node) ||
+      ts.isClassDeclaration(node) ||
+      ts.isEnumDeclaration(node) ||
+      ts.isModuleDeclaration(node)
+    ) {
+      if (ts.isVariableStatement(node)) {
+        node.declarationList.declarations.forEach(declaration => {
+          extractBindingIdentifiers(declaration.name, localIdentifiers);
+        });
+      } else if (ts.isFunctionDeclaration(node) && node.name) {
+        localIdentifiers.add(node.name.text);
+      } else if (ts.isInterfaceDeclaration(node)) {
+        localIdentifiers.add(node.name.text);
+      } else if (ts.isTypeAliasDeclaration(node)) {
+        localIdentifiers.add(node.name.text);
+      } else if (ts.isClassDeclaration(node) && node.name) {
+        localIdentifiers.add(node.name.text);
+      } else if (ts.isEnumDeclaration(node)) {
+        localIdentifiers.add(node.name.text);
+      } else if (ts.isModuleDeclaration(node)) {
+        localIdentifiers.add(node.name.text);
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return { parameters, localIdentifiers };
 }
