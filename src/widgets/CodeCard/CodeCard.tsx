@@ -20,10 +20,17 @@ import { foldedLinesAtom } from '@/features/Code/CodeFold/model/atoms';
 import { cardPositionsAtom } from '../PipelineCanvas/model/atoms';
 import { filesAtom } from '../../app/model/atoms';
 import { deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
+import { hoveredFilePathAtom } from '../IDEScrollView/model/atoms';
+import { activeTabAtom } from '@/features/File/OpenFiles/model/atoms';
 
 const CodeCard = ({ node }: { node: CanvasNode }) => {
   const files = useAtomValue(filesAtom);
   const deadCodeResults = useAtomValue(deadCodeResultsAtom);
+  const setHoveredFilePath = useSetAtom(hoveredFilePathAtom);
+  const activeTab = useAtomValue(activeTabAtom);
+
+  // Check if this card is for the currently active tab
+  const isActive = activeTab === node.filePath;
 
   // Render code lines with syntax highlighting
   const processedLines = useMemo(() => {
@@ -70,10 +77,13 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
       ref={cardRef}
       id={`node-${node.visualId || node.id}`}
       className={`
-        bg-theme-panel/95 backdrop-blur-md border shadow-2xl rounded-lg flex flex-col relative group/card overflow-visible transition-colors
+        bg-theme-panel/95 backdrop-blur-md border shadow-2xl rounded-lg flex flex-col relative group/card overflow-visible
         ${getNodeBorderColor(node.type)}
+        ${!isActive ? 'grayscale transition-all duration-[2000ms] ease-in-out' : 'transition-none'}
         min-w-[420px] max-w-[700px] w-fit cursor-default
       `}
+      onMouseEnter={() => setHoveredFilePath(node.filePath)}
+      onMouseLeave={() => setHoveredFilePath(null)}
     >
       {/* Header */}
       <CodeCardHeader node={node} />

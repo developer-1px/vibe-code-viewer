@@ -17,93 +17,53 @@
 
 @layer base {
   :root {
-    /* Code Editor Syntax - Default Theme (LIMN Warm) */
-    --code-keyword: #ffcc99;
-    --code-function: #ffd699;
-    --code-class: #e5c07b;
-    --code-variable: #ffffff;
-    --code-string: #d4a574;
-    --code-number: #cbd5e1;
-    --code-comment: rgb(255 250 245 / 0.5);
-    --code-property: #d4d4d8;
-    --code-tag: #ffb366;
-    --code-attribute: #cbd5e1;
-    --code-punctuation: rgb(255 250 245 / 0.6);
+    /* Code Editor Syntax - LIMN Design System Colors */
+    --code-keyword: var(--color-warm-300);        /* LIMN warm accent */
+    --code-function: var(--color-status-info);    /* LIMN info blue */
+    --code-class: var(--color-status-warning);    /* LIMN warning yellow */
+    --code-variable: var(--color-text-primary);   /* LIMN primary text */
+    --code-string: var(--color-status-success);   /* LIMN success green */
+    --code-number: var(--color-status-error);     /* LIMN error coral */
+    --code-comment: var(--color-text-tertiary);      /* LIMN muted text */
+    --code-property: var(--color-status-info);    /* LIMN info blue */
+    --code-tag: var(--color-status-warning);      /* LIMN warning yellow */
+    --code-attribute: var(--color-status-info);   /* LIMN info blue */
+    --code-punctuation: var(--color-text-secondary); /* LIMN secondary text */
 
-    /* Interactive Elements - Can be overridden by ThemeAdapter */
-    --code-self: var(--color-warm-300);           /* Definition (self reference) */
-    --code-self-bg: var(--color-warm-500);        /* Definition background */
-    --code-external-import: #4ade80;              /* External import */
-    --code-external-import-bg: #4ade80;           /* External import background */
-    --code-external-closure: var(--color-status-warning); /* Closure variable */
-    --code-external-closure-bg: var(--color-status-warning); /* Closure background */
-    --code-external-function: #a78bfa;            /* External function */
-    --code-external-function-bg: #a78bfa;         /* External function background */
-    --code-parameter: #fb923c;                    /* Function parameter */
-    --code-parameter-bg: var(--color-warm-300);   /* Parameter background */
-    --code-local-variable: var(--color-warm-400); /* Local variable */
-    --code-local-variable-bg: var(--color-warm-500); /* Local variable background */
+    /* Interactive Elements - LIMN Design System */
+    --code-self: var(--color-warm-300);           /* LIMN warm */
+    --code-self-bg: var(--color-warm-300);
+    --code-external-import: var(--color-status-success); /* LIMN green */
+    --code-external-import-bg: var(--color-status-success);
+    --code-external-closure: var(--color-status-error); /* LIMN coral */
+    --code-external-closure-bg: var(--color-status-error);
+    --code-external-function: var(--color-status-info); /* LIMN blue */
+    --code-external-function-bg: var(--color-status-info);
+    --code-parameter: var(--color-status-info);   /* LIMN blue */
+    --code-parameter-bg: var(--color-status-info);
+    --code-local-variable: var(--color-text-secondary); /* LIMN secondary */
+    --code-local-variable-bg: var(--color-warm-300); /* LIMN warm */
 
     /* Focus Mode Colors */
     --focus-gray: rgb(51 65 85);                  /* Unfocused grayscale */
-  }
 
-  /* VSCode Theme - Code Editor Syntax Only */
-  [data-theme="vscode"] {
-    --code-keyword: #569CD6;
-    --code-function: #DCDCAA;
-    --code-class: #4EC9B0;
-    --code-variable: #9CDCFE;
-    --code-string: #CE9178;
-    --code-number: #B5CEA8;
-    --code-comment: #6A9955;
-    --code-property: #9CDCFE;
-    --code-tag: #569CD6;
-    --code-attribute: #9CDCFE;
-    --code-punctuation: #cccccc;
+    /* Dead Code Styles - LIMN muted tones */
+    --code-dead-text: var(--color-text-muted);    /* LIMN muted (더 어둡게) */
+    --code-dead-bg: rgb(255 250 245 / 0.02);      /* 매우 미묘한 배경 */
+    --code-dead-border: rgb(255 250 245 / 0.04);  /* 미묘한 테두리 */
+    --code-dead-decoration: rgb(255 250 245 / 0.2); /* 흐린 취소선 */
 
-    /* Interactive Elements */
-    --code-self: #DCDCAA;
-    --code-self-bg: #DCDCAA;
-    --code-external-import: #4EC9B0;
-    --code-external-import-bg: #4EC9B0;
-    --code-external-closure: #CE9178;
-    --code-external-closure-bg: #CE9178;
-    --code-external-function: #C586C0;
-    --code-external-function-bg: #C586C0;
-    --code-parameter: #9CDCFE;
-    --code-parameter-bg: #569CD6;
-    --code-local-variable: #9CDCFE;
-    --code-local-variable-bg: #4EC9B0;
-  }
+    /* Return Statement Highlight - LIMN success tone */
+    --code-return-bg: var(--color-status-success-bg); /* LIMN success bg (0.1) */
 
-  /* JetBrains Theme - Code Editor Syntax Only */
-  [data-theme="jetbrains"] {
-    --code-keyword: #cf8e6d;
-    --code-function: #56a8f5;
-    --code-class: #9a7ecc;
-    --code-variable: #bcbec4;
-    --code-string: #6aab73;
-    --code-number: #6aab73;
-    --code-comment: #7a7e85;
-    --code-property: #bcbec4;
-    --code-tag: #cf8e6d;
-    --code-attribute: #bcbec4;
-    --code-punctuation: #bcbec4;
+    /* Identifier Hover - LIMN warm hover */
+    --code-identifier-hover-bg: var(--color-warm-active-hover); /* LIMN warm hover (0.12) */
 
-    /* Interactive Elements */
-    --code-self: #56a8f5;
-    --code-self-bg: #56a8f5;
-    --code-external-import: #6aab73;
-    --code-external-import-bg: #6aab73;
-    --code-external-closure: #cf8e6d;
-    --code-external-closure-bg: #cf8e6d;
-    --code-external-function: #9a7ecc;
-    --code-external-function-bg: #9a7ecc;
-    --code-parameter: #bcbec4;
-    --code-parameter-bg: #56a8f5;
-    --code-local-variable: #bcbec4;
-    --code-local-variable-bg: #6aab73;
+    /* Identifier Styles - LIMN warm colors with higher visibility */
+    --code-identifier-bg: rgb(255 200 150 / 0.15);      /* LIMN warm, more visible */
+    --code-identifier-border: rgb(255 200 150 / 0.3);   /* LIMN warm border */
+    --code-identifier-def-bg: rgb(255 200 150 / 0.25);  /* LIMN warm, def more visible */
+    --code-identifier-def-border: rgb(255 200 150 / 0.5); /* LIMN warm, def border stronger */
   }
 }
 
@@ -127,18 +87,16 @@
   /* Generic text color */
   .text-editor-text { color: var(--code-variable); }
 
-  /* Identifier colors */
+  /* Identifier colors - LIMN Design System */
   .text-editor-identifier {
-    color: #ffffff;
-    background-color: rgb(255 180 120 / 0.25);
+    color: var(--color-text-primary);
+    background-color: var(--code-identifier-def-bg);  /* LIMN warm (0.25) */
     padding: 0 2px;
     border-radius: 2px;
+    box-shadow: inset 0 0 0 1px var(--code-identifier-def-border); /* Clickable - has outline */
   }
   .text-editor-identifier-def {
-    color: #ffffff;
-    background-color: rgb(255 180 120 / 0.4);
-    padding: 0 2px;
-    border-radius: 2px;
+    color: var(--color-text-primary);
   }
 
   /* Interactive Elements - Text and Background */
@@ -162,6 +120,43 @@
 
   /* Focus mode grayscale */
   .text-editor-focus-gray { color: var(--focus-gray); }
+
+  /* Dead Code Styles */
+  .text-code-dead {
+    color: var(--code-dead-text);
+    opacity: 0.5;
+  }
+
+  .style-code-dead-import {
+    display: inline-block;
+    padding: 0 0.25rem;
+    border-radius: 0.25rem;
+    background-color: var(--code-dead-bg);
+    color: rgb(148 163 184 / 0.6); /* slate-400/60 */
+    border: 1px solid var(--code-dead-border);
+    text-decoration: line-through;
+    text-decoration-color: var(--code-dead-decoration);
+    user-select: text;
+    cursor: default;
+  }
+
+  /* Return Statement Highlight */
+  .bg-code-return {
+    background-color: var(--code-return-bg);
+    padding: 0 0.125rem;
+    border-radius: 0.25rem;
+  }
+
+  /* Identifier Hover */
+  .hover-code-identifier:hover {
+    background-color: var(--code-identifier-hover-bg);
+  }
+
+  /* Inactive Code Card - Grayscale Animation */
+  .grayscale {
+    filter: grayscale(100%);
+    opacity: 0.6;
+  }
 }
 
 /* ===== Custom Scrollbar ===== */

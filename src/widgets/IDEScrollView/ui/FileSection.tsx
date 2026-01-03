@@ -4,10 +4,12 @@
  */
 
 import React, { useMemo, forwardRef, useEffect, useState, useTransition } from 'react';
-import { useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
 import type { CodeLine } from '../../CodeViewer/core/types';
 import { deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
+import { activeTabAtom } from '@/features/File/OpenFiles/model/atoms';
+import { hoveredFilePathAtom } from '../model/atoms';
 import { renderCodeLinesDirect } from '../../CodeViewer/core/renderer/renderCodeLinesDirect';
 import { renderVueFile } from '../../CodeViewer/core/renderer/renderVueFile';
 import { renderPlaintext } from '../../CodeViewer/core/renderer/renderPlaintext';
@@ -33,9 +35,15 @@ const FileSection = forwardRef<HTMLDivElement, {
   highlightedLines: Set<number>;
 }>(({ node, files, highlightedLines }, ref) => {
   const deadCodeResults = useAtomValue(deadCodeResultsAtom);
+  const activeTab = useAtomValue(activeTabAtom);
+  const hoveredFilePath = useAtomValue(hoveredFilePathAtom);
+  const setHoveredFilePath = useSetAtom(hoveredFilePathAtom);
   const fileName = getFileName(node.filePath);
   const FileIconComponent = getFileIcon(fileName);
   const [isPending, startTransition] = useTransition();
+
+  // Check if this file section is active (via activeTab or hover)
+  const isActive = activeTab === node.filePath || hoveredFilePath === node.filePath;
 
   // Invalidate cache when deadCodeResults changes
   useEffect(() => {
@@ -109,7 +117,12 @@ const FileSection = forwardRef<HTMLDivElement, {
     <div
       ref={ref}
       id={`file-section-${node.filePath}`}
-      className="border-b border-border-DEFAULT"
+      className={`
+        border-b border-border-DEFAULT mb-8 transition-all duration-200 ease-in-out
+        ${!isActive ? 'grayscale opacity-50' : ''}
+      `}
+      onMouseEnter={() => setHoveredFilePath(node.filePath)}
+      onMouseLeave={() => setHoveredFilePath(null)}
     >
       {/* 파일 헤더 */}
       <div className="sticky top-0 z-10 bg-bg-elevated border-b border-border-hover px-4 py-2 flex items-center gap-2 shadow-sm">

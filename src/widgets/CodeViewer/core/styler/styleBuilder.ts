@@ -24,7 +24,7 @@ export function buildSegmentStyle(
   }
 ): SegmentStyle {
   const primaryKind = getPrimaryKind(kinds);
-  const returnBg = options.isInReturn ? 'bg-green-500/10 px-0.5 rounded' : '';
+  const returnBg = options.isInReturn ? 'bg-code-return' : '';
 
   // Focus mode: 활성화된 변수가 있고, 현재 segment가 focus 대상이 아니면 grayscale
   const hasFocusMode = options.focusedVariables && options.focusedVariables.size > 0;
@@ -91,7 +91,7 @@ export function buildSegmentStyle(
     if (options.isDead) {
       console.log(`[styleBuilder] DEAD self identifier "${options.segmentText}"`);
       return {
-        className: 'inline-block px-0.5 rounded text-slate-500 opacity-50 select-text',
+        className: 'inline-block px-0.5 rounded text-code-dead select-text',
         clickable: false,
         title: 'Unused (Dead Code)'
       };
@@ -133,7 +133,7 @@ export function buildSegmentStyle(
     // ✅ Dead code: VSCode-like muted style
     if (options.isDead) {
       return {
-        className: `inline-block px-1 rounded bg-slate-500/8 text-slate-400/60 border border-slate-500/15 line-through decoration-slate-500/40 select-text cursor-default`,
+        className: 'style-code-dead-import',
         clickable: false,
         clickType: 'none',
         title: 'Unused import (Dead code)'
@@ -329,7 +329,7 @@ export function buildSegmentStyle(
   if (primaryKind === 'identifier' && options.hasNodeId) {
     // ✅ Dead identifier: muted style
     const textColor = options.isDead
-      ? 'text-slate-500 opacity-50'
+      ? 'text-code-dead'
       : hasFocusMode && !isFocused
         ? 'text-editor-focus-gray'
         : '';
@@ -344,14 +344,14 @@ export function buildSegmentStyle(
   if (primaryKind === 'identifier' && (options.hasHoverInfo || options.hasDefinition)) {
     // ✅ Dead identifier: override baseColor to ensure muted style
     const baseColor = options.isDead
-      ? 'text-slate-500 opacity-50'
+      ? 'text-code-dead'
       : hasFocusMode && !isFocused
         ? 'text-editor-focus-gray'
         : options.hasDefinition
           ? 'text-editor-identifier-def'
           : 'text-editor-identifier';
     const decoration = '';
-    const hover = options.hasDefinition && !(hasFocusMode && !isFocused) && !options.isDead ? 'cursor-pointer hover:bg-sky-400/15' : '';
+    const hover = options.hasDefinition && !(hasFocusMode && !isFocused) && !options.isDead ? 'cursor-pointer hover-code-identifier' : '';
 
     const finalClassName = `relative inline-block px-0.5 rounded transition-colors select-text ${baseColor} ${decoration} ${hover} ${returnBg}`;
 
@@ -369,7 +369,7 @@ export function buildSegmentStyle(
 
   // Fallback
   const textColor = options.isDead
-    ? 'text-slate-500 opacity-50'
+    ? 'text-code-dead'
     : hasFocusMode && !isFocused
       ? 'text-editor-focus-gray'
       : 'text-editor-text';

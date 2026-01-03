@@ -22,6 +22,7 @@ export interface OpenFileOptions {
 
 export function useOpenFile() {
   const viewMode = useAtomValue(viewModeAtom);
+  const activeTab = useAtomValue(activeTabAtom);
   const setOpenedTabs = useSetAtom(openedTabsAtom);
   const setActiveTab = useSetAtom(activeTabAtom);
   const setOpenedFiles = useSetAtom(openedFilesAtom);
@@ -47,15 +48,23 @@ export function useOpenFile() {
     if (viewMode === 'ide') {
       // IDE 모드: 탭으로 열기
       // 1. 이미 열려있는 파일이면 탭 추가하지 않음 (기존 탭 유지)
-      // 2. 안 열려있는 파일이면 새 탭 추가
+      // 2. 안 열려있는 파일이면 현재 활성 탭 바로 다음에 새 탭 추가
       setOpenedTabs((prev) => {
         if (prev.includes(actualFilePath)) {
           return prev; // 이미 열려있으면 탭 추가 안 함
         }
-        return [...prev, actualFilePath]; // 새 탭 추가
+        // 현재 활성 탭의 위치를 찾아서 그 다음에 삽입
+        const activeIndex = activeTab ? prev.indexOf(activeTab) : -1;
+        const insertIndex = activeIndex >= 0 ? activeIndex + 1 : prev.length;
+        return [
+          ...prev.slice(0, insertIndex),
+          actualFilePath,
+          ...prev.slice(insertIndex)
+        ];
       });
 
       // 활성 탭으로 설정 (이미 열려있든 새로 열든, 해당 탭으로 전환)
+      // activeTab 변경 시 IDEScrollView에서 자동으로 스크롤됨
       setActiveTab(actualFilePath);
     } else {
       // Canvas 모드: openedFiles에 추가

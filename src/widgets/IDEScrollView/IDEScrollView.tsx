@@ -6,10 +6,10 @@
  * 2. Tabs 모드: 열린 탭들의 파일 표시 (IDEView 대체)
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useAtomValue } from 'jotai';
 import { selectedDeadCodeItemsAtom, deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
-import { openedTabsAtom } from '@/features/File/OpenFiles/model/atoms';
+import { openedTabsAtom, activeTabAtom } from '@/features/File/OpenFiles/model/atoms';
 import { fullNodeMapAtom, filesAtom } from '../../app/model/atoms';
 import { getItemKey } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/lib/categoryUtils';
 import FileSection from './ui/FileSection';
@@ -17,7 +17,9 @@ import { Sidebar } from '../../components/ide/Sidebar';
 import { getFileName } from '../../shared/pathUtils';
 import { getFileIcon } from '../FileExplorer/lib/getFileIcon';
 import { useScrollNavigation } from './lib/useScrollNavigation';
+import { useOpenFile } from '@/features/File/OpenFiles/lib/useOpenFile';
 import type { DeadCodeItem } from '../../shared/deadCodeAnalyzer';
+import { hoveredFilePathAtom } from './model/atoms';
 
 const IDEScrollView = () => {
   const selectedItems = useAtomValue(selectedDeadCodeItemsAtom);
@@ -25,6 +27,9 @@ const IDEScrollView = () => {
   const openedTabs = useAtomValue(openedTabsAtom);
   const fullNodeMap = useAtomValue(fullNodeMapAtom);
   const files = useAtomValue(filesAtom);
+  const hoveredFilePath = useAtomValue(hoveredFilePathAtom);
+  const activeTab = useAtomValue(activeTabAtom);
+  const { openFile } = useOpenFile();
 
   // 모드 결정: Dead Code 선택이 있으면 Dead Code 모드, 없으면 Tabs 모드
   const isDeadCodeMode = selectedItems.size > 0 && deadCodeResults;
@@ -92,6 +97,13 @@ const IDEScrollView = () => {
   // useScrollNavigation 훅 사용
   const { currentFilePath, registerSection, scrollToFile } = useScrollNavigation(displayFilePaths);
 
+  // activeTab 변경 감지 - 파일 열 때 자동 스크롤
+  useEffect(() => {
+    if (activeTab && displayFilePaths.includes(activeTab)) {
+      scrollToFile(activeTab);
+    }
+  }, [activeTab, scrollToFile, displayFilePaths]);
+
   // 표시할 파일이 없을 때
   if (displayFilePaths.length === 0) {
     return (
@@ -135,13 +147,13 @@ const IDEScrollView = () => {
         <div className="flex flex-col overflow-y-auto">
           {displayFilePaths.map((filePath) => {
             const fileName = getFileName(filePath);
-            const isActive = filePath === currentFilePath;
+            const isActive = filePath === currentFilePath || filePath === hoveredFilePath;
             const FileIconComponent = getFileIcon(fileName);
 
             return (
               <button
                 key={filePath}
-                onClick={() => scrollToFile(filePath)}
+                onClick={() => openFile(filePath)}
                 className={`
                   flex items-center gap-2 px-3 py-2 text-left transition-colors
                   hover:bg-bg-hover

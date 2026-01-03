@@ -46,6 +46,54 @@
   --color-border-warm: rgb(255 200 150 / 0.2);
   --color-border-active: rgb(255 200 150 / 0.3);
 
+  /* Terminal Colors - LIMN Warm Spectrum (ANSI 16 Color Palette) */
+
+  /* Black & White - Neutral grays with warm undertones */
+  --color-terminal-black: #1a1a20;           /* Warm deep black */
+  --color-terminal-bright-black: #3a3a45;    /* Warm gray (bright black) */
+  --color-terminal-white: #d4cfc4;           /* Warm light gray */
+  --color-terminal-bright-white: #f5f0e8;    /* Warm almost-white */
+
+  /* Red family - coral/salmon reds with warmth */
+  --color-terminal-red: #e88b7a;             /* Warm coral red */
+  --color-terminal-bright-red: #ffa595;      /* Bright salmon */
+  --color-terminal-red-glow: rgb(232 139 122 / 0.15);
+
+  /* Orange family - peachy oranges (LIMN signature) */
+  --color-terminal-orange: #ffb380;          /* Warm peach orange */
+  --color-terminal-bright-orange: #ffcc99;   /* Bright LIMN orange */
+  --color-terminal-orange-glow: rgb(255 179 128 / 0.15);
+
+  /* Yellow family - golden yellows */
+  --color-terminal-yellow: #e8c07a;          /* Warm golden yellow */
+  --color-terminal-bright-yellow: #ffd699;   /* Bright champagne */
+  --color-terminal-yellow-glow: rgb(232 192 122 / 0.15);
+
+  /* Green family - olive/sage greens with warmth */
+  --color-terminal-green: #a8c088;           /* Warm olive green */
+  --color-terminal-bright-green: #c4d8a4;    /* Bright sage */
+  --color-terminal-green-glow: rgb(168 192 136 / 0.15);
+
+  /* Cyan family - teal with peachy undertones */
+  --color-terminal-cyan: #7dc4c4;            /* Warm teal-cyan */
+  --color-terminal-bright-cyan: #9ee0d8;     /* Bright peachy-cyan */
+  --color-terminal-cyan-glow: rgb(125 196 196 / 0.15);
+
+  /* Blue family - warm blues with violet undertones */
+  --color-terminal-blue: #8ba8d8;            /* Warm periwinkle blue */
+  --color-terminal-bright-blue: #a8c4f0;     /* Bright lavender-blue */
+  --color-terminal-blue-glow: rgb(139 168 216 / 0.15);
+
+  /* Magenta family - dusty rose/mauve */
+  --color-terminal-magenta: #d8a8c4;         /* Warm dusty rose */
+  --color-terminal-bright-magenta: #f0c4d8;  /* Bright rose-pink */
+  --color-terminal-magenta-glow: rgb(216 168 196 / 0.15);
+
+  /* Purple family - warm lavender/plum */
+  --color-terminal-purple: #b8a8d8;          /* Warm lavender */
+  --color-terminal-bright-purple: #d4c4f0;   /* Bright pale lavender */
+  --color-terminal-purple-glow: rgb(184 168 216 / 0.15);
+
   /* Font Sizes */
   --font-size-2xs: 10px;
   --line-height-2xs: 14px;
