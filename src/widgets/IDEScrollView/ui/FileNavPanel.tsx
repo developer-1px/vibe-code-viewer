@@ -4,8 +4,8 @@
  */
 
 import React from 'react';
-import { FileText } from 'lucide-react';
 import { getFileName } from '../../../shared/pathUtils';
+import { getFileIcon } from '../../FileExplorer/lib/getFileIcon';
 
 const FileNavPanel = ({
   filePaths,
@@ -29,6 +29,7 @@ const FileNavPanel = ({
         {filePaths.map((filePath) => {
           const fileName = getFileName(filePath);
           const isActive = filePath === currentFilePath;
+          const FileIconComponent = getFileIcon(fileName);
 
           return (
             <button
@@ -40,7 +41,7 @@ const FileNavPanel = ({
                 ${isActive ? 'bg-warm-500/10 border-l-2 border-warm-300' : 'border-l-2 border-transparent'}
               `}
             >
-              <FileText
+              <FileIconComponent
                 size={12}
                 className={`shrink-0 ${isActive ? 'text-warm-300' : 'text-text-tertiary'}`}
               />

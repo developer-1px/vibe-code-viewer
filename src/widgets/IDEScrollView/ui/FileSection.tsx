@@ -114,7 +114,7 @@ const FileSection = forwardRef<HTMLDivElement, {
       {/* 파일 헤더 */}
       <div className="sticky top-0 z-10 bg-bg-elevated border-b border-border-hover px-4 py-2 flex items-center gap-2 shadow-sm">
         <FileIconComponent size={14} className="text-text-secondary" />
-        <span className="text-sm font-medium text-text-primary">{node.filePath}</span>
+        <span className="text-xs font-medium text-text-primary">{node.filePath}</span>
       </div>
 
       {/* 코드 뷰어 */}
