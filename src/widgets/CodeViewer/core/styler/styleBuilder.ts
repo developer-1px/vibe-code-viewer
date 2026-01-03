@@ -350,7 +350,7 @@ export function buildSegmentStyle(
         : options.hasDefinition
           ? 'text-editor-identifier-def'
           : 'text-editor-identifier';
-    const decoration = options.hasDefinition && !(hasFocusMode && !isFocused) && !options.isDead ? 'underline decoration-dotted decoration-sky-300/40' : '';
+    const decoration = '';
     const hover = options.hasDefinition && !(hasFocusMode && !isFocused) && !options.isDead ? 'cursor-pointer hover:bg-sky-400/15' : '';
 
     const finalClassName = `relative inline-block px-0.5 rounded transition-colors select-text ${baseColor} ${decoration} ${hover} ${returnBg}`;
