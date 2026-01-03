@@ -2,7 +2,7 @@
  * useTreeRenderer - Tree rendering logic hook
  * Handles recursive tree rendering with automatic index tracking
  */
-import { useCallback, useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import type { TreeNodeContext } from '../model/types';
 
 export interface UseTreeRendererProps<TNode> {
