@@ -73,7 +73,7 @@ export function useScrollNavigation(filePaths: string[]) {
   const scrollToFile = useCallback((filePath: string) => {
     const element = sectionRefsRef.current.get(filePath);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      element.scrollIntoView({ behavior: 'instant', block: 'start' });
       setCurrentFilePath(filePath);
     }
   }, []);
