@@ -28,6 +28,7 @@ SidebarHeader.displayName = 'SidebarHeader'
 // AppSidebar - Main Component
 export interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode
+  side?: 'left' | 'right' // Which side to place the sidebar
   resizable?: boolean // Enable resize handle
   defaultWidth?: number // Default width in pixels
   minWidth?: number // Min width in pixels
@@ -36,7 +37,7 @@ export interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const SidebarRoot = React.forwardRef<HTMLDivElement, SidebarProps>(
-  ({ className, children, resizable = false, defaultWidth = 240, minWidth = 180, maxWidth = 600, onWidthChange, ...props }, ref) => {
+  ({ className, children, side = 'left', resizable = false, defaultWidth = 240, minWidth = 180, maxWidth = 600, onWidthChange, ...props }, ref) => {
     const [width, setWidth] = React.useState(defaultWidth)
     const [isResizing, setIsResizing] = React.useState(false)
     const startXRef = React.useRef(0)
@@ -54,7 +55,9 @@ const SidebarRoot = React.forwardRef<HTMLDivElement, SidebarProps>(
 
       const handleMouseMove = (e: MouseEvent) => {
         const deltaX = e.clientX - startXRef.current
-        const newWidth = Math.min(maxWidth, Math.max(minWidth, startWidthRef.current + deltaX))
+        // Right side: drag left to increase width (negative deltaX)
+        const adjustedDelta = side === 'right' ? -deltaX : deltaX
+        const newWidth = Math.min(maxWidth, Math.max(minWidth, startWidthRef.current + adjustedDelta))
         setWidth(newWidth)
         if (onWidthChange) {
           onWidthChange(newWidth)
@@ -72,7 +75,7 @@ const SidebarRoot = React.forwardRef<HTMLDivElement, SidebarProps>(
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
       }
-    }, [isResizing, minWidth, maxWidth, onWidthChange])
+    }, [isResizing, minWidth, maxWidth, onWidthChange, side])
 
     // Separate header from content
     const childrenArray = React.Children.toArray(children)
@@ -87,7 +90,8 @@ const SidebarRoot = React.forwardRef<HTMLDivElement, SidebarProps>(
       <div
         ref={ref}
         className={cn(
-          'flex flex-col border-r border-border-DEFAULT bg-bg-elevated relative',
+          'flex flex-col bg-bg-elevated relative',
+          side === 'left' ? 'border-r border-border-DEFAULT' : 'border-l border-border-DEFAULT',
           className
         )}
         style={{ width: `${width}px` }}
@@ -97,7 +101,10 @@ const SidebarRoot = React.forwardRef<HTMLDivElement, SidebarProps>(
         {content}
         {resizable && (
           <div
-            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-warm-300/50 active:bg-warm-300 transition-colors"
+            className={cn(
+              'absolute top-0 w-1 h-full cursor-col-resize hover:bg-warm-300/50 active:bg-warm-300 transition-colors',
+              side === 'left' ? 'right-0' : 'left-0'
+            )}
             onMouseDown={handleMouseDown}
           />
         )}

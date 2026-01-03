@@ -13,7 +13,9 @@ import { openedTabsAtom } from '@/features/File/OpenFiles/model/atoms';
 import { fullNodeMapAtom, filesAtom } from '../../app/model/atoms';
 import { getItemKey } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/lib/categoryUtils';
 import FileSection from './ui/FileSection';
-import FileNavPanel from './ui/FileNavPanel';
+import { Sidebar } from '../../components/ide/Sidebar';
+import { getFileName } from '../../shared/pathUtils';
+import { getFileIcon } from '../FileExplorer/lib/getFileIcon';
 import { useScrollNavigation } from './lib/useScrollNavigation';
 import type { DeadCodeItem } from '../../shared/deadCodeAnalyzer';
 
@@ -125,12 +127,45 @@ const IDEScrollView = () => {
         })}
       </div>
 
-      {/* 우측: 파일 네비게이션 패널 */}
-      <FileNavPanel
-        filePaths={displayFilePaths}
-        currentFilePath={currentFilePath}
-        onFileClick={scrollToFile}
-      />
+      {/* 우측: 파일 네비게이션 사이드바 */}
+      <Sidebar side="right" resizable defaultWidth={192} minWidth={150} maxWidth={400}>
+        <Sidebar.Header>
+          <span className="text-xs font-medium text-text-secondary">Files ({displayFilePaths.length})</span>
+        </Sidebar.Header>
+        <div className="flex flex-col overflow-y-auto">
+          {displayFilePaths.map((filePath) => {
+            const fileName = getFileName(filePath);
+            const isActive = filePath === currentFilePath;
+            const FileIconComponent = getFileIcon(fileName);
+
+            return (
+              <button
+                key={filePath}
+                onClick={() => scrollToFile(filePath)}
+                className={`
+                  flex items-center gap-2 px-3 py-2 text-left transition-colors
+                  hover:bg-bg-hover
+                  ${isActive ? 'bg-warm-500/10 border-l-2 border-warm-300' : 'border-l-2 border-transparent'}
+                `}
+              >
+                <FileIconComponent
+                  size={12}
+                  className={`shrink-0 ${isActive ? 'text-warm-300' : 'text-text-tertiary'}`}
+                />
+                <div className="flex flex-col min-w-0">
+                  <span
+                    className={`text-xs truncate ${
+                      isActive ? 'text-text-primary font-medium' : 'text-text-secondary'
+                    }`}
+                  >
+                    {fileName}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </Sidebar>
     </div>
   );
 };
