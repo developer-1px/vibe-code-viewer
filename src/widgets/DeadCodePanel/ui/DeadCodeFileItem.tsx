@@ -14,11 +14,13 @@ import type { DeadCodeItem } from '../../../shared/deadCodeAnalyzer';
 export function DeadCodeFileItem({
   items,
   fileName,
+  depth,
   globalItemIndex,
   itemRefs,
 }: {
   items: DeadCodeItem[];
   fileName: string;
+  depth: number;
   globalItemIndex: number;
   itemRefs: React.MutableRefObject<Map<number, HTMLDivElement>>;
 }) {
@@ -58,7 +60,7 @@ export function DeadCodeFileItem({
                 icon={fileIcon}
                 label={`${fileName}:${item.line} - ${item.symbolName}`}
                 focused={itemFocused}
-                indent={0}
+                indent={depth}
                 fileExtension={fileExtension}
                 onFocus={() => setFocusedIndex(deadCodeGlobalIndex)}
                 onDoubleClick={() => handleItemClick(item)}

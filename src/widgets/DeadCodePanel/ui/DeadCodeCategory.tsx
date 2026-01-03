@@ -115,6 +115,7 @@ export function DeadCodeCategory({
                 <DeadCodeFileItem
                   items={itemsByFile}
                   fileName={node.name}
+                  depth={depth}
                   globalItemIndex={globalItemIndex}
                   itemRefs={itemRefs}
                 />
