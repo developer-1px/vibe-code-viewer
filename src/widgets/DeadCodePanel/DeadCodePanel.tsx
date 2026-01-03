@@ -417,7 +417,7 @@ export function DeadCodePanel({ className }: DeadCodePanelProps) {
                               icon={fileIcon}
                               label={`${node.name}:${item.line} - ${item.symbolName}`}
                               focused={itemFocused}
-                              indent={depth}
+                              indent={0}
                               fileExtension={fileExtension}
                               onFocus={() => {
                                 if (itemIndex >= 0) setFocusedIndex(itemIndex);
