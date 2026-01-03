@@ -136,7 +136,7 @@
   }
   .text-editor-identifier-def {
     color: #ffffff;
-    background-color: rgb(255 180 120 / 0.25);
+    background-color: rgb(255 180 120 / 0.4);
     padding: 0 2px;
     border-radius: 2px;
   }
