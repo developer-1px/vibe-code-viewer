@@ -9,9 +9,6 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronRight,
-  FileCode,
-  Folder,
-  FolderOpen,
   Package,
   FunctionSquare,
   Box,
@@ -36,6 +33,8 @@ import {
 import { analyzeDeadCode, type DeadCodeItem } from '../../shared/deadCodeAnalyzer';
 import { RefactoringPromptDialog } from '../../features/RefactoringPrompt/RefactoringPromptDialog';
 import { useOpenFile } from '../../features/Files/lib/useOpenFile';
+import type { FolderNode } from '../AppSidebar/model/types';
+import { DeadCodeTreeRenderer } from './ui/DeadCodeTreeRenderer';
 
 export interface DeadCodePanelProps {
   className?: string;
@@ -48,20 +47,12 @@ interface CategoryState {
   unusedVariables: boolean;
 }
 
-interface DeadCodeTreeNode {
-  type: 'file' | 'folder';
-  name: string;
-  path: string;
-  items?: DeadCodeItem[];       // for files
-  children?: DeadCodeTreeNode[]; // for folders
-}
-
 /**
- * Build tree structure from flat dead code items
+ * Build nested folder tree from flat dead code items
+ * Compatible with FolderNode structure used in FileTreeRenderer
  */
-function buildDeadCodeTree(items: DeadCodeItem[]): DeadCodeTreeNode[] {
-  const tree: DeadCodeTreeNode[] = [];
-  const folderMap = new Map<string, DeadCodeTreeNode>();
+function buildDeadCodeTree(items: DeadCodeItem[]): FolderNode[] {
+  const root: Map<string, FolderNode> = new Map();
 
   // Group items by file path
   const fileMap = new Map<string, DeadCodeItem[]>();
@@ -71,46 +62,73 @@ function buildDeadCodeTree(items: DeadCodeItem[]): DeadCodeTreeNode[] {
     fileMap.set(item.filePath, existing);
   });
 
-  // Build tree
+  // Build nested tree
   fileMap.forEach((fileItems, filePath) => {
     const parts = filePath.split('/');
-    const fileName = parts[parts.length - 1];
-    const folderPath = parts.slice(0, -1).join('/');
 
-    // If no folder, add file to root
-    if (folderPath === '' || parts.length === 1) {
-      tree.push({
-        type: 'file',
-        name: fileName,
-        path: filePath,
-        items: fileItems
+    let currentMap = root;
+    let currentPath = '';
+
+    // Create folder hierarchy
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      currentPath = currentPath ? `${currentPath}/${part}` : part;
+
+      if (!currentMap.has(part)) {
+        const folderNode: FolderNode = {
+          type: 'folder',
+          name: part,
+          path: currentPath,
+          children: []
+        };
+        currentMap.set(part, folderNode);
+      }
+
+      const folder = currentMap.get(part)!;
+      if (!folder.children) {
+        folder.children = [];
+      }
+
+      // Create nested map for next level
+      const childMap = new Map<string, FolderNode>();
+      folder.children.forEach(child => {
+        childMap.set(child.name, child);
       });
-      return;
+      currentMap = childMap;
     }
 
-    // Ensure folder exists
-    if (!folderMap.has(folderPath)) {
-      const folderNode: DeadCodeTreeNode = {
-        type: 'folder',
-        name: folderPath,
-        path: folderPath,
-        children: []
-      };
-      folderMap.set(folderPath, folderNode);
-      tree.push(folderNode);
-    }
-
-    // Add file to folder
-    const folder = folderMap.get(folderPath)!;
-    folder.children!.push({
+    // Add file node
+    const fileName = parts[parts.length - 1];
+    const fileNode: FolderNode = {
       type: 'file',
       name: fileName,
       path: filePath,
-      items: fileItems
-    });
+      filePath: filePath
+    };
+    currentMap.set(fileName, fileNode);
   });
 
-  return tree;
+  // Convert root map to array and recursively rebuild children arrays
+  const rebuildChildren = (map: Map<string, FolderNode>): FolderNode[] => {
+    const nodes: FolderNode[] = [];
+    map.forEach(node => {
+      if (node.type === 'folder' && node.children) {
+        const childMap = new Map<string, FolderNode>();
+        node.children.forEach(child => {
+          childMap.set(child.name, child);
+        });
+        node.children = rebuildChildren(childMap);
+      }
+      nodes.push(node);
+    });
+    return nodes.sort((a, b) => {
+      // Folders first, then files
+      if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+  };
+
+  return rebuildChildren(root);
 }
 
 /**
@@ -246,95 +264,6 @@ export function DeadCodePanel({ className }: DeadCodePanelProps) {
     }
   };
 
-  const renderTreeNode = (node: DeadCodeTreeNode, depth: number = 0): React.ReactNode => {
-    if (node.type === 'folder') {
-      const isCollapsed = collapsedFolders.has(node.path);
-      const allItems = node.children?.flatMap(child => child.items || []) || [];
-      const allSelected = allItems.length > 0 && allItems.every(item => selectedItems.has(getItemKey(item)));
-
-      return (
-        <div key={node.path}>
-          {/* Folder Header */}
-          <div className="flex items-center gap-2 px-2 py-1 hover:bg-white/5 transition-colors rounded">
-            <button
-              onClick={() => toggleFolder(node.path)}
-              className="flex items-center gap-1.5 flex-1"
-              style={{ paddingLeft: `${depth * 12}px` }}
-            >
-              {isCollapsed ? (
-                <ChevronRight size={14} className="text-text-muted shrink-0" />
-              ) : (
-                <ChevronDown size={14} className="text-text-muted shrink-0" />
-              )}
-              {isCollapsed ? (
-                <Folder size={14} className="text-text-muted shrink-0" />
-              ) : (
-                <FolderOpen size={14} className="text-text-muted shrink-0" />
-              )}
-              <span className="text-xs text-text-secondary truncate">{node.name}</span>
-              <span className="text-xs text-text-muted">({allItems.length})</span>
-            </button>
-
-            {allItems.length > 0 && (
-              <Checkbox
-                checked={allSelected}
-                onCheckedChange={() => toggleCategorySelection(allItems)}
-                onClick={(e) => e.stopPropagation()}
-              />
-            )}
-          </div>
-
-          {/* Folder Children */}
-          {!isCollapsed && node.children && (
-            <div className="ml-2">
-              {node.children.map(child => renderTreeNode(child, depth + 1))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // File node
-    const fileItems = node.items || [];
-    const fileName = node.name;
-
-    return (
-      <div key={node.path}>
-        {fileItems.map((item, idx) => {
-          const isSelected = selectedItems.has(getItemKey(item));
-
-          return (
-            <div
-              key={idx}
-              className="w-full flex items-center gap-2 px-2 py-1 hover:bg-white/5 transition-colors text-left rounded group cursor-pointer"
-              onClick={() => handleItemClick(item)}
-              style={{ paddingLeft: `${depth * 12}px` }}
-            >
-              <Checkbox
-                checked={isSelected}
-                onCheckedChange={() => toggleItemSelection(item)}
-                className="shrink-0"
-                onClick={(e) => e.stopPropagation()}
-              />
-
-              <FileCode size={12} className="text-text-muted shrink-0" />
-              <span className="text-xs text-text-secondary truncate max-w-[120px]">{fileName}</span>
-              <span className="text-xs text-text-muted shrink-0">:{item.line}</span>
-              <span className="font-mono text-xs text-warm-300 truncate flex-1">
-                {item.symbolName}
-              </span>
-              {item.from && (
-                <span className="text-2xs text-text-tertiary truncate max-w-[150px]">
-                  from "{item.from}"
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
   const renderCategory = (
     title: string,
     items: DeadCodeItem[],
@@ -376,8 +305,20 @@ export function DeadCodePanel({ className }: DeadCodePanelProps) {
 
         {/* Category Items - Tree View */}
         {isExpanded && items.length > 0 && (
-          <div className="space-y-0.5 mt-0.5 ml-2">
-            {tree.map(node => renderTreeNode(node))}
+          <div className="mt-0.5">
+            <DeadCodeTreeRenderer
+              fileTree={tree}
+              collapsedFolders={collapsedFolders}
+              deadCodeItems={items}
+              selectedItems={selectedItems}
+              onFileClick={(filePath, line) => {
+                const item = items.find(i => i.filePath === filePath && i.line === line);
+                if (item) handleItemClick(item);
+              }}
+              onToggleFolder={toggleFolder}
+              onToggleSelection={toggleItemSelection}
+              getItemKey={getItemKey}
+            />
           </div>
         )}
 
