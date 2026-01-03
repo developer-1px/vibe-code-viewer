@@ -385,6 +385,11 @@ export function buildSegmentStyle(
  * 우선순위에 따라 primary kind 결정
  */
 function getPrimaryKind(kinds: SegmentKind[]): SegmentKind {
+  // ✅ Bug fix: kinds가 undefined인 경우 방어
+  if (!kinds || !Array.isArray(kinds)) {
+    return 'text';
+  }
+
   const priority: SegmentKind[] = [
     'keyword',
     'punctuation',
