@@ -169,7 +169,7 @@ const VueTemplateSection = ({template, node, scriptEndLine }: {
           </div>
 
           {/* Template Code with Clickable Tokens */}
-          <div className={`flex-1 ${theme.spacing.lineX} ${theme.spacing.lineY} ${theme.typography.fontFamily} ${theme.typography.fontSize} ${theme.typography.lineHeight} overflow-x-auto whitespace-pre-wrap break-words`}>
+          <div className={`flex-1 ${theme.spacing.lineX} ${theme.spacing.lineY} ${theme.typography.fontFamily} ${theme.typography.fontSize} ${theme.typography.lineHeight} overflow-x-auto whitespace-pre-wrap break-words select-text`}>
             {line.segments.map((seg, segIdx) => {
               if (seg.isClickable && seg.nodeId) {
                 return (

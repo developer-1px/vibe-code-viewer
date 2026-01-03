@@ -139,7 +139,7 @@ const CodeLineView = ({
       </div>
 
       {/* Code Content Column */}
-      <div className={`flex-1 ${theme.spacing.lineX} ${theme.spacing.lineY} overflow-x-auto whitespace-pre-wrap break-words`}>
+      <div className={`flex-1 ${theme.spacing.lineX} ${theme.spacing.lineY} overflow-x-auto whitespace-pre-wrap break-words select-text`}>
         {line.segments.map((segment, segIdx) => (
           <CodeLineSegment
             key={segIdx}
