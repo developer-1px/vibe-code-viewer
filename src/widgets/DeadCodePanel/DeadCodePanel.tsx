@@ -344,101 +344,104 @@ export function DeadCodePanel({ className }: DeadCodePanelProps) {
         </div>
 
         {/* Category Items - Tree View */}
-        {isExpanded && items.length > 0 && (
-          <div className="mt-0.5">
-            <FileTreeRenderer
-              fileTree={tree}
-              collapsedFolders={collapsedFolders}
-              flatItemList={flatItemList}
-              focusedIndex={focusedIndex}
-              itemRefs={itemRefs}
-              onFocusChange={setFocusedIndex}
-              onToggleFolder={toggleFolder}
-              getNodeType={(node) => node.type}
-              getNodePath={(node) => node.path}
-            >
-              {({ node, depth, isFocused, isCollapsed, itemRef, handleFocus, handleDoubleClick }) => {
-                // Folder rendering
-                if (node.type === 'folder') {
-                  const icon = isCollapsed ? Folder : FolderOpen;
+        {isExpanded && items.length > 0 && (() => {
+          // Track independent rendering index for DeadCodePanel
+          // This index matches flatItemList which contains [Folder, DeadCodeItem, DeadCodeItem, ...]
+          // FileTreeRenderer's index doesn't match because it counts file nodes too
+          let renderIndex = 0;
+
+          return (
+            <div className="mt-0.5">
+              <FileTreeRenderer
+                fileTree={tree}
+                collapsedFolders={collapsedFolders}
+                flatItemList={flatItemList}
+                focusedIndex={focusedIndex}
+                itemRefs={itemRefs}
+                onFocusChange={setFocusedIndex}
+                onToggleFolder={toggleFolder}
+                getNodeType={(node) => node.type}
+                getNodePath={(node) => node.path}
+              >
+                {({ node, depth, isFocused, isCollapsed, itemIndex, itemRef, handleFocus, handleDoubleClick }) => {
+                  // Folder rendering
+                  if (node.type === 'folder') {
+                    const icon = isCollapsed ? Folder : FolderOpen;
+                    const folderIndex = renderIndex++;
+                    const folderFocused = focusedIndex === folderIndex;
+
+                    return (
+                      <FileTreeItem
+                        ref={(el) => {
+                          if (el) {
+                            itemRefs.current.set(folderIndex, el);
+                          }
+                        }}
+                        icon={icon}
+                        label={node.name}
+                        isFolder
+                        isOpen={!isCollapsed}
+                        focused={folderFocused}
+                        indent={depth}
+                        onFocus={() => setFocusedIndex(folderIndex)}
+                        onDoubleClick={handleDoubleClick}
+                      />
+                    );
+                  }
+
+                  // File (dead code item) rendering
+                  const itemsByFile = items.filter(i => i.filePath === node.filePath);
+                  const fileExtension = node.name.includes('.')
+                    ? '.' + node.name.split('.').pop()
+                    : undefined;
+                  const fileIcon = getFileIcon(node.name);
+
                   return (
-                    <FileTreeItem
-                      ref={itemRef}
-                      icon={icon}
-                      label={node.name}
-                      isFolder
-                      isOpen={!isCollapsed}
-                      focused={isFocused}
-                      indent={depth}
-                      onFocus={handleFocus}
-                      onDoubleClick={handleDoubleClick}
-                    />
-                  );
-                }
+                    <div>
+                      {itemsByFile.map((item, idx) => {
+                        const isSelected = selectedItems.has(getItemKey(item));
+                        const deadCodeItemIndex = renderIndex++;
+                        const itemFocused = focusedIndex === deadCodeItemIndex;
 
-                // File (dead code item) rendering
-                const itemsByFile = items.filter(i => i.filePath === node.filePath);
-                const fileExtension = node.name.includes('.')
-                  ? '.' + node.name.split('.').pop()
-                  : undefined;
-                const fileIcon = getFileIcon(node.name);
-
-                // Find the starting index of this file's dead code items in flatItemList
-                // Since getDeadCodeFlatList matches rendering order exactly,
-                // we can find the first item and calculate subsequent indices
-                const firstItemKey = itemsByFile[0] ? `${itemsByFile[0].filePath}:${itemsByFile[0].line}:${itemsByFile[0].symbolName}` : '';
-                const startIndex = firstItemKey ? flatItemList.findIndex(
-                  (flatItem) => flatItem.type === 'dead-code-item' && flatItem.path === firstItemKey
-                ) : -1;
-
-                return (
-                  <div>
-                    {itemsByFile.map((item, idx) => {
-                      const isSelected = selectedItems.has(getItemKey(item));
-                      // Calculate exact index: startIndex + offset
-                      const itemIndex = startIndex >= 0 ? startIndex + idx : -1;
-                      const itemFocused = focusedIndex === itemIndex;
-
-                      return (
-                        <div key={idx} className="flex items-center gap-2">
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => toggleItemSelection(item)}
-                            className="shrink-0 ml-2"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <FileTreeItem
-                              ref={(el) => {
-                                if (el && itemIndex >= 0) {
-                                  itemRefs.current.set(itemIndex, el);
-                                }
-                              }}
-                              icon={fileIcon}
-                              label={`${node.name}:${item.line} - ${item.symbolName}`}
-                              focused={itemFocused}
-                              indent={0}
-                              fileExtension={fileExtension}
-                              onFocus={() => {
-                                if (itemIndex >= 0) setFocusedIndex(itemIndex);
-                              }}
-                              onDoubleClick={() => handleItemClick(item)}
+                        return (
+                          <div key={idx} className="flex items-center gap-2">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleItemSelection(item)}
+                              className="shrink-0 ml-2"
+                              onClick={(e) => e.stopPropagation()}
                             />
+                            <div className="flex-1 min-w-0">
+                              <FileTreeItem
+                                ref={(el) => {
+                                  if (el) {
+                                    itemRefs.current.set(deadCodeItemIndex, el);
+                                  }
+                                }}
+                                icon={fileIcon}
+                                label={`${node.name}:${item.line} - ${item.symbolName}`}
+                                focused={itemFocused}
+                                indent={0}
+                                fileExtension={fileExtension}
+                                onFocus={() => setFocusedIndex(deadCodeItemIndex)}
+                                onDoubleClick={() => handleItemClick(item)}
+                              />
+                            </div>
+                            {item.from && (
+                              <span className="text-2xs text-text-tertiary truncate max-w-[150px] mr-2">
+                                from "{item.from}"
+                              </span>
+                            )}
                           </div>
-                          {item.from && (
-                            <span className="text-2xs text-text-tertiary truncate max-w-[150px] mr-2">
-                              from "{item.from}"
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              }}
-            </FileTreeRenderer>
-          </div>
-        )}
+                        );
+                      })}
+                    </div>
+                  );
+                }}
+              </FileTreeRenderer>
+            </div>
+          );
+        })()}
 
         {isExpanded && items.length === 0 && (
           <div className="px-4 py-3 text-xs text-text-muted text-center">

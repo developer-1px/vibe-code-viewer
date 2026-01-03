@@ -50,27 +50,29 @@ export function FileTreeRenderer<TNode, TFlatItem>({
   getFlatItemType = (item: any) => item.type,
   children,
 }: FileTreeRendererProps<TNode, TFlatItem>) {
+  // Track current rendering index (matches flatItemList order exactly)
+  let currentIndex = 0;
+
   const renderNode = (node: TNode, depth: number = 0): React.ReactNode => {
     const nodeType = getNodeType(node);
     const nodePath = getNodePath(node);
     const isCollapsed = collapsedFolders.has(nodePath);
     const nodeChildren = getNodeChildren(node);
 
-    // Find index in flat list
-    const itemIndex = flatItemList.findIndex(
-      (item) => getFlatItemType(item) === nodeType && getFlatItemPath(item) === nodePath
-    );
+    // Use rendering order index instead of findIndex
+    // This ensures each FileTreeRenderer instance has independent indices
+    const itemIndex = currentIndex++;
     const isFocused = focusedIndex === itemIndex;
 
     // Shared handlers
     const itemRef = (el: HTMLDivElement | null) => {
-      if (el && itemIndex >= 0) {
+      if (el) {
         itemRefs.current.set(itemIndex, el);
       }
     };
 
     const handleFocus = () => {
-      if (itemIndex >= 0) onFocusChange(itemIndex);
+      onFocusChange(itemIndex);
     };
 
     const handleDoubleClick = () => {
