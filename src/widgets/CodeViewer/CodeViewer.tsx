@@ -19,9 +19,10 @@ import { calculateFoldRanges } from '@/features/Code/CodeFold/lib/foldUtils';
 interface CodeViewerProps {
   processedLines: CodeLine[];
   node: CanvasNode;
+  highlightedLines?: Set<number>;
 }
 
-const CodeViewer = ({ processedLines, node }: CodeViewerProps) => {
+const CodeViewer = ({ processedLines, node, highlightedLines }: CodeViewerProps) => {
   const currentThemeName = useAtomValue(currentThemeAtom);
   const foldedLinesMap = useAtomValue(foldedLinesAtom);
 
@@ -53,12 +54,15 @@ const CodeViewer = ({ processedLines, node }: CodeViewerProps) => {
             console.warn(`[CodeViewer] Duplicate line number detected: ${line.num} in node ${node.id}`, duplicates);
           }
 
+          const isHighlighted = highlightedLines?.has(line.num) || false;
+
           return (
             <CodeLineView
               key={`${node.id}-line-${line.num}`}
               line={line}
               node={node}
               foldRanges={foldRanges}
+              isHighlighted={isHighlighted}
             />
           );
         })}

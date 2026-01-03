@@ -124,7 +124,8 @@ function buildDeadCodeTreeWithCategory(items: DeadCodeItem[], categoryKey: strin
   return items.map((item, idx) => ({
     id: `${categoryKey}-item-${idx}`,
     type: 'dead-code-item',
-    path: `${categoryKey}/${item.filePath}:${item.line}`,
+    // Include symbolName in path to ensure uniqueness (same file/line can have multiple items)
+    path: `${categoryKey}/${item.filePath}:${item.line}:${item.symbolName}`,
     deadCodeItem: item,
   }));
 }

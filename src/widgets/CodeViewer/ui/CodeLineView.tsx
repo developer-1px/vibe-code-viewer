@@ -18,11 +18,13 @@ import { useEditorTheme } from '../../../app/theme/EditorThemeProvider';
 const CodeLineView = ({
   line,
   node,
-  foldRanges
+  foldRanges,
+  isHighlighted = false,
 }: {
   line: CodeLine;
   node: CanvasNode;
   foldRanges: Array<{ start: number; end: number }>;
+  isHighlighted?: boolean;
 }) => {
   const theme = useEditorTheme();
   const targetLine = useAtomValue(targetLineAtom);
@@ -116,6 +118,7 @@ const CodeLineView = ({
         flex w-full group/line relative transition-colors
         ${isDefinitionLine ? 'bg-vibe-accent/5' : ''}
         ${isTargetLine ? 'bg-yellow-400/20 ring-2 ring-yellow-400/50' : ''}
+        ${isHighlighted ? 'bg-warm-500/10' : ''}
       `}
       data-line-num={line.num}
     >
