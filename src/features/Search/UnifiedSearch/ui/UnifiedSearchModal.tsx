@@ -65,6 +65,14 @@ export const UnifiedSearchModal: React.FC = () => {
     });
   }, [query, allSearchableItems, isOpen, setResults, setFocusedIndex]);
 
+  // Handle close (defined first, used by handleSelectResult)
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+    // Keep query - don't clear it
+    setResults([]);
+    setFocusedIndex(0);
+  }, [setIsOpen, setResults, setFocusedIndex]);
+
   // Handle result selection
   const handleSelectResult = useCallback(
     (result: SearchResult) => {
@@ -126,17 +134,10 @@ export const UnifiedSearchModal: React.FC = () => {
     [
       openFile,
       setCollapsedFolders,
-      setFocusedPane, // Close modal
+      setFocusedPane,
       handleClose,
     ]
   );
-
-  const handleClose = useCallback(() => {
-    setIsOpen(false);
-    // Keep query - don't clear it
-    setResults([]);
-    setFocusedIndex(0);
-  }, [setIsOpen, setResults, setFocusedIndex]);
 
   return (
     <CommandPalette
