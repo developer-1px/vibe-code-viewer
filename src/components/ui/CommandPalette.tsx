@@ -215,7 +215,7 @@ export function CommandPalette({
       return (
         <>
           <span>{snippet.slice(0, index)}</span>
-          <span className={isSelected ? 'text-warm-300 font-semibold' : 'text-text-secondary'}>
+          <span className={cn('font-semibold', isSelected ? 'text-warm-300' : 'text-text-secondary')}>
             {highlightText(symbolName, 'name', result, isSelected)}
           </span>
           <span>{snippet.slice(index + symbolName.length)}</span>
@@ -328,7 +328,7 @@ export function CommandPalette({
                       <>
                         <div className="flex-1 min-w-0 text-2xs text-text-muted truncate">
                           {renderSubtitle(result, isSelected) || (
-                            <span className={isSelected ? 'text-warm-300 font-semibold' : 'text-text-secondary'}>
+                            <span className={cn('font-semibold', isSelected ? 'text-warm-300' : 'text-text-secondary')}>
                               {highlightText(result.name, 'name', result, isSelected)}
                             </span>
                           )}
