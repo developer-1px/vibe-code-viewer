@@ -19,6 +19,7 @@ import {
 import * as React from 'react';
 import { cn } from '@/components/lib/utils';
 import type { SearchResult } from '@/features/Search/UnifiedSearch/model/types';
+import { useListKeyboardNavigation } from '@/shared/hooks/useListKeyboardNavigation';
 import { getFileName } from '../../shared/pathUtils';
 
 export interface CommandPaletteProps {
@@ -44,6 +45,26 @@ export function CommandPalette({
 }: CommandPaletteProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  // Headless keyboard navigation with auto-scroll
+  const { focusedIndex, setFocusedIndex, itemRefs, scrollContainerRef } = useListKeyboardNavigation({
+    items: results,
+    onSelect: (result) => onSelectResult(result),
+    onClose: () => onOpenChange(false),
+    scope: 'search',
+    enabled: open,
+    enableOnFormTags: true,
+  });
+
+  // Sync external selectedIndex with internal focusedIndex
+  React.useEffect(() => {
+    setFocusedIndex(selectedIndex);
+  }, [selectedIndex, setFocusedIndex]);
+
+  // Sync internal focusedIndex with external onSelectedIndexChange
+  React.useEffect(() => {
+    onSelectedIndexChange(focusedIndex);
+  }, [focusedIndex, onSelectedIndexChange]);
+
   // Auto-focus input when opened
   React.useEffect(() => {
     if (open && inputRef.current) {
@@ -51,32 +72,6 @@ export function CommandPalette({
       inputRef.current.select();
     }
   }, [open]);
-
-  // Keyboard navigation
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!open) return;
-
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onOpenChange(false);
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        onSelectedIndexChange(Math.min(selectedIndex + 1, results.length - 1));
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        onSelectedIndexChange(Math.max(selectedIndex - 1, 0));
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        if (results.length > 0) {
-          onSelectResult(results[selectedIndex]);
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, selectedIndex, results, onOpenChange, onSelectedIndexChange, onSelectResult]);
 
   // Get icon for result type
   const getIcon = (result: SearchResult) => {
@@ -259,7 +254,17 @@ export function CommandPalette({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-50 bg-bg-overlay backdrop-blur-sm" onClick={() => onOpenChange(false)} />
+      <div
+        role="button"
+        tabIndex={0}
+        className="fixed inset-0 z-50 bg-bg-overlay backdrop-blur-sm"
+        onClick={() => onOpenChange(false)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            onOpenChange(false);
+          }
+        }}
+      />
 
       {/* Command Palette */}
       <div className="fixed left-1/2 top-[15%] z-50 w-full max-w-3xl -translate-x-1/2">
@@ -281,17 +286,26 @@ export function CommandPalette({
           </div>
 
           {/* Results */}
-          <div className="max-h-[500px] overflow-y-auto p-1">
+          <div ref={scrollContainerRef} className="max-h-[500px] overflow-y-auto p-1">
             {results.length === 0 ? (
               <div className="px-4 py-8 text-center text-text-secondary text-xs">No results found</div>
             ) : (
               results.map((result, index) => {
                 const Icon = getIcon(result);
-                const isSelected = index === selectedIndex;
+                const isSelected = index === focusedIndex;
 
                 return (
                   <div
                     key={result.id}
+                    role="button"
+                    tabIndex={-1}
+                    ref={(el) => {
+                      if (el) {
+                        itemRefs.current.set(index, el);
+                      } else {
+                        itemRefs.current.delete(index);
+                      }
+                    }}
                     className={cn(
                       'group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 transition-all',
                       isSelected
@@ -299,7 +313,13 @@ export function CommandPalette({
                         : 'border border-transparent hover:bg-white/5'
                     )}
                     onClick={() => onSelectResult(result)}
-                    onMouseEnter={() => onSelectedIndexChange(index)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelectResult(result);
+                      }
+                    }}
+                    onMouseEnter={() => setFocusedIndex(index)}
                   >
                     <div
                       className={cn(
