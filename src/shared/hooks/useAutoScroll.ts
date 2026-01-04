@@ -40,16 +40,20 @@ export function useAutoScroll({
     // Update previous index
     prevFocusedIndexRef.current = focusedIndex;
 
-    // Skip for first item (index 0) - should always be at top, no scroll needed
+    const scrollContainer = scrollContainerRef.current;
+
+    // For first item (index 0) - scroll to top
     if (focusedIndex === 0) {
-      if (debug) {
-        console.log('[useAutoScroll] Skipping auto-scroll - first item should be at top');
+      if (scrollContainer) {
+        if (debug) {
+          console.log('[useAutoScroll] Scrolling to top for first item');
+        }
+        scrollContainer.scrollTop = 0;
       }
       return;
     }
 
     const focusedElement = itemRefs.current.get(focusedIndex);
-    const scrollContainer = scrollContainerRef.current;
 
     if (!focusedElement || !scrollContainer) {
       if (debug) {
