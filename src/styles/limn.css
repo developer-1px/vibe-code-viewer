@@ -225,3 +225,55 @@
 .code-tag { color: var(--code-tag); }
 .code-attribute { color: var(--code-attribute); }
 .code-punctuation { color: var(--code-punctuation); }
+
+/* ===== Document Light Mode (for CodeDocView) ===== */
+[data-doc-mode="light"] {
+  /* Light mode background - clean white paper */
+  --color-bg-deep: #ffffff;
+  --color-bg-base: #ffffff;
+  --color-bg-surface: #fafafa;
+  --color-bg-elevated: #f5f5f5;
+  --color-bg-overlay: rgb(0 0 0 / 0.05);
+
+  /* Light mode warm accent - darker for contrast */
+  --color-warm-300: #d97706;
+  --color-warm-400: #ea580c;
+  --color-warm-500: #dc2626;
+
+  /* Light mode text - dark colors */
+  --color-text-primary: #171717;
+  --color-text-secondary: #404040;
+  --color-text-tertiary: #737373;
+  --color-text-muted: #a3a3a3;
+  --color-text-faint: #d4d4d4;
+
+  /* Light mode borders - subtle grays */
+  --color-border-subtle: rgb(0 0 0 / 0.06);
+  --color-border-DEFAULT: rgb(0 0 0 / 0.1);
+  --color-border-light: rgb(0 0 0 / 0.12);
+  --color-border-medium: rgb(0 0 0 / 0.15);
+  --color-border-warm: #fbbf24;
+  --color-border-active: #f59e0b;
+
+  /* Light mode status colors */
+  --color-status-success: #16a34a;
+  --color-status-success-bg: rgb(22 163 74 / 0.1);
+  --color-status-warning: #d97706;
+  --color-status-warning-bg: rgb(217 119 6 / 0.1);
+  --color-status-error: #dc2626;
+  --color-status-error-bg: rgb(220 38 38 / 0.1);
+  --color-status-info: #2563eb;
+
+  /* Light mode code snippet */
+  --code-keyword: #d73a49;
+  --code-function: #6f42c1;
+  --code-class: #22863a;
+  --code-variable: #24292e;
+  --code-string: #032f62;
+  --code-number: #005cc5;
+  --code-comment: #6a737d;
+  --code-property: #005cc5;
+  --code-tag: #22863a;
+  --code-attribute: #6f42c1;
+  --code-punctuation: #24292e;
+}
