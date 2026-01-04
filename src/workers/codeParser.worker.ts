@@ -53,7 +53,7 @@ function parseInWorker(filePath: string, content: string, _files: Record<string,
 
 // Worker 메시지 핸들러
 self.addEventListener('message', (event: MessageEvent<ParseRequest>) => {
-  const { type, filePath, content, files, deadCodeResults } = event.data;
+  const { type, filePath, content, files } = event.data;
 
   if (type === 'parse') {
     const startTime = performance.now();
