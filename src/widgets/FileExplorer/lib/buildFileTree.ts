@@ -27,8 +27,10 @@ function sortTree(node: FolderNode) {
 
 /**
  * Build hierarchical file tree from flat file list
+ * @param files - Record of file paths to content
+ * @param focusedFolder - Optional folder path to use as root (Folder Focus Mode)
  */
-export function buildFileTree(files: Record<string, string>): FolderNode[] {
+export function buildFileTree(files: Record<string, string>, focusedFolder: string | null = null): FolderNode[] {
   const root: FolderNode = {
     id: '__root__',
     parentId: null,
@@ -38,7 +40,22 @@ export function buildFileTree(files: Record<string, string>): FolderNode[] {
     children: []
   };
 
-  Object.keys(files)
+  // Folder Focus Mode: 특정 폴더만 표시
+  let filteredFiles = files;
+  if (focusedFolder) {
+    filteredFiles = {};
+    const prefix = focusedFolder.endsWith('/') ? focusedFolder : focusedFolder + '/';
+
+    Object.keys(files).forEach((filePath) => {
+      if (filePath.startsWith(prefix)) {
+        // Remove prefix from path (e.g., "src/features/Search/ui/Modal.tsx" -> "ui/Modal.tsx")
+        const relativePath = filePath.substring(prefix.length);
+        filteredFiles[relativePath] = files[filePath];
+      }
+    });
+  }
+
+  Object.keys(filteredFiles)
     .sort()
     .forEach((filePath) => {
       const parts = splitPath(filePath);

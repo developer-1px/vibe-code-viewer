@@ -6,6 +6,7 @@ import { ThemeProvider } from './app/theme/ThemeProvider';
 import AppSidebar from '@/widgets/AppSidebar/AppSidebar';
 import PipelineCanvas from './widgets/PipelineCanvas/PipelineCanvas.tsx';
 import IDEScrollView from './widgets/IDEScrollView/IDEScrollView';
+import CodeDocView from './widgets/CodeDocView/CodeDocView';
 import JotaiDevTools from './widgets/JotaiDevTools/JotaiDevTools';
 import { UnifiedSearchModal } from '@/features/Search/UnifiedSearch/ui/UnifiedSearchModal';
 import { KeyboardShortcuts } from './features/KeyboardShortcuts/KeyboardShortcuts';
@@ -56,9 +57,11 @@ const AppContent: React.FC = () => {
         {/* Left Sidebar Area: DeadCodePanel or AppSidebar (File Explorer) */}
         {deadCodePanelOpen ? <DeadCodePanel /> : <AppSidebar />}
 
-        {/* Main Content Area: Canvas or IDEScrollView */}
+        {/* Main Content Area: Canvas or IDEScrollView or CodeDocView */}
         <div className="flex-1 relative overflow-hidden">
-          {viewMode === 'canvas' ? <PipelineCanvas /> : <IDEScrollView />}
+          {viewMode === 'canvas' && <PipelineCanvas />}
+          {viewMode === 'ide' && <IDEScrollView />}
+          {viewMode === 'codeDoc' && <CodeDocView />}
         </div>
       </div>
 

@@ -13,6 +13,11 @@ import { DEFAULT_FILES } from '../../constants';
 // 가상 파일 시스템 (Virtual file system)
 export const filesAtom = atom<Record<string, string>>(DEFAULT_FILES);
 
+// Folder Focus Mode - 특정 폴더를 Root로 하는 격리 뷰
+// null: 전체 파일 트리 표시
+// "src/features": 해당 폴더만 Root로 표시
+export const focusedFolderAtom = atom<string | null>(null);
+
 // ============================================================================
 // Graph Data Atoms (Parsed Project Data)
 // ============================================================================
@@ -34,9 +39,13 @@ export const fullNodeMapAtom = atom((get) => {
 // View Mode Atoms
 // ============================================================================
 
-// 뷰 모드 - Canvas vs IDE view
-export type ViewMode = 'canvas' | 'ide';
+// 뷰 모드 - Canvas vs IDE vs CodeDoc view
+export type ViewMode = 'canvas' | 'ide' | 'codeDoc';
 export const viewModeAtom = atom<ViewMode>('ide'); // Default to IDE mode
+
+// 문서 모드 - Dark vs Light (for CodeDocView)
+export type DocumentMode = 'dark' | 'light';
+export const documentModeAtom = atom<DocumentMode>('light'); // Default to light mode (GitBook-style)
 
 // ============================================================================
 // Focus Management

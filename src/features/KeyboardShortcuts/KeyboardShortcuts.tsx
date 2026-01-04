@@ -6,17 +6,21 @@
 
 import { useEffect, useRef } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { useSetAtom } from 'jotai';
+import { useSetAtom, useAtomValue } from 'jotai';
 import { isSidebarOpenAtom } from '../../widgets/AppSidebar/model/atoms';
 import { searchModalOpenAtom } from '@/features/Search/UnifiedSearch/model/atoms';
+import { viewModeAtom } from '../../app/model/atoms';
 
 const GLOBAL_HOTKEYS = {
   TOGGLE_SIDEBAR: 'mod+\\',
+  TOGGLE_VIEW_MODE: 'backquote',
 } as const;
 
 export const KeyboardShortcuts = () => {
   const setIsSidebarOpen = useSetAtom(isSidebarOpenAtom);
   const setSearchModalOpen = useSetAtom(searchModalOpenAtom);
+  const viewMode = useAtomValue(viewModeAtom);
+  const setViewMode = useSetAtom(viewModeAtom);
 
   // Global hotkeys (no ref needed - always active)
   useHotkeys(Object.values(GLOBAL_HOTKEYS), (e, { hotkey }) => {
@@ -27,8 +31,13 @@ export const KeyboardShortcuts = () => {
       case GLOBAL_HOTKEYS.TOGGLE_SIDEBAR:
         setIsSidebarOpen(prev => !prev);
         break;
+      case GLOBAL_HOTKEYS.TOGGLE_VIEW_MODE:
+        // IDE ↔ CodeDoc 모드 전환 (Canvas 모드는 제외)
+        setViewMode(prev => prev === 'ide' ? 'codeDoc' : 'ide');
+        console.log('[KeyboardShortcuts] View mode toggled:', viewMode === 'ide' ? 'codeDoc' : 'ide');
+        break;
     }
-  }, { enableOnFormTags: true }, [setIsSidebarOpen]);
+  }, { enableOnFormTags: true }, [setIsSidebarOpen, setViewMode, viewMode]);
 
   // Shift+Shift (더블탭) - 검색 모달 열기
   const lastShiftPressRef = useRef<number>(0);
@@ -39,8 +48,8 @@ export const KeyboardShortcuts = () => {
         const now = Date.now();
         const timeSinceLastPress = now - lastShiftPressRef.current;
 
+        // 더블탭 감지
         if (timeSinceLastPress < 300) {
-          // 더블탭 감지
           e.preventDefault();
           setSearchModalOpen(true);
           lastShiftPressRef.current = 0; // 리셋

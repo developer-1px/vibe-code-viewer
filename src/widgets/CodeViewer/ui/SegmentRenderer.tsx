@@ -30,7 +30,7 @@ const IDENTIFIER_KINDS: SegmentKind[] = [
 ];
 
 const isIdentifierSegment = (segment: CodeSegment): boolean => {
-  return segment.kinds.some(kind => IDENTIFIER_KINDS.includes(kind));
+  return segment.kinds?.some(kind => IDENTIFIER_KINDS.includes(kind)) ?? false;
 };
 
 export const SegmentRenderer = ({

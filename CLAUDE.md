@@ -723,6 +723,51 @@ The codebase follows **Feature-Sliced Design (FSD)** - see `CONVENTIONS.md` for 
 4. **AST parsing only** - Never use regex for code analysis
 5. **Path imports** - Use relative paths (`../../../store/atoms`) instead of `@/` alias (configured but not used by convention)
 
+### Widget Design Patterns
+
+**activeTab Reaction Pattern** - Separation of Business Logic and UI
+
+All widgets follow a consistent pattern for handling `activeTab` changes:
+
+**Principle**:
+- **Feature Layer** manages state (`activeTabAtom`)
+- **Widget Layer** reacts to state with UI feedback (scroll, highlight, etc.)
+
+**Bad Pattern** ❌:
+```typescript
+// Widget exposes scroll implementation details
+const { scrollToFile } = useScrollNavigation();
+onClick={() => scrollToFile(filePath)}  // Widget controls both state AND UI
+```
+
+**Good Pattern** ✅:
+```typescript
+// Feature: State management only
+const { openFile } = useOpenFile();
+onClick={() => openFile(filePath)}  // Changes activeTabAtom
+
+// Widget: UI reaction to state change
+const activeTab = useAtomValue(activeTabAtom);
+useEffect(() => {
+  if (activeTab) {
+    scrollToSection(activeTab);  // Internal implementation detail
+  }
+}, [activeTab]);
+```
+
+**Current Implementations**:
+- `IDEScrollView` (src/widgets/IDEScrollView/IDEScrollView.tsx:90-101)
+  - Uses `useScrollNavigation` hook for Intersection Observer
+  - Scrolls to file section when `activeTab` changes
+- `CodeDocView` (src/widgets/CodeDocView/CodeDocView.tsx:40-52)
+  - Direct DOM manipulation with `scrollIntoView`
+  - Scrolls to document when `activeTab` changes
+
+**Key Benefits**:
+- ✅ Clear separation: State (what) vs UI (how)
+- ✅ Each widget can implement scrolling differently
+- ✅ Easy to change UI (e.g., tabs instead of scroll) without touching Feature layer
+
 ### Virtual File System
 
 The app operates on an in-memory file system stored in `filesAtom`:

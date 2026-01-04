@@ -5,10 +5,11 @@
 
 import React, { useState } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
-import { Files, SearchAlertIcon, Search, GitBranch, Sparkles, Settings, Trash2Icon, LucideMap } from 'lucide-react';
+import { Files, SearchAlertIcon, Search, GitBranch, Sparkles, Settings, Trash2Icon, LucideMap, BookOpenText } from 'lucide-react';
 import { ActivityBar, ActivityBarItem } from '@/components/ide/ActivityBar';
 import { viewModeAtom } from '../../app/model/atoms';
 import { deadCodePanelOpenAtom } from '../DeadCodePanel/model/atoms';
+import { DocumentModeToggle } from '@/features/DocumentMode/DocumentModeToggle';
 
 export function AppActivityBar() {
   const [viewMode, setViewMode] = useAtom(viewModeAtom);
@@ -27,6 +28,15 @@ export function AppActivityBar() {
           setActiveView(0);
           setViewMode('ide');
           setDeadCodePanelOpen(false);  // ✅ Dead Code Panel 닫기
+        }}
+      />
+      <ActivityBarItem
+        icon={BookOpenText}
+        label="Code Doc"
+        active={viewMode === 'codeDoc'}
+        onClick={() => {
+          setViewMode('codeDoc');
+          setDeadCodePanelOpen(false);
         }}
       />
       <ActivityBarItem
@@ -58,6 +68,9 @@ export function AppActivityBar() {
         label="Git"
       />
       <div className="flex-1" />
+      <div className="px-1">
+        <DocumentModeToggle />
+      </div>
       <ActivityBarItem icon={Settings} label="Settings" onClick={() => {}} />
     </ActivityBar>
   );

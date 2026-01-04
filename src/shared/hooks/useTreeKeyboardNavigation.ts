@@ -13,6 +13,7 @@ const TREE_HOTKEYS = {
   ENTER: 'enter',
   ARROW_RIGHT: 'arrowright',
   ARROW_LEFT: 'arrowleft',
+  ESCAPE: 'escape',
 } as const;
 
 export interface TreeNavigationItem {
@@ -28,6 +29,8 @@ export interface UseTreeKeyboardNavigationProps<T extends TreeNavigationItem> {
   collapsedFolders: Set<string>;
   onToggleFolder: (path: string) => void;
   onItemAction: (item: T) => void; // Enter 키나 더블 클릭 시 실행할 액션
+  onFolderFocus?: (folderPath: string) => void; // Folder Focus Mode - 폴더를 Root로 설정
+  onExitFocus?: () => void; // Folder Focus Mode 종료 (Escape)
 }
 
 export function useTreeKeyboardNavigation<T extends TreeNavigationItem>({
@@ -35,6 +38,8 @@ export function useTreeKeyboardNavigation<T extends TreeNavigationItem>({
   collapsedFolders,
   onToggleFolder,
   onItemAction,
+  onFolderFocus,
+  onExitFocus,
 }: UseTreeKeyboardNavigationProps<T>) {
   const [focusedIndex, setFocusedIndex] = useState(0);
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -62,10 +67,21 @@ export function useTreeKeyboardNavigation<T extends TreeNavigationItem>({
           break;
         case TREE_HOTKEYS.ENTER:
           if (item.type === 'folder') {
-            onToggleFolder(item.path);
+            // Folder Focus Mode가 활성화되어 있으면 폴더 포커스, 아니면 토글
+            if (onFolderFocus) {
+              onFolderFocus(item.path);
+            } else {
+              onToggleFolder(item.path);
+            }
           } else {
             // Handle file or any other item type
             onItemAction(item);
+          }
+          break;
+        case TREE_HOTKEYS.ESCAPE:
+          // Folder Focus Mode 종료
+          if (onExitFocus) {
+            onExitFocus();
           }
           break;
         case TREE_HOTKEYS.ARROW_RIGHT:
@@ -123,7 +139,7 @@ export function useTreeKeyboardNavigation<T extends TreeNavigationItem>({
       }
     },
     {},
-    [flatItemList, focusedIndex, onItemAction, collapsedFolders, onToggleFolder]
+    [flatItemList, focusedIndex, onItemAction, collapsedFolders, onToggleFolder, onFolderFocus, onExitFocus]
   );
 
   return {
