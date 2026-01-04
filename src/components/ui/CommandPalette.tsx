@@ -53,6 +53,7 @@ export function CommandPalette({
     scope: 'search',
     enabled: open,
     enableOnFormTags: true,
+    debug: true, // Enable debug logs
   });
 
   // Auto-focus input when opened
@@ -243,19 +244,6 @@ export function CommandPalette({
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        role="button"
-        tabIndex={0}
-        className="fixed inset-0 z-50 bg-bg-overlay backdrop-blur-sm"
-        onClick={() => onOpenChange(false)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            onOpenChange(false);
-          }
-        }}
-      />
-
       {/* Command Palette */}
       <div className="fixed left-1/2 top-[15%] z-50 w-full max-w-3xl -translate-x-1/2">
         <div className="mx-4 rounded-lg border border-border-active bg-bg-elevated shadow-xl">
