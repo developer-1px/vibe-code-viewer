@@ -96,7 +96,9 @@ export const UnifiedSearchModal: React.FC = () => {
         // Remove all parent folders from collapsed set
         setCollapsedFolders((prev) => {
           const next = new Set(prev);
-          foldersToOpen.forEach((folder) => next.delete(folder));
+          for (const folder of foldersToOpen) {
+            next.delete(folder);
+          }
           return next;
         });
 
@@ -131,12 +133,7 @@ export const UnifiedSearchModal: React.FC = () => {
       // Close modal
       handleClose();
     },
-    [
-      openFile,
-      setCollapsedFolders,
-      setFocusedPane,
-      handleClose,
-    ]
+    [openFile, setCollapsedFolders, setFocusedPane, handleClose]
   );
 
   return (
