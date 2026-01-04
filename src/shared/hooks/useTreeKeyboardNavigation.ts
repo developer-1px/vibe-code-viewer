@@ -31,6 +31,8 @@ export interface UseTreeKeyboardNavigationProps<T extends TreeNavigationItem> {
   onItemAction: (item: T) => void; // Enter 키나 더블 클릭 시 실행할 액션
   onFolderFocus?: (folderPath: string) => void; // Folder Focus Mode - 폴더를 Root로 설정
   onExitFocus?: () => void; // Folder Focus Mode 종료 (Escape)
+  scope?: string; // react-hotkeys-hook scope (required for modal/conditional components)
+  enabled?: boolean; // Enable/disable navigation (default: true)
 }
 
 export function useTreeKeyboardNavigation<T extends TreeNavigationItem>({
@@ -40,6 +42,8 @@ export function useTreeKeyboardNavigation<T extends TreeNavigationItem>({
   onItemAction,
   onFolderFocus,
   onExitFocus,
+  scope,
+  enabled = true,
 }: UseTreeKeyboardNavigationProps<T>) {
   const [focusedIndex, setFocusedIndex] = useState(0);
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -138,7 +142,10 @@ export function useTreeKeyboardNavigation<T extends TreeNavigationItem>({
           break;
       }
     },
-    {},
+    {
+      scopes: scope ? [scope] : undefined,
+      enabled,
+    },
     [flatItemList, focusedIndex, onItemAction, collapsedFolders, onToggleFolder, onFolderFocus, onExitFocus]
   );
 

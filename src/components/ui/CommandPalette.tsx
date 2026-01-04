@@ -55,16 +55,6 @@ export function CommandPalette({
     enableOnFormTags: true,
   });
 
-  // Sync external selectedIndex with internal focusedIndex
-  React.useEffect(() => {
-    setFocusedIndex(selectedIndex);
-  }, [selectedIndex, setFocusedIndex]);
-
-  // Sync internal focusedIndex with external onSelectedIndexChange
-  React.useEffect(() => {
-    onSelectedIndexChange(focusedIndex);
-  }, [focusedIndex, onSelectedIndexChange]);
-
   // Auto-focus input when opened
   React.useEffect(() => {
     if (open && inputRef.current) {

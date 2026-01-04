@@ -77,6 +77,8 @@ export function FileExplorer({ containerRef }: { containerRef: React.RefObject<H
     },
     onFolderFocus: handleFolderFocus,
     onExitFocus: handleExitFocus,
+    scope: 'sidebar',
+    enabled: true,
   });
 
   // Reset focusedIndex when focusedFolder changes

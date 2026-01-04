@@ -13,7 +13,6 @@ import { searchResultsFuzzy } from '../lib/searchService.ts';
 import { getAllSearchableItems } from '../lib/symbolExtractor.ts';
 import {
   collapsedFoldersAtom,
-  searchFocusedIndexAtom,
   searchModalOpenAtom,
   searchQueryAtom,
   searchResultsAtom,
@@ -24,8 +23,8 @@ import type { SearchResult } from '../model/types.ts';
 export const UnifiedSearchModal: React.FC = () => {
   const [isOpen, setIsOpen] = useAtom(searchModalOpenAtom);
   const [query, setQuery] = useAtom(searchQueryAtom);
-  const [results, setResults] = useAtom(searchResultsAtom);
-  const [focusedIndex, setFocusedIndex] = useAtom(searchFocusedIndexAtom);
+  const results = useAtomValue(searchResultsAtom);
+  const setResults = useSetAtom(searchResultsAtom);
   const [_collapsedFolders, setCollapsedFolders] = useAtom(collapsedFoldersAtom);
   const setFocusedPane = useSetAtom(focusedPaneAtom);
 
@@ -47,7 +46,6 @@ export const UnifiedSearchModal: React.FC = () => {
     // Empty query - show all results (limited)
     if (!query.trim()) {
       setResults(allSearchableItems.slice(0, 50));
-      setFocusedIndex(0);
       return;
     }
 
@@ -61,17 +59,15 @@ export const UnifiedSearchModal: React.FC = () => {
         );
       }
       setResults(fuzzyResults);
-      setFocusedIndex(0);
     });
-  }, [query, allSearchableItems, isOpen, setResults, setFocusedIndex]);
+  }, [query, allSearchableItems, isOpen, setResults]);
 
   // Handle close (defined first, used by handleSelectResult)
   const handleClose = useCallback(() => {
     setIsOpen(false);
     // Keep query - don't clear it
     setResults([]);
-    setFocusedIndex(0);
-  }, [setIsOpen, setResults, setFocusedIndex]);
+  }, [setIsOpen, setResults]);
 
   // Handle result selection
   const handleSelectResult = useCallback(
@@ -143,8 +139,8 @@ export const UnifiedSearchModal: React.FC = () => {
       query={query}
       onQueryChange={setQuery}
       results={results}
-      selectedIndex={focusedIndex}
-      onSelectedIndexChange={setFocusedIndex}
+      selectedIndex={0}
+      onSelectedIndexChange={() => {}}
       onSelectResult={handleSelectResult}
     />
   );
