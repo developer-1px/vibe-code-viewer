@@ -13,13 +13,8 @@ import { openedTabsAtom, activeTabAtom } from '@/features/File/OpenFiles/model/a
 import { fullNodeMapAtom, filesAtom } from '../../app/model/atoms';
 import { getItemKey } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/lib/categoryUtils';
 import FileSection from './ui/FileSection';
-import { Sidebar } from '../../components/ide/Sidebar';
-import { getFileName } from '../../shared/pathUtils';
-import { getFileIcon } from '../FileExplorer/lib/getFileIcon';
 import { useScrollNavigation } from './lib/useScrollNavigation';
-import { useOpenFile } from '@/features/File/OpenFiles/lib/useOpenFile';
 import type { DeadCodeItem } from '../../shared/deadCodeAnalyzer';
-import { hoveredFilePathAtom } from './model/atoms';
 
 const IDEScrollView = () => {
   const selectedItems = useAtomValue(selectedDeadCodeItemsAtom);
@@ -27,9 +22,7 @@ const IDEScrollView = () => {
   const openedTabs = useAtomValue(openedTabsAtom);
   const fullNodeMap = useAtomValue(fullNodeMapAtom);
   const files = useAtomValue(filesAtom);
-  const hoveredFilePath = useAtomValue(hoveredFilePathAtom);
   const activeTab = useAtomValue(activeTabAtom);
-  const { openFile } = useOpenFile();
 
   // 모드 결정: Dead Code 선택이 있으면 Dead Code 모드, 없으면 Tabs 모드
   const isDeadCodeMode = selectedItems.size > 0 && deadCodeResults;
@@ -94,10 +87,13 @@ const IDEScrollView = () => {
     return linesByFile;
   }, [isDeadCodeMode, selectedItems, deadCodeResults]);
 
-  // useScrollNavigation 훅 사용
-  const { currentFilePath, registerSection, scrollToFile } = useScrollNavigation(displayFilePaths);
+  // ==========================================
+  // UI 반응 로직: activeTab 변경에 따른 스크롤
+  // ==========================================
+  // Feature 레이어의 activeTabAtom이 변경되면,
+  // Widget은 해당 파일 섹션으로 스크롤하여 시각적 피드백 제공
+  const { registerSection, scrollToFile } = useScrollNavigation(displayFilePaths);
 
-  // activeTab 변경 감지 - 파일 열 때 자동 스크롤
   useEffect(() => {
     if (activeTab && displayFilePaths.includes(activeTab)) {
       scrollToFile(activeTab);
@@ -118,66 +114,23 @@ const IDEScrollView = () => {
   }
 
   return (
-    <div className="flex-1 h-full flex overflow-hidden bg-bg-elevated">
-      {/* 좌측: 스크롤 가능한 파일 뷰 */}
-      <div id="scroll-view-container" className="flex-1 overflow-y-auto">
-        {displayFilePaths.map((filePath) => {
-          const node = fullNodeMap.get(filePath);
-          if (!node) return null;
+    <div id="scroll-view-container" className="flex-1 h-full overflow-y-auto bg-bg-elevated">
+      {displayFilePaths.map((filePath) => {
+        const node = fullNodeMap.get(filePath);
+        if (!node) return null;
 
-          const highlightedLines = highlightedLinesByFile.get(filePath) || new Set<number>();
+        const highlightedLines = highlightedLinesByFile.get(filePath) || new Set<number>();
 
-          return (
-            <FileSection
-              key={filePath}
-              ref={(el) => registerSection(filePath, el)}
-              node={node}
-              files={files}
-              highlightedLines={highlightedLines}
-            />
-          );
-        })}
-      </div>
-
-      {/* 우측: 파일 네비게이션 사이드바 */}
-      <Sidebar side="right" resizable defaultWidth={192} minWidth={150} maxWidth={400}>
-        <Sidebar.Header>
-          <span className="text-xs font-medium text-text-secondary">Files ({displayFilePaths.length})</span>
-        </Sidebar.Header>
-        <div className="flex flex-col overflow-y-auto">
-          {displayFilePaths.map((filePath) => {
-            const fileName = getFileName(filePath);
-            const isActive = filePath === currentFilePath || filePath === hoveredFilePath;
-            const FileIconComponent = getFileIcon(fileName);
-
-            return (
-              <button
-                key={filePath}
-                onClick={() => openFile(filePath)}
-                className={`
-                  flex items-center gap-2 px-3 py-2 text-left transition-colors
-                  hover:bg-bg-hover
-                  ${isActive ? 'bg-warm-500/10 border-l-2 border-warm-300' : 'border-l-2 border-transparent'}
-                `}
-              >
-                <FileIconComponent
-                  size={12}
-                  className={`shrink-0 ${isActive ? 'text-warm-300' : 'text-text-tertiary'}`}
-                />
-                <div className="flex flex-col min-w-0">
-                  <span
-                    className={`text-xs truncate ${
-                      isActive ? 'text-text-primary font-medium' : 'text-text-secondary'
-                    }`}
-                  >
-                    {fileName}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </Sidebar>
+        return (
+          <FileSection
+            key={filePath}
+            ref={(el) => registerSection(filePath, el)}
+            node={node}
+            files={files}
+            highlightedLines={highlightedLines}
+          />
+        );
+      })}
     </div>
   );
 };

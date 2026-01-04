@@ -1,6 +1,13 @@
 /**
- * useScrollNavigation - 스크롤 네비게이션 훅
- * Intersection Observer로 현재 보고 있는 파일 추적
+ * useScrollNavigation - IDEScrollView 내부 스크롤 관리 훅
+ *
+ * 책임:
+ * - activeTab 변경 시 해당 섹션으로 스크롤 (scrollToFile)
+ * - Intersection Observer로 현재 보고 있는 파일 추적 (currentFilePath)
+ * - 파일 섹션 DOM 요소 등록 (registerSection)
+ *
+ * 주의: 이것은 Widget 내부 UI 구현 세부사항입니다.
+ * Feature 레이어는 activeTabAtom만 변경하고, Widget이 스크롤로 반응합니다.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
