@@ -5,9 +5,9 @@
 
 import * as ts from 'typescript';
 import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
-import type { CodeDocSection, CommentStyle, ParsedCodeDoc, ImportSymbol, SymbolKind } from './types';
-import { extractFileHeader } from './extractFileHeader';
 import { extractExportSignatures } from './extractExportSignatures';
+import { extractFileHeader } from './extractFileHeader';
+import type { CodeDocSection, CommentStyle, ImportSymbol, ParsedCodeDoc, SymbolKind } from './types';
 
 /**
  * Infer symbol kind from name patterns
@@ -29,7 +29,14 @@ function inferSymbolKind(name: string, isTypeOnly: boolean): SymbolKind {
   // PascalCase starting with uppercase → Component or Class
   if (/^[A-Z]/.test(name)) {
     // Known React components or custom components
-    if (name.endsWith('Provider') || name.endsWith('Context') || name.endsWith('Button') || name.endsWith('Modal') || name.endsWith('View') || name.endsWith('Card')) {
+    if (
+      name.endsWith('Provider') ||
+      name.endsWith('Context') ||
+      name.endsWith('Button') ||
+      name.endsWith('Modal') ||
+      name.endsWith('View') ||
+      name.endsWith('Card')
+    ) {
       return 'component';
     }
     // Class-like names
@@ -84,7 +91,7 @@ function extractImportsFromAST(node: SourceFileNode): ImportSymbol[] {
             name,
             kind,
             fromPath,
-            isTypeOnly: isTypeOnly || element.isTypeOnly
+            isTypeOnly: isTypeOnly || element.isTypeOnly,
           });
         });
       }
@@ -96,7 +103,7 @@ function extractImportsFromAST(node: SourceFileNode): ImportSymbol[] {
           name,
           kind: 'const',
           fromPath,
-          isTypeOnly
+          isTypeOnly,
         });
       }
     }
@@ -109,7 +116,7 @@ function extractImportsFromAST(node: SourceFileNode): ImportSymbol[] {
         name,
         kind,
         fromPath,
-        isTypeOnly
+        isTypeOnly,
       });
     }
   });
@@ -131,7 +138,7 @@ function analyzeCommentStyle(commentText: string): {
   if (separatorMatch) {
     return {
       style: 'separator',
-      headingText: separatorMatch[1].trim()
+      headingText: separatorMatch[1].trim(),
     };
   }
 
@@ -163,7 +170,7 @@ function cleanCommentText(commentText: string, style: CommentStyle): string {
   if (style === 'jsdoc') {
     // /** ... */ 형식 정제
     return lines
-      .map(line => {
+      .map((line) => {
         let cleaned = line.trim();
         // 시작/끝 기호 제거
         cleaned = cleaned.replace(/^\/\*\*\s*/, '').replace(/\*\/$/, '');
@@ -178,7 +185,7 @@ function cleanCommentText(commentText: string, style: CommentStyle): string {
   if (style === 'xml') {
     // /// ... 형식 정제
     return lines
-      .map(line => line.trim().replace(/^\/\/\/\s?/, ''))
+      .map((line) => line.trim().replace(/^\/\/\/\s?/, ''))
       .join('\n')
       .trim();
   }
@@ -186,7 +193,7 @@ function cleanCommentText(commentText: string, style: CommentStyle): string {
   if (style === 'block') {
     // /* ... */ 형식 정제
     return lines
-      .map(line => {
+      .map((line) => {
         let cleaned = line.trim();
         cleaned = cleaned.replace(/^\/\*\s*/, '').replace(/\*\/$/, '');
         cleaned = cleaned.replace(/^\*\s?/, '');
@@ -201,9 +208,7 @@ function cleanCommentText(commentText: string, style: CommentStyle): string {
   }
 
   // 일반 한줄 주석: // ...
-  return lines
-    .map(line => line.trim().replace(/^\/\/\s?/, ''))
-    .join('\n');
+  return lines.map((line) => line.trim().replace(/^\/\/\s?/, '')).join('\n');
 }
 
 /**
@@ -226,9 +231,69 @@ function isCommentLine(line: string): boolean {
 /**
  * 라인이 export 선언인지 판별
  */
-function isExportLine(line: string): boolean {
+function _isExportLine(line: string): boolean {
   const trimmed = line.trim();
   return trimmed.startsWith('export ');
+}
+
+/**
+ * 테스트 이름 추출 (test.describe(...), test(...), it(...))
+ */
+function extractTestName(line: string): string {
+  // test.describe('name', ...) or describe('name', ...)
+  const describeMatch = line.match(/(?:test\.)?describe\s*\(\s*['"`](.+?)['"`]/);
+  if (describeMatch) return describeMatch[1];
+
+  // test('name', ...) or it('name', ...)
+  const testMatch = line.match(/(?:test|it)\s*\(\s*['"`](.+?)['"`]/);
+  if (testMatch) return testMatch[1];
+
+  // test.beforeEach(...) or test.afterEach(...)
+  const hookMatch = line.match(/test\.(beforeEach|afterEach)/);
+  if (hookMatch) return hookMatch[1];
+
+  // beforeEach(...) or afterEach(...)
+  const bareHookMatch = line.match(/^(beforeEach|afterEach)/);
+  if (bareHookMatch) return bareHookMatch[1];
+
+  return '';
+}
+
+/**
+ * 테스트 메타데이터 추출 (page.goto, getByTestId, expect)
+ */
+function extractTestMetadata(code: string): {
+  url?: string;
+  selectors?: string[];
+  expectations?: string[];
+} {
+  const metadata: {
+    url?: string;
+    selectors?: string[];
+    expectations?: string[];
+  } = {};
+
+  // Extract URL from page.goto('...')
+  const gotoMatch = code.match(/page\.goto\s*\(\s*['"`](.+?)['"`]/);
+  if (gotoMatch) {
+    metadata.url = gotoMatch[1];
+  }
+
+  // Extract selectors from getByTestId('...')
+  const selectorMatches = code.matchAll(/getByTestId\s*\(\s*['"`](.+?)['"`]/g);
+  const selectors = Array.from(selectorMatches).map((match) => match[1]);
+  if (selectors.length > 0) {
+    metadata.selectors = selectors;
+  }
+
+  // Extract expectations from expect(...).toXXX
+  const expectationMatches = code.matchAll(/expect\(.+?\)\.(\w+)/g);
+  const expectations = Array.from(expectationMatches).map((match) => match[1]);
+  if (expectations.length > 0) {
+    metadata.expectations = [...new Set(expectations)]; // Remove duplicates
+  }
+
+  return metadata;
 }
 
 /**
@@ -237,7 +302,7 @@ function isExportLine(line: string): boolean {
 function containsJSX(code: string): boolean {
   // JSX 태그 패턴: <div, <span, <Component 등
   // return ( 뒤에 JSX가 오는 패턴
-  const jsxTagPattern = /<[A-Z][a-zA-Z0-9]*|<[a-z]+[\s>\/]/;
+  const jsxTagPattern = /<[A-Z][a-zA-Z0-9]*|<[a-z]+[\s>/]/;
   const returnJSXPattern = /return\s*\(/;
   return jsxTagPattern.test(code) || returnJSXPattern.test(code);
 }
@@ -252,17 +317,44 @@ function containsControlFlow(code: string): boolean {
 }
 
 /**
+ * 코드 블록이 테스트인지 판별하고 타입 반환
+ */
+function detectTestType(code: string): 'test-suite' | 'test-case' | 'test-hook' | null {
+  const trimmed = code.trim();
+
+  // test.describe(...) or describe(...)
+  if (/(?:test\.)?describe\s*\(/.test(trimmed)) {
+    return 'test-suite';
+  }
+
+  // test.beforeEach(...) or test.afterEach(...) or beforeEach(...) or afterEach(...)
+  if (/(?:test\.)?(beforeEach|afterEach)\s*\(/.test(trimmed)) {
+    return 'test-hook';
+  }
+
+  // test(...) or it(...)
+  if (/(?:test|it)\s*\(/.test(trimmed)) {
+    return 'test-case';
+  }
+
+  return null;
+}
+
+/**
  * 코드에서 JSX 블록 추출 (return ( ~ ) 부분)
  * @returns { jsxContent, codeWithoutJsx, jsxStartLine, jsxEndLine }
  */
-function extractJSXBlock(code: string, startLine: number): {
+function extractJSXBlock(
+  code: string,
+  startLine: number
+): {
   jsxContent: string | null;
   codeWithoutJsx: string;
   jsxStartLine: number;
   jsxEndLine: number;
 } | null {
   const lines = code.split('\n');
-  const returnIndex = lines.findIndex(line => /return\s*\(/.test(line));
+  const returnIndex = lines.findIndex((line) => /return\s*\(/.test(line));
 
   if (returnIndex === -1) {
     return null;
@@ -270,7 +362,7 @@ function extractJSXBlock(code: string, startLine: number): {
 
   // return ( 이후 괄호 매칭으로 JSX 블록 끝 찾기
   let openParens = 0;
-  let jsxStartLineIdx = returnIndex;
+  const _jsxStartLineIdx = returnIndex;
   let jsxEndLineIdx = returnIndex;
   let started = false;
 
@@ -299,16 +391,13 @@ function extractJSXBlock(code: string, startLine: number): {
   const jsxContent = jsxLines.join('\n');
 
   // JSX 제외한 나머지 코드
-  const codeWithoutJsx = [
-    ...lines.slice(0, returnIndex),
-    ...lines.slice(jsxEndLineIdx + 1)
-  ].join('\n');
+  const codeWithoutJsx = [...lines.slice(0, returnIndex), ...lines.slice(jsxEndLineIdx + 1)].join('\n');
 
   return {
     jsxContent,
     codeWithoutJsx,
     jsxStartLine: startLine + returnIndex,
-    jsxEndLine: startLine + jsxEndLineIdx
+    jsxEndLine: startLine + jsxEndLineIdx,
   };
 }
 
@@ -328,7 +417,7 @@ function splitInterfaceDeclarations(sections: CodeDocSection[], sourceFile: ts.S
   ts.forEachChild(sourceFile, (child) => {
     if (ts.isInterfaceDeclaration(child)) {
       const modifiers = ts.canHaveModifiers(child) ? ts.getModifiers(child) : undefined;
-      const isExport = modifiers?.some(m => m.kind === ts.SyntaxKind.ExportKeyword) || false;
+      const isExport = modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword) || false;
 
       const startLine = sourceFile.getLineAndCharacterOfPosition(child.getStart(sourceFile)).line + 1;
       const endLine = sourceFile.getLineAndCharacterOfPosition(child.getEnd()).line + 1;
@@ -344,7 +433,7 @@ function splitInterfaceDeclarations(sections: CodeDocSection[], sourceFile: ts.S
   // 2. 각 섹션 처리
   const result: CodeDocSection[] = [];
 
-  sections.forEach(section => {
+  sections.forEach((section) => {
     // Comment, export, jsx, control은 그대로 유지
     if (section.type !== 'code') {
       result.push(section);
@@ -353,7 +442,7 @@ function splitInterfaceDeclarations(sections: CodeDocSection[], sourceFile: ts.S
 
     // 이 섹션 범위 내의 interface 선언 찾기
     const interfacesInSection = interfaceDeclarations.filter(
-      iface => iface.startLine >= section.startLine && iface.endLine <= section.endLine
+      (iface) => iface.startLine >= section.startLine && iface.endLine <= section.endLine
     );
 
     // Interface가 없으면 그대로 유지
@@ -364,12 +453,12 @@ function splitInterfaceDeclarations(sections: CodeDocSection[], sourceFile: ts.S
 
     // Interface가 1개 이상이면 각각 분리
     // export interface는 signature로 표시되므로 코드 블록에서 제외하지 않음 (본문도 표시)
-    interfacesInSection.forEach(iface => {
+    interfacesInSection.forEach((iface) => {
       result.push({
         type: 'code',
         content: iface.node.getText(sourceFile),
         startLine: iface.startLine,
-        endLine: iface.endLine
+        endLine: iface.endLine,
       });
     });
   });
@@ -398,10 +487,65 @@ export function parseCodeDoc(node: SourceFileNode): ParsedCodeDoc {
   let currentSection: CodeDocSection | null = null;
   let currentLines: string[] = [];
 
+  // 코드 블록 종료 헬퍼 함수
+  const finalizeCodeSection = (codeContent: string, section: CodeDocSection) => {
+    // 1. 테스트 감지 (최우선)
+    const testType = detectTestType(codeContent);
+    if (testType) {
+      const testName = extractTestName(codeContent.split('\n')[0]);
+      const testMetadata = extractTestMetadata(codeContent);
+      sections.push({
+        ...section,
+        type: testType,
+        testName,
+        testMetadata,
+      });
+      return;
+    }
+
+    // 2. JSX 블록 분리
+    if (containsJSX(codeContent)) {
+      const jsxBlock = extractJSXBlock(codeContent, section.startLine);
+      if (jsxBlock) {
+        // JSX 제외한 코드 블록
+        if (jsxBlock.codeWithoutJsx.trim().length > 0) {
+          sections.push({
+            ...section,
+            content: jsxBlock.codeWithoutJsx.trimEnd(),
+            type: containsControlFlow(jsxBlock.codeWithoutJsx) ? 'control' : 'code',
+          });
+        }
+        // JSX 블록
+        sections.push({
+          type: 'jsx',
+          content: jsxBlock.jsxContent!,
+          startLine: jsxBlock.jsxStartLine,
+          endLine: jsxBlock.jsxEndLine,
+        });
+      } else {
+        // JSX 추출 실패 시 전체를 jsx로
+        section.type = 'jsx';
+        sections.push(section);
+      }
+      return;
+    }
+
+    // 3. 제어문 블록
+    if (containsControlFlow(codeContent)) {
+      section.type = 'control';
+      sections.push(section);
+      return;
+    }
+
+    // 4. 일반 코드 블록
+    sections.push(section);
+  };
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const lineNum = i + 1;
     const isComment = isCommentLine(line);
+    const isBlankLine = line.trim().length === 0;
 
     if (isComment) {
       // 코드 섹션이 진행 중이었다면 종료
@@ -410,38 +554,7 @@ export function parseCodeDoc(node: SourceFileNode): ParsedCodeDoc {
         currentSection.content = codeContent;
         currentSection.endLine = lineNum - 1;
 
-        // JSX 블록 분리
-        if (containsJSX(codeContent)) {
-          const jsxBlock = extractJSXBlock(codeContent, currentSection.startLine);
-          if (jsxBlock) {
-            // JSX 제외한 코드 블록
-            if (jsxBlock.codeWithoutJsx.trim().length > 0) {
-              sections.push({
-                ...currentSection,
-                content: jsxBlock.codeWithoutJsx.trimEnd(),
-                type: containsControlFlow(jsxBlock.codeWithoutJsx) ? 'control' : 'code'
-              });
-            }
-            // JSX 블록
-            sections.push({
-              type: 'jsx',
-              content: jsxBlock.jsxContent!,
-              startLine: jsxBlock.jsxStartLine,
-              endLine: jsxBlock.jsxEndLine
-            });
-          } else {
-            // JSX 추출 실패 시 전체를 jsx로
-            currentSection.type = 'jsx';
-            sections.push(currentSection);
-          }
-        } else if (containsControlFlow(codeContent)) {
-          // 제어문 블록
-          currentSection.type = 'control';
-          sections.push(currentSection);
-        } else {
-          // 일반 코드 블록
-          sections.push(currentSection);
-        }
+        finalizeCodeSection(codeContent, currentSection);
 
         currentLines = [];
         currentSection = null;
@@ -456,12 +569,44 @@ export function parseCodeDoc(node: SourceFileNode): ParsedCodeDoc {
           startLine: lineNum,
           endLine: lineNum,
           depth: calculateDepth(line),
-          commentStyle: 'line'
+          commentStyle: 'line',
         };
         currentLines = [line];
       } else {
         // 기존 주석 섹션 계속
         currentLines.push(line);
+        currentSection.endLine = lineNum;
+      }
+    } else if (isBlankLine) {
+      // ✅ 빈 줄: 다음 non-blank 라인이 주석인지 체크 후 결정
+      let nextNonBlankIdx = i + 1;
+      while (nextNonBlankIdx < lines.length && lines[nextNonBlankIdx].trim().length === 0) {
+        nextNonBlankIdx++;
+      }
+      const nextNonBlankLine = nextNonBlankIdx < lines.length ? lines[nextNonBlankIdx] : '';
+      const nextIsComment = nextNonBlankLine.length > 0 && isCommentLine(nextNonBlankLine);
+
+      if (currentSection?.type === 'code' && currentLines.length > 0) {
+        if (nextIsComment) {
+          // 다음 non-blank가 주석이면 현재 코드 블록 종료 (새 그룹 시작)
+          const codeContent = currentLines.join('\n').trimEnd();
+          currentSection.content = codeContent;
+          currentSection.endLine = lineNum - 1;
+
+          finalizeCodeSection(codeContent, currentSection);
+
+          currentLines = [];
+          currentSection = null;
+        } else {
+          // 다음 non-blank가 코드면 빈 줄 포함하고 계속 누적 (같은 그룹 유지)
+          currentLines.push(line);
+          currentSection.endLine = lineNum;
+        }
+      }
+
+      // ✅ 주석 섹션은 빈 줄에서 종료하지 않음 (빈 줄도 포함)
+      if (currentSection?.type === 'comment') {
+        currentLines.push(line); // 빈 줄도 주석 내용에 포함
         currentSection.endLine = lineNum;
       }
     } else {
@@ -479,20 +624,18 @@ export function parseCodeDoc(node: SourceFileNode): ParsedCodeDoc {
         currentSection = null;
       }
 
-      // 일반 코드 섹션 처리
+      // ✅ 일반 코드: 빈 라인이 아니면 기존 코드 블록에 추가 (그룹화)
       if (!currentSection || currentSection.type !== 'code') {
-        // 빈 라인이 아닌 경우에만 새 코드 섹션 시작
-        if (line.trim().length > 0) {
-          currentSection = {
-            type: 'code',
-            content: '',
-            startLine: lineNum,
-            endLine: lineNum
-          };
-          currentLines = [line];
-        }
+        // 새 코드 섹션 시작
+        currentSection = {
+          type: 'code',
+          content: '',
+          startLine: lineNum,
+          endLine: lineNum,
+        };
+        currentLines = [line];
       } else {
-        // 기존 코드 섹션이 진행 중이면 빈 라인도 포함
+        // 기존 코드 섹션 계속 (연속된 선언문은 하나의 블록)
         currentLines.push(line);
         currentSection.endLine = lineNum;
       }
@@ -514,38 +657,7 @@ export function parseCodeDoc(node: SourceFileNode): ParsedCodeDoc {
       const codeContent = currentLines.join('\n').trimEnd();
       currentSection.content = codeContent;
 
-      // JSX 블록 분리
-      if (containsJSX(codeContent)) {
-        const jsxBlock = extractJSXBlock(codeContent, currentSection.startLine);
-        if (jsxBlock) {
-          // JSX 제외한 코드 블록
-          if (jsxBlock.codeWithoutJsx.trim().length > 0) {
-            sections.push({
-              ...currentSection,
-              content: jsxBlock.codeWithoutJsx.trimEnd(),
-              type: containsControlFlow(jsxBlock.codeWithoutJsx) ? 'control' : 'code'
-            });
-          }
-          // JSX 블록
-          sections.push({
-            type: 'jsx',
-            content: jsxBlock.jsxContent!,
-            startLine: jsxBlock.jsxStartLine,
-            endLine: jsxBlock.jsxEndLine
-          });
-        } else {
-          // JSX 추출 실패 시 전체를 jsx로
-          currentSection.type = 'jsx';
-          sections.push(currentSection);
-        }
-      } else if (containsControlFlow(codeContent)) {
-        // 제어문 블록
-        currentSection.type = 'control';
-        sections.push(currentSection);
-      } else {
-        // 일반 코드 블록
-        sections.push(currentSection);
-      }
+      finalizeCodeSection(codeContent, currentSection);
     }
   }
 
@@ -553,14 +665,13 @@ export function parseCodeDoc(node: SourceFileNode): ParsedCodeDoc {
   const sectionsWithSplitInterfaces = splitInterfaceDeclarations(sections, node.sourceFile);
 
   // 모든 섹션에 바로 앞 주석 연결 (빈 줄 없이 연속인 경우)
-  sectionsWithSplitInterfaces.forEach(section => {
+  sectionsWithSplitInterfaces.forEach((section) => {
     // Comment는 제외 (자기 자신과 연결 방지)
     if (section.type === 'comment') return;
 
     // 바로 앞 섹션 찾기
-    const prevSection = sectionsWithSplitInterfaces.find(s =>
-      s.type === 'comment' &&
-      s.endLine === section.startLine - 1 // 빈 줄 없이 바로 앞
+    const prevSection = sectionsWithSplitInterfaces.find(
+      (s) => s.type === 'comment' && s.endLine === section.startLine - 1 // 빈 줄 없이 바로 앞
     );
 
     if (prevSection) {
@@ -573,10 +684,9 @@ export function parseCodeDoc(node: SourceFileNode): ParsedCodeDoc {
   const exportSections = extractExportSignatures(node);
 
   // Export signature에도 바로 앞 주석 연결
-  exportSections.forEach(exportSection => {
-    const prevSection = sectionsWithSplitInterfaces.find(s =>
-      s.type === 'comment' &&
-      s.endLine === exportSection.startLine - 1
+  exportSections.forEach((exportSection) => {
+    const prevSection = sectionsWithSplitInterfaces.find(
+      (s) => s.type === 'comment' && s.endLine === exportSection.startLine - 1
     );
 
     if (prevSection) {
@@ -599,6 +709,6 @@ export function parseCodeDoc(node: SourceFileNode): ParsedCodeDoc {
   // sections + imports 함께 반환 (한 번의 파싱 결과)
   return {
     sections: sectionsWithSplitInterfaces,
-    imports
+    imports,
   };
 }

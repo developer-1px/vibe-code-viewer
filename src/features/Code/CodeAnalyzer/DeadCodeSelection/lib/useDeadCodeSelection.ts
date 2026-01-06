@@ -2,9 +2,9 @@
  * Dead Code Selection Hook
  */
 import { useAtom } from 'jotai';
-import { selectedDeadCodeItemsAtom } from '../../DeadCodeAnalyzer/model/atoms.ts';
 import type { DeadCodeItem } from '../../../../../shared/deadCodeAnalyzer.ts';
 import { getItemKey } from '../../DeadCodeAnalyzer/lib/categoryUtils.tsx';
+import { selectedDeadCodeItemsAtom } from '../../DeadCodeAnalyzer/model/atoms.ts';
 
 export function useDeadCodeSelection() {
   const [selectedItems, setSelectedItems] = useAtom(selectedDeadCodeItemsAtom);
@@ -21,15 +21,15 @@ export function useDeadCodeSelection() {
   };
 
   const toggleCategorySelection = (items: DeadCodeItem[]) => {
-    const allSelected = items.every(item => selectedItems.has(getItemKey(item)));
+    const allSelected = items.every((item) => selectedItems.has(getItemKey(item)));
     const newSelected = new Set(selectedItems);
 
     if (allSelected) {
       // Deselect all in this category
-      items.forEach(item => newSelected.delete(getItemKey(item)));
+      items.forEach((item) => newSelected.delete(getItemKey(item)));
     } else {
       // Select all in this category
-      items.forEach(item => newSelected.add(getItemKey(item)));
+      items.forEach((item) => newSelected.add(getItemKey(item)));
     }
 
     setSelectedItems(newSelected);
@@ -40,12 +40,12 @@ export function useDeadCodeSelection() {
   };
 
   const isCategoryAllSelected = (items: DeadCodeItem[]) => {
-    return items.length > 0 && items.every(item => selectedItems.has(getItemKey(item)));
+    return items.length > 0 && items.every((item) => selectedItems.has(getItemKey(item)));
   };
 
   const isCategorySomeSelected = (items: DeadCodeItem[]) => {
     const allSelected = isCategoryAllSelected(items);
-    return items.some(item => selectedItems.has(getItemKey(item))) && !allSelected;
+    return items.some((item) => selectedItems.has(getItemKey(item))) && !allSelected;
   };
 
   return {

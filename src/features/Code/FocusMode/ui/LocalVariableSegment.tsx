@@ -4,12 +4,13 @@
  * - Cmd+Click: 정의로 이동
  */
 
-import React from 'react';
-import { useSetAtom } from 'jotai';
-import type { CodeSegment, SegmentStyle } from '../../../../widgets/CodeViewer/core/types/codeLine.ts';
-import type { CanvasNode } from '../../../../entities/CanvasNode/model/types.ts';
-import { activeLocalVariablesAtom } from '../model/atoms.ts';
+import { useAtomValue, useSetAtom } from 'jotai';
+import type React from 'react';
+import { hoveredIdentifierAtom } from '@/app/model/atoms';
 import { useGotoDefinition } from '@/features/File/GotoDefinition/lib/useGotoDefinition.ts';
+import type { CanvasNode } from '../../../../entities/CanvasNode/model/types.ts';
+import type { CodeSegment, SegmentStyle } from '../../../../widgets/CodeViewer/core/types/codeLine.ts';
+import { activeLocalVariablesAtom } from '../model/atoms.ts';
 
 interface LocalVariableSegmentProps {
   segment: CodeSegment;
@@ -21,6 +22,10 @@ interface LocalVariableSegmentProps {
 export const LocalVariableSegment: React.FC<LocalVariableSegmentProps> = ({ segment, node, style, isFocused }) => {
   const setActiveLocalVariables = useSetAtom(activeLocalVariablesAtom);
   const { handleGotoDefinitionByLocation } = useGotoDefinition();
+  const hoveredIdentifier = useAtomValue(hoveredIdentifierAtom);
+  const setHoveredIdentifier = useSetAtom(hoveredIdentifierAtom);
+
+  const isHovered = hoveredIdentifier === segment.text;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -55,12 +60,28 @@ export const LocalVariableSegment: React.FC<LocalVariableSegmentProps> = ({ segm
     });
   };
 
+  const handleMouseEnter = () => {
+    setHoveredIdentifier(segment.text);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredIdentifier(null);
+  };
+
   const className = isFocused
     ? `${style.className} bg-cyan-500/30 rounded`
-    : style.className;
+    : isHovered
+      ? `${style.className} bg-yellow-400/20 rounded`
+      : style.className;
 
   return (
-    <span onClick={handleClick} className={className} title={style.title}>
+    <span
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={className}
+      title={style.title}
+    >
       {segment.text}
     </span>
   );

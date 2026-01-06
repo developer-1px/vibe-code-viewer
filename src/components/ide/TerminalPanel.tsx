@@ -1,35 +1,24 @@
-import * as React from 'react'
-import {
-  Terminal,
-  Plus,
-  X,
-  Split,
-  Trash2,
-  ChevronDown,
-  ChevronUp,
-  Maximize2,
-  Minimize2,
-} from 'lucide-react'
-import { Button } from '@/components/ui/Button'
-import { ScrollArea } from '@/components/ui/ScrollArea'
-import { Indicator } from '@/components/ui/Indicator'
-import { cn } from '@/components/lib/utils'
+import { Maximize2, Minimize2, Plus, Split, Terminal, Trash2, X } from 'lucide-react';
+import * as React from 'react';
+import { cn } from '@/components/lib/utils';
+import { Button } from '@/components/ui/Button';
+import { Indicator } from '@/components/ui/Indicator';
 
 export interface TerminalPanelProps {
-  className?: string
+  className?: string;
 }
 
 interface TerminalTab {
-  id: string
-  name: string
-  cwd: string
-  history: TerminalLine[]
-  active: boolean
+  id: string;
+  name: string;
+  cwd: string;
+  history: TerminalLine[];
+  active: boolean;
 }
 
 interface TerminalLine {
-  type: 'command' | 'output' | 'error'
-  text: string
+  type: 'command' | 'output' | 'error';
+  text: string;
 }
 
 /**
@@ -60,17 +49,17 @@ export function TerminalPanel({ className }: TerminalPanelProps) {
         { type: 'output', text: '' },
       ],
     },
-  ])
+  ]);
 
-  const [currentInput, setCurrentInput] = React.useState('')
-  const [isMaximized, setIsMaximized] = React.useState(false)
-  const inputRef = React.useRef<HTMLInputElement>(null)
-  const scrollRef = React.useRef<HTMLDivElement>(null)
+  const [currentInput, setCurrentInput] = React.useState('');
+  const [isMaximized, setIsMaximized] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
 
-  const activeTerminal = terminals.find((t) => t.active)
+  const activeTerminal = terminals.find((t) => t.active);
 
   const addTerminal = () => {
-    const newId = `terminal-${terminals.length + 1}`
+    const newId = `terminal-${terminals.length + 1}`;
     setTerminals((prev) => [
       ...prev.map((t) => ({ ...t, active: false })),
       {
@@ -80,49 +69,42 @@ export function TerminalPanel({ className }: TerminalPanelProps) {
         active: true,
         history: [],
       },
-    ])
-  }
+    ]);
+  };
 
   const removeTerminal = (id: string) => {
     setTerminals((prev) => {
-      const filtered = prev.filter((t) => t.id !== id)
-      if (filtered.length === 0) return prev
+      const filtered = prev.filter((t) => t.id !== id);
+      if (filtered.length === 0) return prev;
       if (prev.find((t) => t.id === id)?.active && filtered.length > 0) {
-        filtered[0].active = true
+        filtered[0].active = true;
       }
-      return filtered
-    })
-  }
+      return filtered;
+    });
+  };
 
   const switchTerminal = (id: string) => {
-    setTerminals((prev) => prev.map((t) => ({ ...t, active: t.id === id })))
-  }
+    setTerminals((prev) => prev.map((t) => ({ ...t, active: t.id === id })));
+  };
 
   const clearTerminal = () => {
-    setTerminals((prev) =>
-      prev.map((t) => (t.active ? { ...t, history: [] } : t))
-    )
-  }
+    setTerminals((prev) => prev.map((t) => (t.active ? { ...t, history: [] } : t)));
+  };
 
   const executeCommand = () => {
-    if (!currentInput.trim() || !activeTerminal) return
+    if (!currentInput.trim() || !activeTerminal) return;
 
-    const newHistory: TerminalLine[] = [
-      ...activeTerminal.history,
-      { type: 'command', text: currentInput },
-    ]
+    const newHistory: TerminalLine[] = [...activeTerminal.history, { type: 'command', text: currentInput }];
 
     // Simulate command output
     if (currentInput === 'clear') {
-      setTerminals((prev) =>
-        prev.map((t) => (t.active ? { ...t, history: [] } : t))
-      )
-      setCurrentInput('')
-      return
+      setTerminals((prev) => prev.map((t) => (t.active ? { ...t, history: [] } : t)));
+      setCurrentInput('');
+      return;
     }
 
     if (currentInput.startsWith('cd ')) {
-      const newCwd = currentInput.substring(3).trim()
+      const newCwd = currentInput.substring(3).trim();
       setTerminals((prev) =>
         prev.map((t) =>
           t.active
@@ -133,38 +115,36 @@ export function TerminalPanel({ className }: TerminalPanelProps) {
               }
             : t
         )
-      )
-      setCurrentInput('')
-      return
+      );
+      setCurrentInput('');
+      return;
     }
 
     // Default command output
-    newHistory.push({ type: 'output', text: `zsh: command not found: ${currentInput}` })
+    newHistory.push({ type: 'output', text: `zsh: command not found: ${currentInput}` });
 
-    setTerminals((prev) =>
-      prev.map((t) => (t.active ? { ...t, history: newHistory } : t))
-    )
-    setCurrentInput('')
+    setTerminals((prev) => prev.map((t) => (t.active ? { ...t, history: newHistory } : t)));
+    setCurrentInput('');
 
     // Auto-scroll to bottom
     setTimeout(() => {
       if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
       }
-    }, 0)
-  }
+    }, 0);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      executeCommand()
+      executeCommand();
     }
-  }
+  };
 
   React.useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [activeTerminal?.history])
+  }, []);
 
   return (
     <div
@@ -191,15 +171,12 @@ export function TerminalPanel({ className }: TerminalPanelProps) {
             >
               <Terminal size={12} />
               <span>{term.name}</span>
-              <Indicator
-                variant="success"
-                className="h-1 w-1"
-              />
+              <Indicator variant="success" className="h-1 w-1" />
               {terminals.length > 1 && (
                 <button
                   onClick={(e) => {
-                    e.stopPropagation()
-                    removeTerminal(term.id)
+                    e.stopPropagation();
+                    removeTerminal(term.id);
                   }}
                   className="opacity-0 group-hover:opacity-100 hover:bg-white/10 rounded p-0.5"
                 >
@@ -209,36 +186,21 @@ export function TerminalPanel({ className }: TerminalPanelProps) {
             </button>
           ))}
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            onClick={addTerminal}
-          >
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={addTerminal}>
             <Plus size={12} />
           </Button>
         </div>
 
         {/* Controls */}
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 px-2 text-xs"
-            onClick={clearTerminal}
-          >
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={clearTerminal}>
             <Trash2 size={10} className="mr-1" />
             Clear
           </Button>
           <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
             <Split size={12} />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            onClick={() => setIsMaximized(!isMaximized)}
-          >
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setIsMaximized(!isMaximized)}>
             {isMaximized ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
           </Button>
         </div>
@@ -248,10 +210,7 @@ export function TerminalPanel({ className }: TerminalPanelProps) {
       {activeTerminal && (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Output */}
-          <div
-            ref={scrollRef}
-            className="flex-1 overflow-y-auto p-3 font-mono text-xs leading-relaxed"
-          >
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 font-mono text-xs leading-relaxed">
             {activeTerminal.history.map((line, idx) => (
               <div key={idx} className="whitespace-pre-wrap">
                 {line.type === 'command' ? (
@@ -277,7 +236,6 @@ export function TerminalPanel({ className }: TerminalPanelProps) {
                 onChange={(e) => setCurrentInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="flex-1 bg-transparent text-text-primary outline-none caret-warm-300"
-                autoFocus
                 spellCheck={false}
               />
             </div>
@@ -294,5 +252,5 @@ export function TerminalPanel({ className }: TerminalPanelProps) {
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -2,22 +2,22 @@
  * Jotai DevTools - Custom compact implementation using store
  */
 
-import React, { useState, useEffect } from 'react';
-import { Atom } from 'jotai';
-import { store } from '../../app/model/store';
-import * as appAtoms from '../../app/model/atoms';
-import * as themeAtoms from '../../app/theme/atoms';
-import * as searchAtoms from '@/features/Search/UnifiedSearch/model/atoms';
-import * as navigationAtoms from '@/features/File/Navigation/model/atoms';
+import type { Atom } from 'jotai';
+import { ChevronDown } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import * as deadCodeAtoms from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
 import * as codeFoldAtoms from '@/features/Code/CodeFold/model/atoms';
 import * as focusModeAtoms from '@/features/Code/FocusMode/model/atoms';
-import * as deadCodeAtoms from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
+import * as navigationAtoms from '@/features/File/Navigation/model/atoms';
 import * as filesAtoms from '@/features/File/OpenFiles/model/atoms';
-import * as canvasAtoms from '../PipelineCanvas/model/atoms';
-import * as ideViewAtoms from '../IDEView/model/atoms';
+import * as searchAtoms from '@/features/Search/UnifiedSearch/model/atoms';
+import * as appAtoms from '../../app/model/atoms';
+import { store } from '../../app/model/store';
+import * as themeAtoms from '../../app/theme/atoms';
 import * as sidebarAtoms from '../AppSidebar/model/atoms';
 import * as deadCodePanelAtoms from '../DeadCodePanel/model/atoms';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import * as ideViewAtoms from '../IDEView/model/atoms';
+import * as canvasAtoms from '../PipelineCanvas/model/atoms';
 
 // Combine all atoms for DevTools tracking
 const atoms = {
@@ -63,7 +63,7 @@ const JotaiDevTools = () => {
             name,
             value,
             timestamp: Date.now(),
-            id: `${name}-${Date.now()}`
+            id: `${name}-${Date.now()}`,
           });
         } catch (e) {
           console.log(`Failed to read atom ${name}:`, e);
@@ -90,23 +90,23 @@ const JotaiDevTools = () => {
             name,
             value,
             timestamp,
-            id: `${name}-${timestamp}`
+            id: `${name}-${timestamp}`,
           };
 
           // Remove old entry with same name and add new update to the top
-          setUpdateHistory(prev => {
-            const filtered = prev.filter(item => item.name !== name);
+          setUpdateHistory((prev) => {
+            const filtered = prev.filter((item) => item.name !== name);
             return [newUpdate, ...filtered];
           });
         });
         unsubscribers.push(unsub);
-      } catch (e) {
+      } catch (_e) {
         // Skip atoms that can't be subscribed
       }
     });
 
     return () => {
-      unsubscribers.forEach(unsub => unsub());
+      unsubscribers.forEach((unsub) => unsub());
     };
   }, [isOpen]);
 
@@ -132,12 +132,9 @@ const JotaiDevTools = () => {
       <div className="flex items-center justify-between px-3 py-2 bg-slate-800 border-b border-slate-700 flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-purple-400">Jotai DevTools</span>
-          <span className="text-[10px] text-slate-500">({updateHistory.length} updates)</span>
+          <span className="text-2xs text-slate-500">({updateHistory.length} updates)</span>
         </div>
-        <button
-          onClick={() => setIsOpen(false)}
-          className="text-slate-400 hover:text-slate-200 transition-colors"
-        >
+        <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-200 transition-colors">
           <ChevronDown className="w-4 h-4" />
         </button>
       </div>
@@ -190,22 +187,18 @@ const AtomUpdateItem: React.FC<{ update: AtomUpdate; isFirst: boolean }> = ({ up
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    fractionalSecondDigits: 3
+    fractionalSecondDigits: 3,
   });
 
   return (
-    <div className={`flex items-center justify-between gap-2 px-2 py-1 rounded ${isFirst ? 'bg-purple-900/30 border border-purple-500/50' : 'bg-slate-800/50 border border-slate-700/50'}`}>
+    <div
+      className={`flex items-center justify-between gap-2 px-2 py-1 rounded ${isFirst ? 'bg-purple-900/30 border border-purple-500/50' : 'bg-slate-800/50 border border-slate-700/50'}`}
+    >
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <div className="text-[9px] text-slate-500 font-mono flex-shrink-0">
-          {timeStr}
-        </div>
-        <div className="text-[10px] font-semibold text-purple-300 flex-shrink-0">
-          {name}
-        </div>
+        <div className="text-[9px] text-slate-500 font-mono flex-shrink-0">{timeStr}</div>
+        <div className="text-2xs font-semibold text-purple-300 flex-shrink-0">{name}</div>
       </div>
-      <div className="text-[10px] text-slate-400 font-mono truncate flex-shrink-0 max-w-[150px]">
-        {valuePreview}
-      </div>
+      <div className="text-2xs text-slate-400 font-mono truncate flex-shrink-0 max-w-[150px]">{valuePreview}</div>
     </div>
   );
 };

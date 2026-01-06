@@ -38,7 +38,7 @@ export function generateRefactoringPrompt(
     ...deadCodeResults.unusedImports,
     ...deadCodeResults.deadFunctions,
     ...deadCodeResults.unusedVariables,
-  ].forEach(item => {
+  ].forEach((item) => {
     const key = `${item.filePath}:${item.line}:${item.symbolName}`;
     if (selectedItemKeys.has(key)) {
       selectedItems.push(item);
@@ -61,7 +61,7 @@ export function generateRefactoringPrompt(
   promptLines.push('');
 
   // Each item in one line: @filepath:lineNo `symbolName`
-  selectedItems.forEach(item => {
+  selectedItems.forEach((item) => {
     promptLines.push(`@${item.filePath}:${item.line} \`${item.symbolName}\``);
   });
 

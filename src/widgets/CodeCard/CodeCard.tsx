@@ -1,27 +1,22 @@
-import React, { useMemo, useEffect, useRef } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { CanvasNode } from '../../entities/CanvasNode/model/types';
-
+import { useEffect, useMemo, useRef } from 'react';
+import { deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
+import { getFoldableLinesByMaxDepth } from '@/features/Code/CodeFold/lib/foldUtils';
+// Atoms
+import { foldedLinesAtom } from '@/features/Code/CodeFold/model/atoms';
+import { activeTabAtom } from '@/features/File/OpenFiles/model/atoms';
+import { filesAtom } from '../../app/model/atoms';
+import type { CanvasNode } from '../../entities/CanvasNode/model/types';
+import { getNodeBorderColor } from '../../entities/SourceFileNode/lib/styleUtils';
+import CodeViewer from '../CodeViewer/CodeViewer';
 // Lib - Pure Utilities
 import { renderCodeLinesDirect } from '../CodeViewer/core/renderer/renderCodeLinesDirect';
 import { renderVueFile } from '../CodeViewer/core/renderer/renderVueFile';
-import type { CodeLine } from '../CodeViewer/core/types/codeLine';
-import { getNodeBorderColor } from '../../entities/SourceFileNode/lib/styleUtils';
-import { getFoldableLinesByMaxDepth } from '@/features/Code/CodeFold/lib/foldUtils';
-
+import VueTemplateSection from '../CodeViewer/ui/VueTemplateSection';
+import { hoveredFilePathAtom } from '../IDEScrollView/model/atoms';
+import CodeCardCopyButton from './ui/CodeCardCopyButton';
 // UI Components
 import CodeCardHeader from './ui/CodeCardHeader';
-import CodeCardCopyButton from './ui/CodeCardCopyButton';
-import CodeViewer from '../CodeViewer/CodeViewer';
-import VueTemplateSection from '../CodeViewer/ui/VueTemplateSection';
-
-// Atoms
-import { foldedLinesAtom } from '@/features/Code/CodeFold/model/atoms';
-import { cardPositionsAtom } from '../PipelineCanvas/model/atoms';
-import { filesAtom } from '../../app/model/atoms';
-import { deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
-import { hoveredFilePathAtom } from '../IDEScrollView/model/atoms';
-import { activeTabAtom } from '@/features/File/OpenFiles/model/atoms';
 
 const CodeCard = ({ node }: { node: CanvasNode }) => {
   const files = useAtomValue(filesAtom);
@@ -54,10 +49,10 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
 
     // depth 1 (import)만 접기 (Level 0)
     const linesToFold = getFoldableLinesByMaxDepth(processedLines, 1);
-    setFoldedLinesMap(prev => {
+    setFoldedLinesMap((prev) => {
       const next = new Map(prev);
       const nodeFolds = new Set<number>();
-      linesToFold.forEach(lineNum => nodeFolds.add(lineNum));
+      linesToFold.forEach((lineNum) => nodeFolds.add(lineNum));
       next.set(node.id, nodeFolds);
       return next;
     });
@@ -89,12 +84,7 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
       <CodeCardHeader node={node} />
 
       {/* Code Lines (script가 있을 때만) */}
-      {processedLines.length > 0 && (
-        <CodeViewer
-          processedLines={processedLines}
-          node={node}
-        />
-      )}
+      {processedLines.length > 0 && <CodeViewer processedLines={processedLines} node={node} />}
 
       {/* Vue Template Section (파일 노드이면서 vueTemplate이 있을 때만) */}
       {node.vueTemplate && (

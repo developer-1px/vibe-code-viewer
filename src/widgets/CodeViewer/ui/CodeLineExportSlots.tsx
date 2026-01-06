@@ -3,8 +3,8 @@
  * export { foo, bar } 형태의 export 문에 대한 output slot 표시
  */
 
-import React from 'react';
 import { useAtomValue } from 'jotai';
+import type React from 'react';
 import { fullNodeMapAtom } from '../../../app/model/atoms';
 import type { CodeLine } from '../core/types';
 import CodeSlot from './CodeSlot';

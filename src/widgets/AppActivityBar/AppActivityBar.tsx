@@ -3,17 +3,19 @@
  * Main navigation bar for the application
  */
 
-import React, { useState } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
-import { Files, SearchAlertIcon, Search, GitBranch, Sparkles, Settings, Trash2Icon, LucideMap, BookOpenText } from 'lucide-react';
+import { BookOpenText, Files, GitBranch, LucideMap, SearchAlertIcon, Settings, Sparkles } from 'lucide-react';
+import { useState } from 'react';
 import { ActivityBar, ActivityBarItem } from '@/components/ide/ActivityBar';
-import { viewModeAtom } from '../../app/model/atoms';
-import { deadCodePanelOpenAtom } from '../DeadCodePanel/model/atoms';
 import { DocumentModeToggle } from '@/features/DocumentMode/DocumentModeToggle';
+import UploadFolderButton from '@/features/UploadFolderButton';
+import { rightPanelOpenAtom, viewModeAtom } from '../../app/model/atoms';
+import { deadCodePanelOpenAtom } from '../DeadCodePanel/model/atoms';
 
 export function AppActivityBar() {
   const [viewMode, setViewMode] = useAtom(viewModeAtom);
   const setDeadCodePanelOpen = useSetAtom(deadCodePanelOpenAtom);
+  const [_rightPanelOpen, _setRightPanelOpen] = useAtom(rightPanelOpenAtom);
 
   // Active view for ActivityBar (0: Explorer, 1: Search, 2: Dead Code, 3: Canvas, 4: AI)
   const [activeView, setActiveView] = useState(0);
@@ -27,7 +29,7 @@ export function AppActivityBar() {
         onClick={() => {
           setActiveView(0);
           setViewMode('ide');
-          setDeadCodePanelOpen(false);  // ✅ Dead Code Panel 닫기
+          setDeadCodePanelOpen(false); // ✅ Dead Code Panel 닫기
         }}
       />
       <ActivityBarItem
@@ -63,11 +65,11 @@ export function AppActivityBar() {
         active={activeView === 3}
         onClick={() => setActiveView(3)}
       />
-      <ActivityBarItem
-        icon={GitBranch}
-        label="Git"
-      />
+      <ActivityBarItem icon={GitBranch} label="Git" />
+
       <div className="flex-1" />
+
+      <UploadFolderButton />
       <div className="px-1">
         <DocumentModeToggle />
       </div>

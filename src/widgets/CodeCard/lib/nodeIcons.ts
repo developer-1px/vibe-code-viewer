@@ -3,22 +3,22 @@
  * Switch statement → 객체 매핑으로 변환하여 가독성과 유지보수성 향상
  */
 
+import type { LucideIcon } from 'lucide-react';
 import {
-  Terminal as IconTerminal,
+  AlertCircle as IconAlertCircle,
   Box as IconBox,
-  FunctionSquare as IconFunctionSquare,
-  LayoutTemplate as IconLayoutTemplate,
-  Database as IconDatabase,
-  Link2 as IconLink2,
-  PlayCircle as IconPlayCircle,
   BoxSelect as IconBoxSelect,
   Calculator as IconCalculator,
-  Shield as IconShield,
-  Zap as IconZap,
+  Database as IconDatabase,
+  FunctionSquare as IconFunctionSquare,
+  LayoutTemplate as IconLayoutTemplate,
+  Link2 as IconLink2,
+  PlayCircle as IconPlayCircle,
   RefreshCw as IconRefreshCw,
-  AlertCircle as IconAlertCircle,
+  Shield as IconShield,
+  Terminal as IconTerminal,
+  Zap as IconZap,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 
 export interface NodeIconConfig {
   Icon: LucideIcon;
@@ -47,14 +47,14 @@ export const NODE_ICON_MAP: Record<string, NodeIconConfig> = {
     color: 'text-blue-400',
     category: 'calculation',
   },
-  'computed': {
+  computed: {
     Icon: IconFunctionSquare,
     color: 'text-sky-400',
     category: 'calculation',
   },
 
   // === STATE ACTIONS (상태 변경, 주황/노랑 계열) ===
-  'ref': {
+  ref: {
     Icon: IconDatabase,
     color: 'text-emerald-400',
     category: 'state', // 하위 호환
@@ -81,29 +81,29 @@ export const NODE_ICON_MAP: Record<string, NodeIconConfig> = {
     color: 'text-red-400',
     category: 'effect',
   },
-  'hook': {
+  hook: {
     Icon: IconLink2,
     color: 'text-violet-400',
     category: 'effect',
   },
 
   // === LEGACY/OTHER ===
-  'function': {
+  function: {
     Icon: IconTerminal,
     color: 'text-amber-400',
     category: 'legacy',
   },
-  'template': {
+  template: {
     Icon: IconLayoutTemplate,
     color: 'text-pink-400',
     category: 'legacy',
   },
-  'call': {
+  call: {
     Icon: IconPlayCircle,
     color: 'text-yellow-400',
     category: 'legacy',
   },
-  'module': {
+  module: {
     Icon: IconBoxSelect,
     color: 'text-orange-400',
     category: 'legacy',

@@ -6,10 +6,10 @@
  * 블록 타입
  */
 export enum BlockType {
-  PROSE = 'PROSE',       // 설명 텍스트
-  CODE = 'CODE',         // 코드 블록
-  TAG = 'TAG',           // NOTE, WARNING 등의 태그
-  BRANCH = 'BRANCH'      // 분기 설명
+  PROSE = 'PROSE', // 설명 텍스트
+  CODE = 'CODE', // 코드 블록
+  TAG = 'TAG', // NOTE, WARNING 등의 태그
+  BRANCH = 'BRANCH', // 분기 설명
 }
 
 /**
@@ -18,8 +18,8 @@ export enum BlockType {
 export interface DocBlock {
   type: BlockType;
   content: string;
-  label?: string;    // TAG, BRANCH의 라벨
-  lines?: string;    // 라인 범위 (e.g., "L10-15")
+  label?: string; // TAG, BRANCH의 라벨
+  lines?: string; // 라인 범위 (e.g., "L10-15")
 }
 
 /**
@@ -70,9 +70,10 @@ export interface Parameter {
  */
 export interface SymbolDetail {
   name: string;
-  type: 'function' | 'interface' | 'class';
+  type: 'function' | 'interface' | 'class' | 'test-suite' | 'test-case' | 'test-hook';
   modifiers?: string[];
   lineRange?: string;
+  startLine?: number; // 소스 파일에서의 시작 라인 (스크롤용)
   signature: string;
   description: string;
   parameters?: Parameter[];
@@ -81,7 +82,14 @@ export interface SymbolDetail {
   members?: SymbolMember[];
   analysis?: SymbolAnalysis;
   blocks?: DocBlock[];
-  flowchart?: string;  // Mermaid flowchart
+  flowchart?: string; // Mermaid flowchart
+
+  // Test-specific fields
+  testMetadata?: {
+    url?: string;
+    selectors?: string[];
+    expectations?: string[];
+  };
 }
 
 /**

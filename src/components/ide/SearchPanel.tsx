@@ -1,33 +1,22 @@
-import * as React from 'react'
-import {
-  Search,
-  ChevronDown,
-  ChevronRight,
-  X,
-  CaseSensitive,
-  WholeWord,
-  FileSearch,
-  Replace,
-} from 'lucide-react'
-import { Input } from '@/components/ui/Input'
-import { Button } from '@/components/ui/Button'
-import { Checkbox } from '@/components/ui/Checkbox'
-import { Label } from '@/components/ui/Label'
-import { ScrollArea } from '@/components/ui/ScrollArea'
-import { cn } from '@/components/lib/utils'
+import { CaseSensitive, ChevronDown, ChevronRight, FileSearch, Replace, Search, WholeWord } from 'lucide-react';
+import * as React from 'react';
+import { cn } from '@/components/lib/utils';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { ScrollArea } from '@/components/ui/ScrollArea';
 
 export interface SearchPanelProps {
-  className?: string
+  className?: string;
 }
 
 interface SearchResult {
-  file: string
+  file: string;
   matches: {
-    line: number
-    text: string
-    matchStart: number
-    matchEnd: number
-  }[]
+    line: number;
+    text: string;
+    matchStart: number;
+    matchEnd: number;
+  }[];
 }
 
 /**
@@ -41,54 +30,52 @@ interface SearchResult {
  * - Grouped results by file
  */
 export function SearchPanel({ className }: SearchPanelProps) {
-  const [searchQuery, setSearchQuery] = React.useState('')
-  const [replaceQuery, setReplaceQuery] = React.useState('')
-  const [showReplace, setShowReplace] = React.useState(false)
-  const [caseSensitive, setCaseSensitive] = React.useState(false)
-  const [wholeWord, setWholeWord] = React.useState(false)
-  const [useRegex, setUseRegex] = React.useState(false)
-  const [expandedFiles, setExpandedFiles] = React.useState<Set<string>>(new Set())
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [replaceQuery, setReplaceQuery] = React.useState('');
+  const [showReplace, setShowReplace] = React.useState(false);
+  const [caseSensitive, setCaseSensitive] = React.useState(false);
+  const [wholeWord, setWholeWord] = React.useState(false);
+  const [useRegex, setUseRegex] = React.useState(false);
+  const [expandedFiles, setExpandedFiles] = React.useState<Set<string>>(new Set());
 
   // Mock search results
   const searchResults: SearchResult[] = [
     {
       file: 'src/components/ide/CodeView.tsx',
       matches: [
-        { line: 45, text: "  const user = await createUser(data)", matchStart: 16, matchEnd: 26 },
-        { line: 52, text: "  return { success: true, user }", matchStart: 27, matchEnd: 31 },
+        { line: 45, text: '  const user = await createUser(data)', matchStart: 16, matchEnd: 26 },
+        { line: 52, text: '  return { success: true, user }', matchStart: 27, matchEnd: 31 },
       ],
     },
     {
       file: 'src/components/ide/OutlinePanel.tsx',
       matches: [
-        { line: 12, text: "interface User {", matchStart: 10, matchEnd: 14 },
-        { line: 89, text: "function getUserById(id: string) {", matchStart: 9, matchEnd: 20 },
+        { line: 12, text: 'interface User {', matchStart: 10, matchEnd: 14 },
+        { line: 89, text: 'function getUserById(id: string) {', matchStart: 9, matchEnd: 20 },
       ],
     },
     {
       file: 'src/App.tsx',
-      matches: [
-        { line: 23, text: "  const currentUser = useUser()", matchStart: 8, matchEnd: 19 },
-      ],
+      matches: [{ line: 23, text: '  const currentUser = useUser()', matchStart: 8, matchEnd: 19 }],
     },
-  ]
+  ];
 
-  const totalMatches = searchResults.reduce((sum, result) => sum + result.matches.length, 0)
+  const totalMatches = searchResults.reduce((sum, result) => sum + result.matches.length, 0);
 
   const toggleFileExpanded = (file: string) => {
-    const newExpanded = new Set(expandedFiles)
+    const newExpanded = new Set(expandedFiles);
     if (newExpanded.has(file)) {
-      newExpanded.delete(file)
+      newExpanded.delete(file);
     } else {
-      newExpanded.add(file)
+      newExpanded.add(file);
     }
-    setExpandedFiles(newExpanded)
-  }
+    setExpandedFiles(newExpanded);
+  };
 
   const renderMatchText = (match: SearchResult['matches'][0]) => {
-    const before = match.text.substring(0, match.matchStart)
-    const matchedText = match.text.substring(match.matchStart, match.matchEnd)
-    const after = match.text.substring(match.matchEnd)
+    const before = match.text.substring(0, match.matchStart);
+    const matchedText = match.text.substring(match.matchStart, match.matchEnd);
+    const after = match.text.substring(match.matchEnd);
 
     return (
       <span className="font-mono text-xs">
@@ -96,8 +83,8 @@ export function SearchPanel({ className }: SearchPanelProps) {
         <span className="bg-warm-300/20 text-warm-300 rounded px-0.5">{matchedText}</span>
         {after}
       </span>
-    )
-  }
+    );
+  };
 
   return (
     <div className={cn('flex h-full flex-col bg-bg-surface border-r border-border-DEFAULT', className)}>
@@ -191,7 +178,7 @@ export function SearchPanel({ className }: SearchPanelProps) {
         <div className="p-2 space-y-1">
           {searchQuery &&
             searchResults.map((result) => {
-              const isExpanded = expandedFiles.has(result.file)
+              const isExpanded = expandedFiles.has(result.file);
               return (
                 <div key={result.file} className="rounded overflow-hidden">
                   {/* File Header */}
@@ -217,19 +204,17 @@ export function SearchPanel({ className }: SearchPanelProps) {
                           key={idx}
                           className="w-full flex items-start gap-2 px-2 py-1 hover:bg-white/5 transition-colors text-left rounded"
                         >
-                          <span className="text-xs text-text-muted shrink-0 w-8 text-right">
-                            {match.line}
-                          </span>
+                          <span className="text-xs text-text-muted shrink-0 w-8 text-right">{match.line}</span>
                           <div className="flex-1 min-w-0 truncate">{renderMatchText(match)}</div>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
-              )
+              );
             })}
         </div>
       </ScrollArea>
     </div>
-  )
+  );
 }

@@ -1,10 +1,11 @@
 /**
  * Copy All Prompt Hook
  */
-import { useState } from 'react';
+
 import { useAtomValue } from 'jotai';
-import { deadCodeResultsAtom } from '../../DeadCodeAnalyzer/model/atoms.ts';
+import { useState } from 'react';
 import { getItemKey } from '../../DeadCodeAnalyzer/lib/categoryUtils.tsx';
+import { deadCodeResultsAtom } from '../../DeadCodeAnalyzer/model/atoms.ts';
 
 export function useCopyAllPrompt() {
   const deadCodeResults = useAtomValue(deadCodeResultsAtom);

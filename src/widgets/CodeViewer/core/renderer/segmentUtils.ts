@@ -17,7 +17,10 @@ export function getSegmentKey(start: number, end: number): string {
 export function extractShortId(nodeId: string): string {
   return nodeId.includes('::')
     ? nodeId.split('::').pop() || ''
-    : nodeId.split('/').pop()?.replace(/\.(tsx?|jsx?|vue)$/, '') || '';
+    : nodeId
+        .split('/')
+        .pop()
+        ?.replace(/\.(tsx?|jsx?|vue)$/, '') || '';
 }
 
 /**
@@ -25,7 +28,7 @@ export function extractShortId(nodeId: string): string {
  */
 export function createDependencyMap(dependencies: string[] = []): Map<string, string> {
   const map = new Map<string, string>();
-  dependencies.forEach(dep => {
+  dependencies.forEach((dep) => {
     const name = dep.split('::').pop();
     if (name) map.set(name, dep);
   });
@@ -47,12 +50,12 @@ function extractBindingIdentifiers(bindingName: ts.BindingName, identifiers: Set
     identifiers.add(bindingName.text);
   } else if (ts.isObjectBindingPattern(bindingName)) {
     // const { a, b: c } = obj;
-    bindingName.elements.forEach(element => {
+    bindingName.elements.forEach((element) => {
       extractBindingIdentifiers(element.name, identifiers);
     });
   } else if (ts.isArrayBindingPattern(bindingName)) {
     // const [a, b] = arr;
-    bindingName.elements.forEach(element => {
+    bindingName.elements.forEach((element) => {
       if (ts.isBindingElement(element)) {
         extractBindingIdentifiers(element.name, identifiers);
       }
@@ -80,7 +83,7 @@ export function extractLocalIdentifiers(sourceFile: ts.SourceFile): Set<string> 
       // 선언 이름 추출
       if (ts.isVariableStatement(node)) {
         // VariableStatement은 여러 declaration을 가질 수 있음
-        node.declarationList.declarations.forEach(declaration => {
+        node.declarationList.declarations.forEach((declaration) => {
           extractBindingIdentifiers(declaration.name, localIdentifiers);
         });
       } else if (ts.isFunctionDeclaration(node) && node.name) {
@@ -150,9 +153,7 @@ export function getDeclarationName(node: ts.Node): ts.Identifier | undefined {
  */
 export function isJsxTagName(node: ts.Node, parent: ts.Node): boolean {
   return (
-    (ts.isJsxOpeningElement(parent) ||
-      ts.isJsxSelfClosingElement(parent) ||
-      ts.isJsxClosingElement(parent)) &&
+    (ts.isJsxOpeningElement(parent) || ts.isJsxSelfClosingElement(parent) || ts.isJsxClosingElement(parent)) &&
     (parent as any).tagName === node
   );
 }
@@ -161,11 +162,7 @@ export function isJsxTagName(node: ts.Node, parent: ts.Node): boolean {
  * Property access의 name인지 확인
  */
 export function isPropertyAccessName(node: ts.Node, parent: ts.Node): boolean {
-  return (
-    (ts.isPropertyAccessExpression(parent) ||
-      ts.isPropertyAccessChain(parent)) &&
-    (parent as any).name === node
-  );
+  return (ts.isPropertyAccessExpression(parent) || ts.isPropertyAccessChain(parent)) && (parent as any).name === node;
 }
 
 /**
@@ -203,7 +200,7 @@ export function extractParametersFromAST(sourceFile: ts.SourceFile): Set<string>
       ts.isConstructorDeclaration(node)
     ) {
       // 파라미터 추출
-      node.parameters.forEach(param => {
+      node.parameters.forEach((param) => {
         extractBindingIdentifiers(param.name, parameters);
       });
     }
@@ -238,7 +235,7 @@ export function extractASTMetadata(sourceFile: ts.SourceFile): ASTMetadata {
       ts.isMethodDeclaration(node) ||
       ts.isConstructorDeclaration(node)
     ) {
-      node.parameters.forEach(param => {
+      node.parameters.forEach((param) => {
         extractBindingIdentifiers(param.name, parameters);
       });
     }
@@ -254,7 +251,7 @@ export function extractASTMetadata(sourceFile: ts.SourceFile): ASTMetadata {
       ts.isModuleDeclaration(node)
     ) {
       if (ts.isVariableStatement(node)) {
-        node.declarationList.declarations.forEach(declaration => {
+        node.declarationList.declarations.forEach((declaration) => {
           extractBindingIdentifiers(declaration.name, localIdentifiers);
         });
       } else if (ts.isFunctionDeclaration(node) && node.name) {

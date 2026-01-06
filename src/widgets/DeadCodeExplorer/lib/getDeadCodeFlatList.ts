@@ -2,8 +2,9 @@
  * Get flat list of all visible items in dead code tree for keyboard navigation
  * Includes folders, files, AND dead code items
  */
-import type { FolderNode } from '../../AppSidebar/model/types';
+
 import type { DeadCodeItem } from '../../../shared/deadCodeAnalyzer';
+import type { FolderNode } from '../../AppSidebar/model/types';
 
 export interface DeadCodeFlatItem {
   id: string; // 고유 ID
@@ -23,7 +24,7 @@ export function getDeadCodeFlatList(
 
   // Group dead code items by file path
   const itemsByFile = new Map<string, DeadCodeItem[]>();
-  deadCodeItems.forEach(item => {
+  deadCodeItems.forEach((item) => {
     const existing = itemsByFile.get(item.filePath) || [];
     existing.push(item);
     itemsByFile.set(item.filePath, existing);
@@ -34,8 +35,8 @@ export function getDeadCodeFlatList(
     // Process folder
     if (node.type === 'folder') {
       result.push({
-        id: node.id,              // 고유 ID
-        parentId: node.parentId,  // 부모 ID
+        id: node.id, // 고유 ID
+        parentId: node.parentId, // 부모 ID
         type: 'folder',
         path: node.path,
       });
@@ -43,15 +44,15 @@ export function getDeadCodeFlatList(
       // If folder is open and has children, recursively traverse them
       const isCollapsed = collapsedFolders.has(node.path);
       if (!isCollapsed && node.children && node.children.length > 0) {
-        node.children.forEach(child => traverseNode(child));
+        node.children.forEach((child) => traverseNode(child));
       }
     }
 
     // Process dead-code-item nodes
     if (node.type === 'dead-code-item' && node.deadCodeItem) {
       result.push({
-        id: node.id,              // 고유 ID
-        parentId: node.parentId,  // 부모 ID
+        id: node.id, // 고유 ID
+        parentId: node.parentId, // 부모 ID
         type: 'dead-code-item',
         path: node.path,
         filePath: node.filePath,
@@ -61,7 +62,7 @@ export function getDeadCodeFlatList(
   }
 
   // Traverse all top-level nodes
-  tree.forEach(node => traverseNode(node));
+  tree.forEach((node) => traverseNode(node));
 
   return result;
 }

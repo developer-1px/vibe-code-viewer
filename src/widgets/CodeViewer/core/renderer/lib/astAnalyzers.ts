@@ -4,7 +4,6 @@
 
 import * as ts from 'typescript';
 import type { CodeLine, SegmentKind } from '../../types/codeLine';
-import type { SegmentToAdd } from './types';
 import { addSegmentToLines } from './segmentBuilders';
 
 /**
@@ -63,24 +62,36 @@ export const addComments = (
   // Leading comments
   const leadingCommentRanges = ts.getLeadingCommentRanges(sourceFile.text, node.getFullStart());
   if (leadingCommentRanges) {
-    leadingCommentRanges.forEach(range => {
-      addSegmentToLines(lines, sourceFile, code, {
-        start: range.pos,
-        end: range.end,
-        kinds: ['comment']
-      }, deadIdentifiers);
+    leadingCommentRanges.forEach((range) => {
+      addSegmentToLines(
+        lines,
+        sourceFile,
+        code,
+        {
+          start: range.pos,
+          end: range.end,
+          kinds: ['comment'],
+        },
+        deadIdentifiers
+      );
     });
   }
 
   // Trailing comments
   const trailingCommentRanges = ts.getTrailingCommentRanges(sourceFile.text, node.getEnd());
   if (trailingCommentRanges) {
-    trailingCommentRanges.forEach(range => {
-      addSegmentToLines(lines, sourceFile, code, {
-        start: range.pos,
-        end: range.end,
-        kinds: ['comment']
-      }, deadIdentifiers);
+    trailingCommentRanges.forEach((range) => {
+      addSegmentToLines(
+        lines,
+        sourceFile,
+        code,
+        {
+          start: range.pos,
+          end: range.end,
+          kinds: ['comment'],
+        },
+        deadIdentifiers
+      );
     });
   }
 };

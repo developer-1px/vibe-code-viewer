@@ -3,13 +3,13 @@
  * 선택된 dead code items를 기반으로 AI 리팩토링 프롬프트를 생성하고 복사/전송하는 다이얼로그
  */
 
-import * as React from 'react'
-import {Check, Copy, Sparkles, X} from 'lucide-react'
-import {Button} from '@/components/ui/Button'
-import {Dialog} from '@/components/ui/Dialog'
-import {ScrollArea} from '@/components/ui/ScrollArea'
-import {generateRefactoringPrompt, type RefactoringPrompt} from './lib/promptGenerator'
-import type {DeadCodeResults} from '../../shared/deadCodeAnalyzer'
+import { Check, Copy, Sparkles, X } from 'lucide-react';
+import * as React from 'react';
+import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
+import { ScrollArea } from '@/components/ui/ScrollArea';
+import type { DeadCodeResults } from '../../shared/deadCodeAnalyzer';
+import { generateRefactoringPrompt, type RefactoringPrompt } from './lib/promptGenerator';
 
 export interface RefactoringPromptDialogProps {
   open: boolean;
@@ -65,16 +65,9 @@ export function RefactoringPromptDialog({
           <div className="flex items-center justify-between p-4 border-b border-border-DEFAULT">
             <div className="flex items-center gap-2">
               <Sparkles size={18} className="text-warm-300" />
-              <h2 className="text-base font-semibold text-text-primary">
-                AI Refactoring Prompt
-              </h2>
+              <h2 className="text-base font-semibold text-text-primary">AI Refactoring Prompt</h2>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => onOpenChange(false)}>
               <X size={16} />
             </Button>
           </div>
@@ -109,19 +102,10 @@ export function RefactoringPromptDialog({
 
           {/* Footer Actions */}
           <div className="flex items-center justify-end gap-2 p-4 border-t border-border-DEFAULT">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleCopy}
-              className="gap-2"
-            >
+            <Button variant="ghost" size="sm" onClick={handleCopy} className="gap-2">
               {copied ? (
                 <>
                   <Check size={14} className="text-emerald-300" />
@@ -134,12 +118,7 @@ export function RefactoringPromptDialog({
                 </>
               )}
             </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleSendToAI}
-              className="gap-2"
-            >
+            <Button variant="default" size="sm" onClick={handleSendToAI} className="gap-2">
               <Sparkles size={14} />
               Send to AI Assistant
             </Button>

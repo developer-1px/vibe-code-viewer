@@ -2,7 +2,7 @@
  * Segment 생성 및 조작 순수 함수들
  */
 
-import * as ts from 'typescript';
+import type * as ts from 'typescript';
 import type { CodeLine, CodeSegment } from '../../types/codeLine';
 import type { SegmentToAdd } from './types';
 import { getLinePosition } from './types';
@@ -17,7 +17,7 @@ export const createInitialLines = (lineCount: number, startLineNum: number): Cod
   return Array.from({ length: lineCount }, (_, idx) => ({
     num: startLineNum + idx,
     segments: [],
-    hasInput: false
+    hasInput: false,
   }));
 };
 
@@ -27,14 +27,9 @@ export const createInitialLines = (lineCount: number, startLineNum: number): Cod
  * Performance optimization: Mutates line.segments directly instead of creating new arrays
  * Safe because line is never shared externally during parsing
  */
-export const addSegmentToLine = (
-  line: CodeLine,
-  segment: CodeSegment
-): void => {
+export const addSegmentToLine = (line: CodeLine, segment: CodeSegment): void => {
   // Segment 중복 방지: 같은 위치에 같은 텍스트가 있으면 kinds만 병합
-  const existing = line.segments.find(
-    seg => seg.position === segment.position && seg.text === segment.text
-  );
+  const existing = line.segments.find((seg) => seg.position === segment.position && seg.text === segment.text);
 
   if (existing) {
     // kinds 병합 (in-place)
@@ -42,7 +37,7 @@ export const addSegmentToLine = (
     if (!existing.kinds) {
       existing.kinds = [];
     }
-    segment.kinds.forEach(kind => {
+    segment.kinds.forEach((kind) => {
       if (!existing.kinds.includes(kind)) {
         existing.kinds.push(kind);
       }
@@ -91,21 +86,33 @@ export const addSegmentToLines = (
     const segmentText = code.slice(start, end);
 
     // ✅ Dead identifier 체크
-    const isDead = (
-      kinds.includes('identifier') ||
-      kinds.includes('local-variable') ||
-      kinds.includes('self') ||
-      kinds.includes('external-import') ||
-      kinds.includes('external-closure') ||
-      kinds.includes('external-function')
-    ) && deadIdentifiers.has(segmentText);
+    const isDead =
+      (kinds.includes('identifier') ||
+        kinds.includes('local-variable') ||
+        kinds.includes('self') ||
+        kinds.includes('external-import') ||
+        kinds.includes('external-closure') ||
+        kinds.includes('external-function')) &&
+      deadIdentifiers.has(segmentText);
 
     // Debug logging only in development mode
     if (__DEV__) {
       if (isDead) {
-        console.log(`[addSegmentToLines] ✅ Single-line DEAD identifier: "${segmentText}", kinds:`, JSON.stringify(kinds), 'isDead:', isDead);
+        console.log(
+          `[addSegmentToLines] ✅ Single-line DEAD identifier: "${segmentText}", kinds:`,
+          JSON.stringify(kinds),
+          'isDead:',
+          isDead
+        );
       } else if (deadIdentifiers.has(segmentText)) {
-        console.log(`[addSegmentToLines] ❌ Dead identifier NOT marked: "${segmentText}", kinds:`, JSON.stringify(kinds), 'has identifier:', kinds.includes('identifier'), 'has external-import:', kinds.includes('external-import'));
+        console.log(
+          `[addSegmentToLines] ❌ Dead identifier NOT marked: "${segmentText}", kinds:`,
+          JSON.stringify(kinds),
+          'has identifier:',
+          kinds.includes('identifier'),
+          'has external-import:',
+          kinds.includes('external-import')
+        );
       }
     }
 
@@ -117,7 +124,7 @@ export const addSegmentToLines = (
       isDeclarationName,
       position: start,
       tsNode,
-      isDead
+      isDead,
     });
 
     if (shouldMarkInput) {
@@ -133,9 +140,8 @@ export const addSegmentToLines = (
     if (!line) continue; // Safety check
 
     const lineStart = sourceFile.getPositionOfLineAndCharacter(lineNum, 0);
-    const nextLineStart = lineNum < lines.length - 1
-      ? sourceFile.getPositionOfLineAndCharacter(lineNum + 1, 0)
-      : code.length;
+    const nextLineStart =
+      lineNum < lines.length - 1 ? sourceFile.getPositionOfLineAndCharacter(lineNum + 1, 0) : code.length;
 
     const segStart = Math.max(start, lineStart);
     const segEnd = Math.min(end, nextLineStart - 1);
@@ -145,33 +151,45 @@ export const addSegmentToLines = (
     const segmentText = code.slice(segStart, segEnd);
 
     // ✅ Dead identifier 체크
-    const isDead = (
-      kinds.includes('identifier') ||
-      kinds.includes('local-variable') ||
-      kinds.includes('self') ||
-      kinds.includes('external-import') ||
-      kinds.includes('external-closure') ||
-      kinds.includes('external-function')
-    ) && deadIdentifiers.has(segmentText);
+    const isDead =
+      (kinds.includes('identifier') ||
+        kinds.includes('local-variable') ||
+        kinds.includes('self') ||
+        kinds.includes('external-import') ||
+        kinds.includes('external-closure') ||
+        kinds.includes('external-function')) &&
+      deadIdentifiers.has(segmentText);
 
     // Debug logging only in development mode
     if (__DEV__) {
       if (isDead) {
-        console.log(`[addSegmentToLines] ✅ Multi-line DEAD identifier: "${segmentText}", kinds:`, kinds, 'isDead:', isDead);
+        console.log(
+          `[addSegmentToLines] ✅ Multi-line DEAD identifier: "${segmentText}", kinds:`,
+          kinds,
+          'isDead:',
+          isDead
+        );
       } else if (deadIdentifiers.has(segmentText)) {
-        console.log(`[addSegmentToLines] ❌ Dead identifier NOT marked: "${segmentText}", kinds:`, kinds, 'has identifier:', kinds.includes('identifier'), 'has external-import:', kinds.includes('external-import'));
+        console.log(
+          `[addSegmentToLines] ❌ Dead identifier NOT marked: "${segmentText}", kinds:`,
+          kinds,
+          'has identifier:',
+          kinds.includes('identifier'),
+          'has external-import:',
+          kinds.includes('external-import')
+        );
       }
     }
 
     addSegmentToLine(line, {
       text: segmentText,
-      kinds: [...kinds],  // Copy kinds array to prevent mutation
+      kinds: [...kinds], // Copy kinds array to prevent mutation
       nodeId,
       definedIn,
       isDeclarationName,
       position: segStart,
       tsNode,
-      isDead
+      isDead,
     });
 
     if (lineNum === startPos.line && shouldMarkInput) {
@@ -184,11 +202,7 @@ export const addSegmentToLines = (
  * 라인의 segments를 정렬하고 빈 공간을 'text'로 채우기
  * Phase 2-A: Insertion sort optimization (O(n) for nearly-sorted data)
  */
-export const fillLineGaps = (
-  line: CodeLine,
-  lineText: string,
-  sourceFile: ts.SourceFile
-): CodeLine => {
+export const fillLineGaps = (line: CodeLine, lineText: string, sourceFile: ts.SourceFile): CodeLine => {
   // Segments는 AST 순회 중 순서대로 추가되므로 대부분 이미 정렬됨
   // Insertion sort: O(n) for nearly-sorted, O(n²) worst case (rare)
   // Array.sort: O(n log n) always
@@ -212,7 +226,7 @@ export const fillLineGaps = (
   const filledSegments: CodeSegment[] = [];
   let cursor = 0;
 
-  sortedSegments.forEach(seg => {
+  sortedSegments.forEach((seg) => {
     // ✅ Bug fix: kinds가 undefined인 segment 방어
     if (!seg.kinds) {
       if (__DEV__) {
@@ -228,7 +242,7 @@ export const fillLineGaps = (
       // 앞의 빈 공간
       filledSegments.push({
         text: lineText.slice(cursor, segOffset),
-        kinds: ['text']
+        kinds: ['text'],
       });
     }
 
@@ -240,28 +254,20 @@ export const fillLineGaps = (
   if (cursor < lineText.length) {
     filledSegments.push({
       text: lineText.slice(cursor),
-      kinds: ['text']
+      kinds: ['text'],
     });
   }
 
   // Segments가 없으면 전체 라인을 text로
   return {
     ...line,
-    segments: filledSegments.length > 0
-      ? filledSegments
-      : [{ text: lineText, kinds: ['text'] }]
+    segments: filledSegments.length > 0 ? filledSegments : [{ text: lineText, kinds: ['text'] }],
   };
 };
 
 /**
  * 모든 라인의 빈 공간 채우기
  */
-export const finalizeAllLines = (
-  lines: CodeLine[],
-  lineTexts: string[],
-  sourceFile: ts.SourceFile
-): CodeLine[] => {
-  return lines.map((line, idx) =>
-    fillLineGaps(line, lineTexts[idx], sourceFile)
-  );
+export const finalizeAllLines = (lines: CodeLine[], lineTexts: string[], sourceFile: ts.SourceFile): CodeLine[] => {
+  return lines.map((line, idx) => fillLineGaps(line, lineTexts[idx], sourceFile));
 };

@@ -12,8 +12,10 @@ export type SegmentKind =
   | 'string'
   | 'number'
   | 'comment'
+  | 'function' // Function call (detected by Language Service)
   | 'identifier'
   | 'external-import'
+  | 'external-npm'
   | 'external-closure'
   | 'external-function'
   | 'self'

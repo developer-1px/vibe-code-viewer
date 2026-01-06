@@ -10,6 +10,22 @@
 /* ===== 1. Tailwind CSS ===== */
 @import "tailwindcss";
 
+/* ===== Design Tokens (Tailwind v4) ===== */
+@theme {
+  /* Typography Scale */
+  --font-size-3xs: 9px;
+  --font-size-2xs: 10px;
+  --font-size-xs: 12px;
+
+  /* Line Heights */
+  --line-height-tight: 1.2;
+  --line-height-snug: 1.4;
+  --line-height-label: 14px;
+
+  /* Letter Spacing */
+  --tracking-label: 0.1em;
+}
+
 /* ===== 2. LIMN Design System Base ===== */
 @import "./limn.css";
 
@@ -22,10 +38,10 @@
     --code-function: var(--color-status-info);    /* LIMN info blue */
     --code-class: var(--color-status-warning);    /* LIMN warning yellow */
     --code-variable: var(--color-text-primary);   /* LIMN primary text */
-    --code-string: var(--color-status-success);   /* LIMN success green */
+    --code-string: #6ee7b7;                       /* Soft emerald-300 */
     --code-number: var(--color-status-error);     /* LIMN error coral */
-    --code-comment: var(--color-text-tertiary);      /* LIMN muted text */
-    --code-property: var(--color-status-info);    /* LIMN info blue */
+    --code-comment: var(--color-text-muted);      /* LIMN muted text for comments */
+    --code-property: #f472b6;    /* Tailwind pink-400 - soft pink for properties */
     --code-tag: var(--color-status-warning);      /* LIMN warning yellow */
     --code-attribute: var(--color-status-info);   /* LIMN info blue */
     --code-punctuation: var(--color-text-secondary); /* LIMN secondary text */
@@ -33,12 +49,12 @@
     /* Interactive Elements - LIMN Design System */
     --code-self: var(--color-warm-300);           /* LIMN warm */
     --code-self-bg: var(--color-warm-300);
-    --code-external-import: var(--color-status-success); /* LIMN green */
-    --code-external-import-bg: var(--color-status-success);
-    --code-external-closure: var(--color-status-error); /* LIMN coral */
-    --code-external-closure-bg: var(--color-status-error);
-    --code-external-function: var(--color-status-info); /* LIMN blue */
-    --code-external-function-bg: var(--color-status-info);
+    --code-external-import: #a78bfa;              /* Violet-400 - 외부 import (보라) */
+    --code-external-import-bg: #a78bfa;
+    --code-external-closure: #c084fc;             /* Purple-400 - 외부 closure (연보라) */
+    --code-external-closure-bg: #c084fc;
+    --code-external-function: #8b5cf6;            /* Violet-500 - 외부 function (진보라) */
+    --code-external-function-bg: #8b5cf6;
     --code-parameter: var(--color-status-info);   /* LIMN blue */
     --code-parameter-bg: var(--color-status-info);
     --code-local-variable: var(--color-text-secondary); /* LIMN secondary */
@@ -67,6 +83,29 @@
   }
 }
 
+/* ===== Custom Typography Utilities ===== */
+
+@layer utilities {
+  /* Font Sizes */
+  .text-3xs {
+    font-size: var(--font-size-3xs);
+  }
+
+  .text-2xs {
+    font-size: var(--font-size-2xs);
+  }
+
+  /* Line Heights */
+  .leading-label {
+    line-height: var(--line-height-label);
+  }
+
+  /* Letter Spacing */
+  .tracking-label {
+    letter-spacing: var(--tracking-label);
+  }
+}
+
 /* ===== Code Editor Syntax Utilities ===== */
 
 @layer utilities {
@@ -91,9 +130,7 @@
   .text-editor-identifier {
     color: var(--color-text-primary);
     background-color: var(--code-identifier-def-bg);  /* LIMN warm (0.25) */
-    padding: 0 2px;
     border-radius: 2px;
-    box-shadow: inset 0 0 0 1px var(--code-identifier-def-border); /* Clickable - has outline */
   }
   .text-editor-identifier-def {
     color: var(--color-text-primary);
@@ -129,21 +166,224 @@
 
   .style-code-dead-import {
     display: inline-block;
-    padding: 0 0.25rem;
     border-radius: 0.25rem;
     background-color: var(--code-dead-bg);
     color: rgb(148 163 184 / 0.6); /* slate-400/60 */
-    border: 1px solid var(--code-dead-border);
     text-decoration: line-through;
     text-decoration-color: var(--code-dead-decoration);
     user-select: text;
     cursor: default;
   }
 
+  /* ===== Code Token Composite Styles ===== */
+
+  /* Self (Definition) */
+  .token-self {
+    display: inline-block;
+    border-radius: 0.25rem;
+    background-color: rgb(from var(--code-self) r g b / 0.15);
+    color: var(--code-self);
+    font-weight: 700;
+    cursor: pointer;
+    user-select: text;
+    transition: background-color 150ms;
+  }
+  .token-self:hover {
+    background-color: rgb(from var(--code-self) r g b / 0.25);
+  }
+  .token-self-focused {
+    background-color: rgb(from var(--code-self) r g b / 0.3);
+  }
+  .token-self-focused:hover {
+    background-color: rgb(from var(--code-self) r g b / 0.4);
+  }
+  .token-self-unfocused {
+    color: var(--focus-gray);
+    background-color: transparent;
+  }
+  .token-self-unfocused:hover {
+    background-color: rgb(from var(--code-self) r g b / 0.1);
+    color: rgb(from var(--code-self) r g b / 0.6);
+  }
+
+  /* External NPM (npm 모듈 - secondary text 톤, 배경/강조 없음) */
+  .token-external-npm {
+    color: var(--color-text-secondary);
+    user-select: text;
+  }
+  .token-external-npm-focused {
+    color: theme(colors.amber.500);
+    font-weight: 700;
+  }
+  .token-external-npm-unfocused {
+    color: var(--focus-gray);
+  }
+
+  /* External Import (로컬 모듈 - 초록색) */
+  .token-external-import {
+    display: inline-block;
+    border-radius: 0.25rem;
+    color: var(--code-external-import);
+    user-select: text;
+    transition: all 150ms;
+  }
+  .token-external-import:hover {
+    background-color: rgb(from var(--code-external-import) r g b / 0.15);
+  }
+  .token-external-import-active {
+    background-color: rgb(from var(--code-external-import) r g b / 0.15);
+    font-weight: 600;
+  }
+  .token-external-import-active:hover {
+    background-color: rgb(from var(--code-external-import) r g b / 0.2);
+  }
+  .token-external-import-focused {
+    background-color: rgb(from var(--code-external-import) r g b / 0.2);
+    font-weight: 700;
+  }
+  .token-external-import-focused:hover {
+    background-color: rgb(from var(--code-external-import) r g b / 0.25);
+  }
+  .token-external-import-unfocused {
+    color: var(--focus-gray);
+  }
+  .token-external-import-unfocused:hover {
+    background-color: rgb(from var(--code-external-import) r g b / 0.1);
+    color: var(--code-external-import);
+  }
+
+  /* External Closure */
+  .token-external-closure {
+    display: inline-block;
+    border-radius: 0.25rem;
+    color: var(--code-external-closure);
+    font-weight: 600;
+    user-select: text;
+    transition: all 150ms;
+  }
+  .token-external-closure:hover {
+    background-color: rgb(from var(--code-external-closure) r g b / 0.15);
+  }
+  .token-external-closure-focused {
+    background-color: rgb(from var(--code-external-closure) r g b / 0.2);
+    font-weight: 700;
+  }
+  .token-external-closure-focused:hover {
+    background-color: rgb(from var(--code-external-closure) r g b / 0.25);
+  }
+  .token-external-closure-unfocused {
+    color: var(--focus-gray);
+  }
+  .token-external-closure-unfocused:hover {
+    background-color: rgb(from var(--code-external-closure) r g b / 0.1);
+    color: var(--code-external-closure);
+  }
+
+  /* External Function */
+  .token-external-function {
+    display: inline-block;
+    border-radius: 0.25rem;
+    color: var(--code-external-function);
+    font-weight: 600;
+    user-select: text;
+    transition: all 150ms;
+  }
+  .token-external-function:hover {
+    background-color: rgb(from var(--code-external-function) r g b / 0.15);
+  }
+  .token-external-function-focused {
+    background-color: rgb(from var(--code-external-function) r g b / 0.2);
+    font-weight: 700;
+  }
+  .token-external-function-focused:hover {
+    background-color: rgb(from var(--code-external-function) r g b / 0.25);
+  }
+  .token-external-function-unfocused {
+    color: var(--focus-gray);
+  }
+  .token-external-function-unfocused:hover {
+    background-color: rgb(from var(--code-external-function) r g b / 0.1);
+    color: var(--code-external-function);
+  }
+
+  /* Parameter */
+  .token-parameter {
+    display: inline-block;
+    border-radius: 0.25rem;
+    background-color: rgb(from var(--code-parameter) r g b / 0.15);
+    color: var(--code-parameter);
+    font-weight: 600;
+    cursor: pointer;
+    user-select: text;
+    transition: all 150ms;
+  }
+  .token-parameter:hover {
+    background-color: rgb(from var(--code-parameter) r g b / 0.25);
+  }
+  .token-parameter-active {
+    background-color: rgb(from var(--code-parameter) r g b / 0.2);
+  }
+  .token-parameter-active:hover {
+    background-color: rgb(from var(--code-parameter) r g b / 0.3);
+  }
+  .token-parameter-focused {
+    background-color: rgb(from var(--code-parameter) r g b / 0.3);
+    font-weight: 700;
+  }
+  .token-parameter-focused:hover {
+    background-color: rgb(from var(--code-parameter) r g b / 0.4);
+  }
+  .token-parameter-unfocused {
+    color: var(--focus-gray);
+  }
+  .token-parameter-unfocused:hover {
+    color: var(--code-parameter);
+  }
+
+  /* Local Variable */
+  .token-local-variable {
+    display: inline-block;
+    border-radius: 0.25rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    user-select: text;
+    transition: all 150ms;
+  }
+  .token-local-variable:hover {
+    background-color: rgb(from var(--code-local-variable-bg) r g b / 0.1);
+    color: var(--code-local-variable-bg);
+  }
+  .token-local-variable-active {
+    background-color: rgb(from var(--code-local-variable-bg) r g b / 0.2);
+    color: var(--code-local-variable-bg);
+    font-weight: 600;
+  }
+  .token-local-variable-active:hover {
+    background-color: rgb(from var(--code-local-variable-bg) r g b / 0.3);
+  }
+  .token-local-variable-focused {
+    background-color: rgb(from var(--code-local-variable-bg) r g b / 0.3);
+    color: var(--code-local-variable-bg);
+    font-weight: 700;
+  }
+  .token-local-variable-focused:hover {
+    background-color: rgb(from var(--code-local-variable-bg) r g b / 0.4);
+  }
+  .token-local-variable-unfocused {
+    color: var(--focus-gray);
+  }
+  .token-local-variable-unfocused:hover {
+    background-color: rgb(from var(--code-local-variable-bg) r g b / 0.1);
+    color: var(--code-local-variable-bg);
+  }
+
+  /* Common Utilities */
+  .token-clickable { cursor: pointer; }
+  .token-italic { font-style: italic; }
+
   /* Return Statement Highlight */
   .bg-code-return {
     background-color: var(--code-return-bg);
-    padding: 0 0.125rem;
     border-radius: 0.25rem;
   }
 

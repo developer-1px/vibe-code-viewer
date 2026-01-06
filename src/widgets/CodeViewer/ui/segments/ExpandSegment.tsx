@@ -2,11 +2,12 @@
  * ExpandSegment - 의존성 노드 열기 핸들러
  */
 
-import React from 'react';
-import { useSetAtom } from 'jotai';
-import type { CodeSegment, SegmentStyle } from '../../core/types';
+import { useAtomValue, useSetAtom } from 'jotai';
+import type React from 'react';
+import { hoveredIdentifierAtom } from '@/app/model/atoms';
 import type { CanvasNode } from '../../../../entities/CanvasNode/model/types';
 import { visibleNodeIdsAtom } from '../../../PipelineCanvas/model/atoms';
+import type { CodeSegment, SegmentStyle } from '../../core/types';
 
 interface ExpandSegmentProps {
   segment: CodeSegment;
@@ -17,6 +18,10 @@ interface ExpandSegmentProps {
 
 export const ExpandSegment: React.FC<ExpandSegmentProps> = ({ segment, node, style, isFocused }) => {
   const setVisibleNodeIds = useSetAtom(visibleNodeIdsAtom);
+  const hoveredIdentifier = useAtomValue(hoveredIdentifierAtom);
+  const setHoveredIdentifier = useSetAtom(hoveredIdentifierAtom);
+
+  const isHovered = hoveredIdentifier === segment.text;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -29,12 +34,28 @@ export const ExpandSegment: React.FC<ExpandSegmentProps> = ({ segment, node, sty
     });
   };
 
+  const handleMouseEnter = () => {
+    setHoveredIdentifier(segment.text);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredIdentifier(null);
+  };
+
   const className = isFocused
     ? `${style.className} bg-cyan-500/30 rounded`
-    : style.className;
+    : isHovered
+      ? `${style.className} bg-yellow-400/20 rounded`
+      : style.className;
 
   return (
-    <span onClick={handleClick} className={className} title={style.title}>
+    <span
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={className}
+      title={style.title}
+    >
       {segment.text}
     </span>
   );

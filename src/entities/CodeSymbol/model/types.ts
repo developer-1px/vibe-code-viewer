@@ -8,7 +8,7 @@
  * Extracted from TypeScript Language Service and dependency analysis
  */
 export interface CodeSymbolMetadata {
-  typeInfo: string | null;  // TypeScript type information from Language Service hover
-  codeSnippet: string;      // First line of code snippet (definition)
-  usageCount: number;       // Number of dependencies referencing this symbol
+  typeInfo: string | null; // TypeScript type information from Language Service hover
+  codeSnippet: string; // First line of code snippet (definition)
+  usageCount: number; // Number of dependencies referencing this symbol
 }

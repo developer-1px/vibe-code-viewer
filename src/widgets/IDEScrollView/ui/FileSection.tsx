@@ -3,20 +3,20 @@
  * 스크롤 뷰에서 하나의 파일을 표시하는 단위
  */
 
-import React, { useMemo, forwardRef, useEffect, useState, useTransition } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
-import type { CodeLine } from '../../CodeViewer/core/types';
+import { forwardRef, useEffect, useRef, useState, useTransition } from 'react';
 import { deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
 import { activeTabAtom } from '@/features/File/OpenFiles/model/atoms';
-import { hoveredFilePathAtom } from '../model/atoms';
-import { renderCodeLinesDirect } from '../../CodeViewer/core/renderer/renderCodeLinesDirect';
-import { renderVueFile } from '../../CodeViewer/core/renderer/renderVueFile';
-import { renderPlaintext } from '../../CodeViewer/core/renderer/renderPlaintext';
+import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
+import { getFileName } from '../../../shared/pathUtils';
 import { getWorkerPool } from '../../../shared/workerPool';
 import CodeViewer from '../../CodeViewer/CodeViewer';
-import { getFileName } from '../../../shared/pathUtils';
+import { renderCodeLinesDirect } from '../../CodeViewer/core/renderer/renderCodeLinesDirect';
+import { renderPlaintext } from '../../CodeViewer/core/renderer/renderPlaintext';
+import { renderVueFile } from '../../CodeViewer/core/renderer/renderVueFile';
+import type { CodeLine } from '../../CodeViewer/core/types/codeLine';
 import { getFileIcon } from '../../FileExplorer/lib/getFileIcon';
+import { hoveredFilePathAtom } from '../model/atoms';
 
 // Module-level cache for processedLines (Phase 1 performance optimization)
 // Key: `${filePath}|${deadCodeResultsVersion}`
@@ -29,18 +29,21 @@ export const invalidateProcessedLinesCache = () => {
   deadCodeResultsVersion++;
 };
 
-const FileSection = forwardRef<HTMLDivElement, {
-  node: SourceFileNode;
-  files: Record<string, string>;
-  highlightedLines: Set<number>;
-}>(({ node, files, highlightedLines }, ref) => {
+const FileSection = forwardRef<
+  HTMLDivElement,
+  {
+    node: SourceFileNode;
+    files: Record<string, string>;
+    highlightedLines: Set<number>;
+  }
+>(({ node, files, highlightedLines }, ref) => {
   const deadCodeResults = useAtomValue(deadCodeResultsAtom);
   const activeTab = useAtomValue(activeTabAtom);
   const hoveredFilePath = useAtomValue(hoveredFilePathAtom);
   const setHoveredFilePath = useSetAtom(hoveredFilePathAtom);
   const fileName = getFileName(node.filePath);
   const FileIconComponent = getFileIcon(fileName);
-  const [isPending, startTransition] = useTransition();
+  const [_isPending, startTransition] = useTransition();
 
   // Check if this file section is active (via activeTab or hover)
   const isActive = activeTab === node.filePath || hoveredFilePath === node.filePath;
@@ -48,7 +51,7 @@ const FileSection = forwardRef<HTMLDivElement, {
   // Invalidate cache when deadCodeResults changes
   useEffect(() => {
     deadCodeResultsVersion++;
-  }, [deadCodeResults]);
+  }, []);
 
   // Phase A + B: Progressive Rendering with Stale-While-Revalidate
   // 1단계: Plaintext 즉시 표시 (파싱 없음, 초고속)
@@ -113,29 +116,42 @@ const FileSection = forwardRef<HTMLDivElement, {
     }
   }, [cacheKey, node, files, deadCodeResults]);
 
+  // Ref for the header element
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  // Ref for the scroll container (IDEScrollView의 스크롤 컨테이너)
+  const scrollContainerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    // IDEScrollView의 스크롤 컨테이너 찾기
+    const scrollContainer = document.getElementById('scroll-view-container');
+    console.log('[FileSection] Found scroll container:', scrollContainer);
+    scrollContainerRef.current = scrollContainer;
+  }, []);
+
   return (
     <div
       ref={ref}
       id={`file-section-${node.filePath}`}
       className={`
-        border-b border-border-DEFAULT mb-8 transition-all duration-200 ease-in-out
+        relative
+        border-b border-border-DEFAULT mb-8
         ${!isActive ? 'grayscale opacity-50' : ''}
       `}
       onMouseEnter={() => setHoveredFilePath(node.filePath)}
       onMouseLeave={() => setHoveredFilePath(null)}
     >
-      {/* 파일 헤더 */}
-      <div className="sticky top-0 z-10 bg-bg-elevated border-b border-border-hover px-4 py-2 flex items-center gap-2 shadow-sm">
-        <FileIconComponent size={14} className="text-text-secondary" />
-        <span className="text-xs font-medium text-text-primary">{node.filePath}</span>
+      {/* 파일 헤더 + Sticky Stack (함께 sticky) */}
+      <div ref={headerRef} className="sticky top-0 z-10 bg-bg-elevated shadow-sm">
+        {/* 파일명 헤더 */}
+        <div className="px-4 py-2 flex items-center gap-2 border-b border-border-hover">
+          <FileIconComponent size={14} className="text-text-secondary" />
+          <span className="text-xs font-medium text-text-primary">{node.filePath}</span>
+        </div>
       </div>
 
       {/* 코드 뷰어 */}
-      <CodeViewer
-        processedLines={processedLines}
-        node={node}
-        highlightedLines={highlightedLines}
-      />
+      <CodeViewer processedLines={processedLines} node={node} highlightedLines={highlightedLines} />
     </div>
   );
 });

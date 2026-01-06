@@ -12,11 +12,14 @@ import type { CodeDocSection } from './types';
  * export function extractOutlineStructure(node: SourceFileNode): OutlineNode[]
  * → extractOutlineStructure(node: SourceFileNode) → OutlineNode[]
  */
-function formatFunctionSignature(node: ts.FunctionDeclaration | ts.VariableStatement, sourceFile: ts.SourceFile): string {
+function formatFunctionSignature(
+  node: ts.FunctionDeclaration | ts.VariableStatement,
+  sourceFile: ts.SourceFile
+): string {
   // Function Declaration
   if (ts.isFunctionDeclaration(node)) {
     const name = node.name?.getText(sourceFile) || 'anonymous';
-    const params = node.parameters.map(p => p.getText(sourceFile)).join(', ');
+    const params = node.parameters.map((p) => p.getText(sourceFile)).join(', ');
     const returnType = node.type ? node.type.getText(sourceFile) : 'void';
     return `${name}(${params}) → ${returnType}`;
   }
@@ -29,7 +32,7 @@ function formatFunctionSignature(node: ts.FunctionDeclaration | ts.VariableState
 
       if (ts.isArrowFunction(declaration.initializer) || ts.isFunctionExpression(declaration.initializer)) {
         const func = declaration.initializer as ts.ArrowFunction | ts.FunctionExpression;
-        const params = func.parameters.map(p => p.getText(sourceFile)).join(', ');
+        const params = func.parameters.map((p) => p.getText(sourceFile)).join(', ');
         const returnType = func.type ? func.type.getText(sourceFile) : 'unknown';
         return `${name}(${params}) → ${returnType}`;
       }
@@ -53,7 +56,7 @@ export function extractExportSignatures(node: SourceFileNode): CodeDocSection[] 
   ts.forEachChild(sourceFile, (child) => {
     // Export로 시작하는 선언문만 처리
     const modifiers = ts.canHaveModifiers(child) ? ts.getModifiers(child) : undefined;
-    const hasExportModifier = modifiers?.some(m => m.kind === ts.SyntaxKind.ExportKeyword);
+    const hasExportModifier = modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
 
     if (!hasExportModifier) return;
 
@@ -68,7 +71,7 @@ export function extractExportSignatures(node: SourceFileNode): CodeDocSection[] 
         type: 'export',
         content: signature,
         startLine,
-        endLine
+        endLine,
       });
     }
     // Interface 선언
@@ -79,7 +82,7 @@ export function extractExportSignatures(node: SourceFileNode): CodeDocSection[] 
         type: 'export',
         content: `interface ${name}`,
         startLine,
-        endLine
+        endLine,
       });
     }
   });

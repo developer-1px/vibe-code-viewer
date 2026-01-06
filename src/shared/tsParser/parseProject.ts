@@ -6,11 +6,11 @@
  */
 
 import * as ts from 'typescript';
-import type { GraphData, SourceFileNode } from '../../entities/SourceFileNode/model/types';
-import { extractVueScript, isVueFile } from './utils/vueExtractor';
-import { createLanguageService } from './utils/languageService';
 import { getDependencies } from '../../entities/SourceFileNode/lib/getters';
+import type { GraphData, SourceFileNode } from '../../entities/SourceFileNode/model/types';
+import { createLanguageService } from './utils/languageService';
 import { resolvePath } from './utils/pathResolver';
+import { extractVueScript, isVueFile } from './utils/vueExtractor';
 
 /**
  * Extract function and variable declarations from a source file
@@ -40,16 +40,16 @@ function extractDeclarations(
         label: name,
         filePath,
         type: 'function',
-        codeSnippet: snippet,  // display용
+        codeSnippet: snippet, // display용
         startLine: lineAndChar.line + 1,
-        sourceFile,  // ← 전체 파일 sourceFile 공유
-        dependencies: []
+        sourceFile, // ← 전체 파일 sourceFile 공유
+        dependencies: [],
       });
     }
 
     // Variable declarations (const, let, var)
     if (ts.isVariableStatement(node)) {
-      node.declarationList.declarations.forEach(decl => {
+      node.declarationList.declarations.forEach((decl) => {
         if (ts.isIdentifier(decl.name)) {
           const name = decl.name.text;
           const start = node.getStart(sourceFile);
@@ -71,10 +71,10 @@ function extractDeclarations(
             label: name,
             filePath,
             type,
-            codeSnippet: snippet,  // display용
+            codeSnippet: snippet, // display용
             startLine: lineAndChar.line + 1,
-            sourceFile,  // ← 전체 파일 sourceFile 공유
-            dependencies: []
+            sourceFile, // ← 전체 파일 sourceFile 공유
+            dependencies: [],
           });
         }
       });
@@ -95,10 +95,10 @@ function extractDeclarations(
         label: name,
         filePath,
         type: 'function', // Treat classes as functions for now
-        codeSnippet: snippet,  // display용
+        codeSnippet: snippet, // display용
         startLine: lineAndChar.line + 1,
-        sourceFile,  // ← 전체 파일 sourceFile 공유
-        dependencies: []
+        sourceFile, // ← 전체 파일 sourceFile 공유
+        dependencies: [],
       });
     }
 
@@ -127,7 +127,7 @@ export function parseProject(
   }
 
   // ✅ 모든 파일을 단순히 순회하며 파싱
-  Object.keys(files).forEach(filePath => {
+  Object.keys(files).forEach((filePath) => {
     const content = files[filePath];
     if (!content) return;
 
@@ -139,10 +139,13 @@ export function parseProject(
     const fileNameWithoutExt = fileName.replace(/\.(tsx?|jsx?|vue)$/, '');
 
     try {
-      const scriptKind = filePath.endsWith('.tsx') ? ts.ScriptKind.TSX :
-                        filePath.endsWith('.jsx') ? ts.ScriptKind.JSX :
-                        filePath.endsWith('.vue') ? ts.ScriptKind.TS :
-                        ts.ScriptKind.TS;
+      const scriptKind = filePath.endsWith('.tsx')
+        ? ts.ScriptKind.TSX
+        : filePath.endsWith('.jsx')
+          ? ts.ScriptKind.JSX
+          : filePath.endsWith('.vue')
+            ? ts.ScriptKind.TS
+            : ts.ScriptKind.TS;
 
       let parseContent = content;
 
@@ -151,13 +154,7 @@ export function parseProject(
         parseContent = extractVueScript(content, filePath) || '';
       }
 
-      const sourceFile = ts.createSourceFile(
-        filePath,
-        parseContent,
-        ts.ScriptTarget.Latest,
-        true,
-        scriptKind
-      );
+      const sourceFile = ts.createSourceFile(filePath, parseContent, ts.ScriptTarget.Latest, true, scriptKind);
 
       // SourceFileNode 생성 (sourceFile 포함)
       const dependencies = getDependencies({ sourceFile, filePath, id: filePath } as any, files, resolvePath);
@@ -170,14 +167,13 @@ export function parseProject(
         codeSnippet: content,
         startLine: 1,
         sourceFile,
-        dependencies
+        dependencies,
       };
 
       nodes.push(node);
 
       // ✅ Extract functions and variables from this file
       extractDeclarations(sourceFile, filePath, nodes, parseContent);
-
     } catch (error) {
       console.error(`❌ Error parsing ${filePath}:`, error);
     }

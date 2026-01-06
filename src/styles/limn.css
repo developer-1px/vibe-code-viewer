@@ -4,10 +4,10 @@
   /* ===== LIMN Color Theme for Tailwind Utilities ===== */
 
   /* Background Colors */
-  --color-bg-deep: #0d0d12;
-  --color-bg-base: #0f0f16;
-  --color-bg-surface: rgb(20 20 28 / 0.95);
-  --color-bg-elevated: #14141c;
+  --color-bg-deep: #15151d;
+  --color-bg-base: #181822;
+  --color-bg-surface: rgb(28 28 38 / 0.95);
+  --color-bg-elevated: #1c1c26;
   --color-bg-overlay: rgb(0 0 0 / 0.6);
 
   /* Warm Accent */
@@ -25,8 +25,8 @@
   /* Text */
   --color-text-primary: rgb(255 240 220 / 0.95);
   --color-text-secondary: rgb(255 250 245 / 0.7);
-  --color-text-tertiary: rgb(255 250 245 / 0.5);
-  --color-text-muted: rgb(255 250 245 / 0.35);
+  --color-text-tertiary: rgb(255 250 245 / 0.55);
+  --color-text-muted: #64748b;  /* Tailwind slate-500 (same as line numbers) */
   --color-text-faint: rgb(255 250 245 / 0.2);
 
   /* Status */
@@ -39,10 +39,10 @@
   --color-status-info: #60a5fa;
 
   /* Border */
-  --color-border-subtle: rgb(255 255 255 / 0.04);
-  --color-border-DEFAULT: rgb(255 255 255 / 0.06);
-  --color-border-light: rgb(255 255 255 / 0.08);
-  --color-border-medium: rgb(255 255 255 / 0.1);
+  --color-border-subtle: rgb(255 255 255 / 0.06);
+  --color-border-DEFAULT: rgb(255 255 255 / 0.09);
+  --color-border-light: rgb(255 255 255 / 0.12);
+  --color-border-medium: rgb(255 255 255 / 0.14);
   --color-border-warm: rgb(255 200 150 / 0.2);
   --color-border-active: rgb(255 200 150 / 0.3);
 
@@ -183,14 +183,6 @@
 }
 
 /* Custom utility classes */
-.label {
-  font-size: 10px;
-  line-height: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgb(255 250 245 / 0.35);
-}
-
 .active-glow {
   background: linear-gradient(
     145deg,

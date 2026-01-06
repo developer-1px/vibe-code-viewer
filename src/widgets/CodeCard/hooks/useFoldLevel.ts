@@ -6,15 +6,12 @@
  * CodeCardHeader의 복잡도를 낮춥니다.
  */
 
-import { useMemo, useCallback } from 'react';
 import { useAtom } from 'jotai';
+import { useCallback, useMemo } from 'react';
+import { getFoldableLinesByMaxDepth, getFoldableLinesExcludingDepth } from '@/features/Code/CodeFold/lib/foldUtils';
+import { foldedLinesAtom } from '@/features/Code/CodeFold/model/atoms';
 import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
 import type { CodeLine } from '../../../entities/CodeLine/model/types';
-import { foldedLinesAtom } from '@/features/Code/CodeFold/model/atoms';
-import {
-  getFoldableLinesByMaxDepth,
-  getFoldableLinesExcludingDepth,
-} from '@/features/Code/CodeFold/lib/foldUtils';
 
 export type FoldLevel = 0 | 1 | 2;
 
@@ -42,10 +39,7 @@ export interface UseFoldLevelReturn {
  *   {currentLevel === 2 ? 'Minimal' : currentLevel === 1 ? 'Compact' : 'Maximize'}
  * </button>
  */
-export function useFoldLevel(
-  node: CanvasNode,
-  processedLines: CodeLine[]
-): UseFoldLevelReturn {
+export function useFoldLevel(node: CanvasNode, processedLines: CodeLine[]): UseFoldLevelReturn {
   const [foldedLinesMap, setFoldedLinesMap] = useAtom(foldedLinesAtom);
 
   // 현재 노드의 접힌 라인들
@@ -72,9 +66,7 @@ export function useFoldLevel(
     // 실제로 접혀있는 라인 수 계산
     const allFoldedCount = allFoldableLines.filter((line) => foldedLines.has(line)).length;
     const depth1FoldedCount = depth1Lines.filter((line) => foldedLines.has(line)).length;
-    const depth2ExcludedFoldedCount = depth2ExcludedLines.filter((line) =>
-      foldedLines.has(line)
-    ).length;
+    const depth2ExcludedFoldedCount = depth2ExcludedLines.filter((line) => foldedLines.has(line)).length;
 
     console.log(
       `[${node.label}] Fold counts:`,
@@ -89,19 +81,12 @@ export function useFoldLevel(
     }
 
     // Level 1 (Compact): depth 2를 제외한 모든 라인이 접혀있음
-    if (
-      depth2ExcludedFoldedCount === depth2ExcludedLines.length &&
-      depth2ExcludedLines.length > 0
-    ) {
+    if (depth2ExcludedFoldedCount === depth2ExcludedLines.length && depth2ExcludedLines.length > 0) {
       return 1;
     }
 
     // Level 0 (Maximize): depth 1 (import)만 접혀있음
-    if (
-      depth1FoldedCount === depth1Lines.length &&
-      depth1Lines.length > 0 &&
-      allFoldedCount === depth1FoldedCount
-    ) {
+    if (depth1FoldedCount === depth1Lines.length && depth1Lines.length > 0 && allFoldedCount === depth1FoldedCount) {
       return 0;
     }
 

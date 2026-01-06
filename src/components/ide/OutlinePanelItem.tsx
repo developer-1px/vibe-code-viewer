@@ -1,158 +1,149 @@
 import {
+  Blocks,
+  BookA,
+  Box,
   ChevronDown,
   ChevronRight,
-  FileCode,
-  MessageSquare,
-  Box,
-  Code2,
-  GitBranch,
-  Repeat,
-  RotateCw,
-  Shuffle,
-  Blocks,
-  PackageOpen,
-  FileType,
-  Braces,
-  Hash,
-  Variable,
-  FunctionSquare,
-  SquareStack,
-  Dot,
-  Phone,
-  CornerDownRight,
   Component,
+  CornerDownRight,
+  Dot,
+  FileCode,
+  GitBranch,
+  MessageSquare,
+  PackageOpen,
+  Phone,
+  Repeat,
+  Shuffle,
   Type,
-  BookA,
-} from 'lucide-react'
-import { cn } from '@/components/lib/utils'
-import type { OutlineNode, OutlineNodeKind } from '../../shared/outlineExtractor'
+} from 'lucide-react';
+import type { OutlineNode, OutlineNodeKind } from '../../shared/outlineExtractor';
 
 interface OutlinePanelItemProps {
-  node: OutlineNode
-  prevNode?: OutlineNode | null
-  depth: number
-  isExpanded: boolean
-  expandedNodes: Set<string>
-  onToggle: (nodeKey: string) => void
-  onNodeClick: (line: number) => void
+  node: OutlineNode;
+  prevNode?: OutlineNode | null;
+  depth: number;
+  isExpanded: boolean;
+  expandedNodes: Set<string>;
+  onToggle: (nodeKey: string) => void;
+  onNodeClick: (line: number) => void;
 }
 
 // Get icon for outline node kind
 function getNodeIcon(kind: OutlineNodeKind) {
-  const iconProps = { size: 10 }
+  const iconProps = { size: 10 };
 
   switch (kind) {
     // Comments
     case 'comment':
-      return <MessageSquare {...iconProps} className="text-slate-400/70" />
+      return <MessageSquare {...iconProps} className="text-slate-400/70" />;
 
     // Control flow
     case 'if':
-      return <GitBranch {...iconProps} className="text-orange-400" />
+      return <GitBranch {...iconProps} className="text-orange-400" />;
     case 'for':
     case 'while':
     case 'do-while':
-      return <Repeat {...iconProps} className="text-cyan-400" />
+      return <Repeat {...iconProps} className="text-cyan-400" />;
     case 'switch':
-      return <Shuffle {...iconProps} className="text-purple-400" />
+      return <Shuffle {...iconProps} className="text-purple-400" />;
     case 'case':
-      return <CornerDownRight {...iconProps} className="text-purple-300" />
+      return <CornerDownRight {...iconProps} className="text-purple-300" />;
 
     // Error handling
     case 'try':
     case 'catch':
     case 'finally':
-      return <Box {...iconProps} className="text-red-400" />
+      return <Box {...iconProps} className="text-red-400" />;
 
     // Declarations
     case 'import':
-      return <PackageOpen {...iconProps} className="text-purple-400" />
+      return <PackageOpen {...iconProps} className="text-purple-400" />;
     case 'type':
-      return <Type {...iconProps} className="text-blue-400" />
+      return <Type {...iconProps} className="text-blue-400" />;
     case 'interface':
-      return <Type {...iconProps} className="text-cyan-400" />
+      return <Type {...iconProps} className="text-cyan-400" />;
     case 'enum':
-      return <BookA {...iconProps} className="text-orange-400" />
+      return <BookA {...iconProps} className="text-orange-400" />;
     case 'const':
     case 'let':
     case 'var':
-      return <BookA {...iconProps} className="text-yellow-400" />
+      return <BookA {...iconProps} className="text-yellow-400" />;
     case 'function':
     case 'arrow-function':
-      return <BookA {...iconProps} className="text-pink-400" />
+      return <BookA {...iconProps} className="text-pink-400" />;
     case 'class':
-      return <BookA {...iconProps} className="text-status-success" />
+      return <BookA {...iconProps} className="text-status-success" />;
     case 'method':
-      return <Dot {...iconProps} className="text-warm-300" fill="currentColor" />
+      return <Dot {...iconProps} className="text-warm-300" fill="currentColor" />;
     case 'property':
-      return <Dot {...iconProps} className="text-text-tertiary/60" fill="currentColor" />
+      return <Dot {...iconProps} className="text-text-tertiary/60" fill="currentColor" />;
 
     // Expressions
     case 'call':
-      return <Phone {...iconProps} className="text-blue-300" />
+      return <Phone {...iconProps} className="text-blue-300" />;
     case 'return':
-      return <CornerDownRight {...iconProps} className="text-green-400" />
+      return <CornerDownRight {...iconProps} className="text-green-400" />;
     case 'block':
-      return <Blocks {...iconProps} className="text-slate-500" />
+      return <Blocks {...iconProps} className="text-slate-500" />;
 
     // JSX
     case 'jsx-element':
     case 'jsx-fragment':
-      return <Component {...iconProps} className="text-blue-400" />
+      return <Component {...iconProps} className="text-blue-400" />;
 
     default:
-      return <FileCode {...iconProps} className="text-text-muted" />
+      return <FileCode {...iconProps} className="text-text-muted" />;
   }
 }
 
 // Get color for node name
-function getNodeColor(kind: OutlineNodeKind): string {
+function _getNodeColor(kind: OutlineNodeKind): string {
   switch (kind) {
     case 'comment':
-      return 'text-slate-400/70'
+      return 'text-slate-400/70';
     case 'if':
-      return 'text-orange-400'
+      return 'text-orange-400';
     case 'for':
     case 'while':
     case 'do-while':
-      return 'text-cyan-400'
+      return 'text-cyan-400';
     case 'switch':
     case 'case':
-      return 'text-purple-400'
+      return 'text-purple-400';
     case 'try':
     case 'catch':
     case 'finally':
-      return 'text-red-400'
+      return 'text-red-400';
     case 'import':
-      return 'text-purple-400'
+      return 'text-purple-400';
     case 'type':
-      return 'text-blue-400'
+      return 'text-blue-400';
     case 'interface':
-      return 'text-cyan-400'
+      return 'text-cyan-400';
     case 'enum':
-      return 'text-orange-400'
+      return 'text-orange-400';
     case 'const':
     case 'let':
     case 'var':
-      return 'text-yellow-400'
+      return 'text-yellow-400';
     case 'function':
     case 'arrow-function':
-      return 'text-pink-400'
+      return 'text-pink-400';
     case 'class':
-      return 'text-status-success'
+      return 'text-status-success';
     case 'method':
-      return 'text-warm-300'
+      return 'text-warm-300';
     case 'call':
-      return 'text-blue-300'
+      return 'text-blue-300';
     case 'return':
-      return 'text-green-400'
+      return 'text-green-400';
     case 'block':
-      return 'text-slate-500'
+      return 'text-slate-500';
     case 'jsx-element':
     case 'jsx-fragment':
-      return 'text-blue-400'
+      return 'text-blue-400';
     default:
-      return 'text-text-secondary'
+      return 'text-text-secondary';
   }
 }
 
@@ -163,37 +154,36 @@ export function OutlinePanelItem({
   isExpanded,
   expandedNodes,
   onToggle,
-  onNodeClick
+  onNodeClick,
 }: OutlinePanelItemProps) {
-  const hasChildren = node.children && node.children.length > 0
-  const indent = depth * 10
+  const hasChildren = node.children && node.children.length > 0;
+  const indent = depth * 10;
 
   // Create unique key for this node (line + name)
-  const nodeKey = `${node.line}-${node.name}`
+  const nodeKey = `${node.line}-${node.name}`;
 
   // Calculate gap based on line difference (empty lines in code)
-  const hasGapBefore = prevNode ? (node.line - (prevNode.endLine || prevNode.line)) >= 2 : false
+  const hasGapBefore = prevNode ? node.line - (prevNode.endLine || prevNode.line) >= 2 : false;
 
   // Display actual code line (remove line breaks, let CSS handle truncation)
-  const displayName = node.text
-    ? node.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim()
-    : node.name
+  const displayName = node.text ? node.text.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim() : node.name;
 
   return (
     <div className={hasGapBefore ? 'mt-6' : ''}>
       {/* Node Header */}
       <div
-        className="flex flex-nowrap items-center gap-1 rounded px-1.5 py-0.5 hover:bg-white/5 transition-colors group overflow-hidden"
-        style={{ paddingLeft: `calc(${indent}px + var(--limn-indent) / 2)` }}
+        className="flex flex-nowrap h-[var(--limn-file-item-height)] items-center gap-1 px-2 text-xs cursor-pointer border-l-2 border-transparent text-text-secondary hover:bg-white/5 transition-colors overflow-hidden"
+        style={{ paddingLeft: `calc(12px + ${indent}px)` }}
+        onClick={() => onNodeClick(node.line)}
       >
         {/* Expand/Collapse */}
         {hasChildren ? (
           <button
             onClick={(e) => {
-              e.stopPropagation()
-              onToggle(nodeKey)
+              e.stopPropagation();
+              onToggle(nodeKey);
             }}
-            className="flex-shrink-0 hover:bg-theme-hover rounded-sm transition-colors"
+            className="shrink-0"
           >
             {isExpanded ? (
               <ChevronDown size={11} className="text-text-muted" />
@@ -202,18 +192,15 @@ export function OutlinePanelItem({
             )}
           </button>
         ) : (
-          <div className="w-3 flex-shrink-0" />
+          <div className="w-[11px] shrink-0" />
         )}
 
         {/* Kind Icon */}
-        <div className="w-4 flex items-center justify-center flex-shrink-0">
-          {getNodeIcon(node.kind)}
-        </div>
+        <div className="shrink-0">{getNodeIcon(node.kind)}</div>
 
         {/* Node Name (actual code line, truncates with ellipsis) */}
         <span
-          className={`${getNodeColor(node.kind)} cursor-pointer font-medium truncate overflow-hidden min-w-0`}
-          onClick={() => onNodeClick(node.line)}
+          className="flex-1 truncate whitespace-nowrap overflow-hidden text-ellipsis min-w-0"
           title={`${node.text || ''}\nLine ${node.line}${node.endLine ? ` - ${node.endLine}` : ''}`}
         >
           {displayName}
@@ -221,7 +208,7 @@ export function OutlinePanelItem({
 
         {/* End line indicator (for blocks) */}
         {node.endLine && node.endLine !== node.line && (
-          <span className="text-text-tertiary/30 text-2xs truncate overflow-hidden min-w-0">
+          <span className="text-text-tertiary text-2xs shrink-0">
             L{node.line}-{node.endLine}
           </span>
         )}
@@ -230,8 +217,8 @@ export function OutlinePanelItem({
       {/* Children */}
       {isExpanded && hasChildren && (
         <div className="border-l-2 border-slate-600/60 ml-3 pl-1">
-          {node.children!.map((child, idx) => {
-            const prevChild = idx > 0 ? node.children![idx - 1] : null
+          {node.children?.map((child, idx) => {
+            const prevChild = idx > 0 ? node.children?.[idx - 1] : null;
             return (
               <OutlinePanelItem
                 key={`${child.line}-${child.name}-${idx}`}
@@ -243,10 +230,10 @@ export function OutlinePanelItem({
                 onToggle={onToggle}
                 onNodeClick={onNodeClick}
               />
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
+  );
 }

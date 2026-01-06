@@ -23,7 +23,7 @@ export const openedFilesAtom = atom(new Set<string>());
 export const layoutNodesAtom = atom([] as CanvasNode[]);
 
 // 노드 간 링크 정보
-export const layoutLinksAtom = atom([] as {source: string, target: string}[]);
+export const layoutLinksAtom = atom([] as { source: string; target: string }[]);
 
 // ============================================================================
 // Canvas Transform (Pan & Zoom from useD3Zoom)
@@ -44,7 +44,7 @@ export const visibleNodeIdsAtom = atom(new Set<string>());
 // ============================================================================
 
 // 각 카드의 위치 정보 (Map<nodeId, {x: number, y: number}>)
-export const cardPositionsAtom = atom(new Map<string, {x: number, y: number}>());
+export const cardPositionsAtom = atom(new Map<string, { x: number; y: number }>());
 
 // 선택된 노드 ID들 (FigJam-style 드래그)
 export const selectedNodeIdsAtom = atom(new Set<string>());

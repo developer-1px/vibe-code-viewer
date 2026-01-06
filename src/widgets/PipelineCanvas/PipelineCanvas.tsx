@@ -1,21 +1,19 @@
-import React, { useRef, useMemo, useEffect } from 'react';
-import { useAtomValue, useSetAtom, useAtom } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import type React from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-
-// Hooks & Sub-components
-import { useCanvasLayout } from './useCanvasLayout.ts';
-import D3ZoomContainer from './D3ZoomContainer.tsx';
-import CanvasConnections from './CanvasConnections.tsx';
-import CanvasBackground from './CanvasBackground.tsx';
-import { CanvasCodeCard } from './CanvasCodeCard.tsx';
+import { symbolMetadataAtom } from '@/features/Search/UnifiedSearch/model/atoms';
+import { extractSymbolMetadata } from '@/shared/symbolMetadataExtractor.ts';
+// Atoms & Hooks
+import { filesAtom, focusedPaneAtom, fullNodeMapAtom, graphDataAtom } from '../../app/model/atoms';
 import CopyAllCodeButton from '../../features/CopyAllCodeButton.tsx';
 import ResetViewButton from '../../features/ResetViewButton.tsx';
-
-// Atoms & Hooks
-import { fullNodeMapAtom, filesAtom, focusedPaneAtom, graphDataAtom } from '../../app/model/atoms';
-import { symbolMetadataAtom } from '@/features/Search/UnifiedSearch/model/atoms';
-import { visibleNodeIdsAtom, selectedNodeIdsAtom, openedFilesAtom } from './model/atoms';
-import { extractSymbolMetadata } from '@/shared/symbolMetadataExtractor.ts';
+import { CanvasCodeCard } from './CanvasCodeCard.tsx';
+import CanvasConnections from './CanvasConnections.tsx';
+import D3ZoomContainer from './D3ZoomContainer.tsx';
+import { openedFilesAtom, selectedNodeIdsAtom, visibleNodeIdsAtom } from './model/atoms';
+// Hooks & Sub-components
+import { useCanvasLayout } from './useCanvasLayout.ts';
 
 const PipelineCanvas: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -43,7 +41,7 @@ const PipelineCanvas: React.FC = () => {
     if (!fullNodeMap || fullNodeMap.size === 0) return;
 
     const filePaths = new Set<string>();
-    visibleNodeIds.forEach(nodeId => {
+    visibleNodeIds.forEach((nodeId) => {
       const node = fullNodeMap.get(nodeId);
       if (node) {
         filePaths.add(node.filePath);
@@ -52,14 +50,14 @@ const PipelineCanvas: React.FC = () => {
 
     // Add missing files to openedFiles
     let needsUpdate = false;
-    filePaths.forEach(filePath => {
+    filePaths.forEach((filePath) => {
       if (!openedFiles.has(filePath)) {
         needsUpdate = true;
       }
     });
 
     if (needsUpdate) {
-      setOpenedFiles(prev => new Set([...prev, ...filePaths]));
+      setOpenedFiles((prev) => new Set([...prev, ...filePaths]));
     }
   }, [visibleNodeIds, fullNodeMap, openedFiles, setOpenedFiles]);
 
@@ -71,7 +69,7 @@ const PipelineCanvas: React.FC = () => {
     const expanded = new Set(visibleNodeIds);
 
     // Add file nodes from opened files (check fullNodeMap for all files including orphaned)
-    openedFiles.forEach(filePath => {
+    openedFiles.forEach((filePath) => {
       // Check if file exists in fullNodeMap (for connected files)
       const fileNode = fullNodeMap.get(filePath);
       if (fileNode) {
@@ -101,79 +99,83 @@ const PipelineCanvas: React.FC = () => {
   };
 
   // Delete/Backspace key handler - close selected files
-  useHotkeys('delete, backspace', (e) => {
-    console.log('[PipelineCanvas] Delete/Backspace pressed, focusedPane:', focusedPane, 'selectedNodeIds:', selectedNodeIds.size);
+  useHotkeys(
+    'delete, backspace',
+    (e) => {
+      console.log(
+        '[PipelineCanvas] Delete/Backspace pressed, focusedPane:',
+        focusedPane,
+        'selectedNodeIds:',
+        selectedNodeIds.size
+      );
 
-    // Only work when canvas is focused AND there are selected nodes
-    if (focusedPane !== 'canvas' || selectedNodeIds.size === 0) {
-      console.log('[PipelineCanvas] Ignoring: focusedPane:', focusedPane, 'selectedCount:', selectedNodeIds.size);
-      return;
-    }
-
-    // Prevent default backspace navigation
-    e.preventDefault();
-
-    // Extract file paths AND node IDs from selected nodes
-    const filesToClose = new Set<string>();
-    const nodeIdsToRemove = new Set<string>();
-
-    selectedNodeIds.forEach(nodeId => {
-      // Collect node ID for removal from visibleNodeIds
-      nodeIdsToRemove.add(nodeId);
-
-      // Check if nodeId is a file path (orphaned file)
-      if (files[nodeId]) {
-        filesToClose.add(nodeId);
-      } else {
-        // Check if nodeId exists in fullNodeMap
-        const node = fullNodeMap.get(nodeId);
-        if (node) {
-          filesToClose.add(node.filePath);
-
-          // Also remove all nodes from the same file
-          fullNodeMap.forEach((n) => {
-            if (n.filePath === node.filePath) {
-              nodeIdsToRemove.add(n.id);
-            }
-          });
-        }
+      // Only work when canvas is focused AND there are selected nodes
+      if (focusedPane !== 'canvas' || selectedNodeIds.size === 0) {
+        console.log('[PipelineCanvas] Ignoring: focusedPane:', focusedPane, 'selectedCount:', selectedNodeIds.size);
+        return;
       }
-    });
 
-    console.log('[PipelineCanvas] OpenFiles to close:', Array.from(filesToClose));
-    console.log('[PipelineCanvas] Node IDs to remove:', Array.from(nodeIdsToRemove));
+      // Prevent default backspace navigation
+      e.preventDefault();
 
-    // Remove files from openedFiles AND nodes from visibleNodeIds
-    if (filesToClose.size > 0) {
-      // Remove from openedFiles
-      setOpenedFiles(prev => {
-        const next = new Set(prev);
-        filesToClose.forEach(filePath => next.delete(filePath));
-        return next;
+      // Extract file paths AND node IDs from selected nodes
+      const filesToClose = new Set<string>();
+      const nodeIdsToRemove = new Set<string>();
+
+      selectedNodeIds.forEach((nodeId) => {
+        // Collect node ID for removal from visibleNodeIds
+        nodeIdsToRemove.add(nodeId);
+
+        // Check if nodeId is a file path (orphaned file)
+        if (files[nodeId]) {
+          filesToClose.add(nodeId);
+        } else {
+          // Check if nodeId exists in fullNodeMap
+          const node = fullNodeMap.get(nodeId);
+          if (node) {
+            filesToClose.add(node.filePath);
+
+            // Also remove all nodes from the same file
+            fullNodeMap.forEach((n) => {
+              if (n.filePath === node.filePath) {
+                nodeIdsToRemove.add(n.id);
+              }
+            });
+          }
+        }
       });
 
-      // Remove from visibleNodeIds (prevents auto-re-opening)
-      setVisibleNodeIds(prev => {
-        const next = new Set(prev);
-        nodeIdsToRemove.forEach(nodeId => next.delete(nodeId));
-        return next;
-      });
+      console.log('[PipelineCanvas] OpenFiles to close:', Array.from(filesToClose));
+      console.log('[PipelineCanvas] Node IDs to remove:', Array.from(nodeIdsToRemove));
 
-      // Clear selection
-      setSelectedNodeIds(new Set());
+      // Remove files from openedFiles AND nodes from visibleNodeIds
+      if (filesToClose.size > 0) {
+        // Remove from openedFiles
+        setOpenedFiles((prev) => {
+          const next = new Set(prev);
+          filesToClose.forEach((filePath) => next.delete(filePath));
+          return next;
+        });
+
+        // Remove from visibleNodeIds (prevents auto-re-opening)
+        setVisibleNodeIds((prev) => {
+          const next = new Set(prev);
+          nodeIdsToRemove.forEach((nodeId) => next.delete(nodeId));
+          return next;
+        });
+
+        // Clear selection
+        setSelectedNodeIds(new Set());
+      }
+    },
+    {
+      enableOnFormTags: false,
+      enabled: true, // Always listen, but check focusedPane inside handler
     }
-  }, {
-    enableOnFormTags: false,
-    enabled: true // Always listen, but check focusedPane inside handler
-  });
+  );
 
   return (
-    <div
-      className="w-full h-full relative overflow-hidden bg-vibe-dark"
-      ref={containerRef}
-      onClick={handleCanvasClick}
-    >
-
+    <div className="w-full h-full relative overflow-hidden bg-vibe-dark" ref={containerRef} onClick={handleCanvasClick}>
       {/* Controls */}
       <ResetViewButton />
 
@@ -188,7 +190,7 @@ const PipelineCanvas: React.FC = () => {
         <CanvasConnections />
 
         {/* Nodes */}
-        {layoutNodes.map(node => (
+        {layoutNodes.map((node) => (
           <CanvasCodeCard key={node.visualId} node={node} />
         ))}
       </D3ZoomContainer>

@@ -7,11 +7,7 @@
 /**
  * Import 경로를 실제 파일 경로로 해결
  */
-export function resolvePath(
-  currentFile: string,
-  importPath: string,
-  files: Record<string, string>
-): string | null {
+export function resolvePath(currentFile: string, importPath: string, files: Record<string, string>): string | null {
   // 1. Alias 처리
   let resolvedPath = importPath;
 
@@ -56,7 +52,6 @@ function resolveRelativePath(currentDir: string, relativePath: string): string {
 
   for (const part of importParts) {
     if (part === '.') {
-      continue;
     } else if (part === '..') {
       parts.pop();
     } else {
@@ -70,10 +65,7 @@ function resolveRelativePath(currentDir: string, relativePath: string): string {
 /**
  * 확장자를 추가하여 파일 찾기
  */
-function findFileWithExtension(
-  basePath: string,
-  files: Record<string, string>
-): string | null {
+function findFileWithExtension(basePath: string, files: Record<string, string>): string | null {
   // 정확한 파일이 있으면 그대로 반환
   if (files[basePath]) {
     return basePath;

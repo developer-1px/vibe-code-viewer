@@ -4,34 +4,31 @@
  */
 
 import * as ts from 'typescript';
-import type { CodeLine, SegmentKind } from '../types/codeLine';
-import type { SourceFileNode } from '../../../../entities/SourceFileNode/model/types';
+import { collectFoldMetadata } from '@/features/Code/CodeFold/lib/collectFoldMetadata';
 import { getImportSource } from '../../../../entities/SourceFileNode/lib/getters';
+import type { SourceFileNode } from '../../../../entities/SourceFileNode/model/types';
 import { resolvePath } from '../../../../shared/tsParser/utils/pathResolver';
-import {
-  extractShortId,
-  createDependencyMap,
-  isTsxFile,
-  extractLocalIdentifiers,
-  shouldSkipIdentifier,
-  extractParametersFromAST,
-  extractASTMetadata
-} from './segmentUtils';
+import type { CodeLine, SegmentKind } from '../types/codeLine';
 import {
   processDeclarationNode,
-  processTemplateLiteral,
-  processIdentifier,
   processExportDeclaration,
-  processExportDefault
+  processExportDefault,
+  processIdentifier,
+  processTemplateLiteral,
 } from './astHooks';
-import { collectFoldMetadata } from '@/features/Code/CodeFold/lib/collectFoldMetadata';
-
-// Refactored pure functions
-import { createInitialLines, addSegmentToLines, finalizeAllLines } from './lib/segmentBuilders';
-import { getSegmentKind, addComments } from './lib/astAnalyzers';
-import { enrichWithLanguageService } from './lib/languageServiceEnrichers';
+import { addComments, getSegmentKind } from './lib/astAnalyzers';
 import { extractDeadIdentifiers } from './lib/deadCodeHelpers';
+import { enrichWithLanguageService } from './lib/languageServiceEnrichers';
+// Refactored pure functions
+import { addSegmentToLines, createInitialLines, finalizeAllLines } from './lib/segmentBuilders';
 import type { RenderContext } from './lib/types';
+import {
+  createDependencyMap,
+  extractASTMetadata,
+  extractShortId,
+  isTsxFile,
+  shouldSkipIdentifier,
+} from './segmentUtils';
 
 // Development mode flag (Vite injects this at build time)
 const __DEV__ = import.meta.env.DEV;
@@ -48,7 +45,7 @@ export function renderCodeLinesDirect(
     unusedImports: Array<{ filePath: string; symbolName: string }>;
     unusedExports: Array<{ filePath: string; symbolName: string }>;
     deadFunctions: Array<{ filePath: string; symbolName: string }>;
-    unusedVariables: Array<{ filePath: string; symbolName: string }>
+    unusedVariables: Array<{ filePath: string; symbolName: string }>;
   } | null
 ): CodeLine[] {
   const codeSnippet = node.codeSnippet;
@@ -71,7 +68,7 @@ export function renderCodeLinesDirect(
     return lines.map((lineText, idx) => ({
       num: startLineNum + idx,
       segments: [{ text: lineText, kinds: ['text'] }],
-      hasInput: false
+      hasInput: false,
     }));
   }
 
@@ -102,7 +99,7 @@ export function renderCodeLinesDirect(
       dependencyMap,
       files,
       getImportSource,
-      resolvePath
+      resolvePath,
     };
 
     // Helper: segment 추가 함수 (Phase 1-3: No assignment needed, mutates in-place)
@@ -114,15 +111,21 @@ export function renderCodeLinesDirect(
       isDeclarationNameOrDefinedIn?: boolean | string,
       tsNode?: ts.Node
     ): void => {
-      addSegmentToLines(currentLines, sourceFile, codeSnippet, {
-        start,
-        end,
-        kinds: [kind],
-        nodeId,
-        definedIn: typeof isDeclarationNameOrDefinedIn === 'string' ? isDeclarationNameOrDefinedIn : undefined,
-        isDeclarationName: isDeclarationNameOrDefinedIn === true,
-        tsNode
-      }, deadIdentifiers);
+      addSegmentToLines(
+        currentLines,
+        sourceFile,
+        codeSnippet,
+        {
+          start,
+          end,
+          kinds: [kind],
+          nodeId,
+          definedIn: typeof isDeclarationNameOrDefinedIn === 'string' ? isDeclarationNameOrDefinedIn : undefined,
+          isDeclarationName: isDeclarationNameOrDefinedIn === true,
+          tsNode,
+        },
+        deadIdentifiers
+      );
     };
 
     // AST 순회 함수 (재귀)
@@ -187,7 +190,6 @@ export function renderCodeLinesDirect(
     currentLines = enrichWithLanguageService(currentLines, codeSnippet, filePath || '', isTsx);
 
     return currentLines;
-
   } catch (error) {
     console.error('Error parsing code:', error);
 
@@ -195,7 +197,7 @@ export function renderCodeLinesDirect(
     return lines.map((lineText, idx) => ({
       num: startLineNum + idx,
       segments: [{ text: lineText, kinds: ['text'] }],
-      hasInput: false
+      hasInput: false,
     }));
   }
 }

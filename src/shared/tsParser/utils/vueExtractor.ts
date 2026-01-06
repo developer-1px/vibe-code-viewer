@@ -41,8 +41,8 @@ export function extractVueTemplate(vueContent: string, filePath: string): string
 
     // <template>부터 </template>까지 전체 추출
     const templateBlock = descriptor.template;
-    const startTag = `<template>`;
-    const endTag = `</template>`;
+    const startTag = '<template>';
+    const endTag = '</template>';
     const fullTemplate = `${startTag}\n${templateBlock.content}\n${endTag}`;
 
     return fullTemplate;

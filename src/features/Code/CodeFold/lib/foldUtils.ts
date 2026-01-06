@@ -9,8 +9,8 @@ import type { CodeLine } from '../../../../widgets/CodeViewer/core/types/codeLin
  */
 export function getImportFoldLines(lines: CodeLine[]): number[] {
   return lines
-    .filter(line => line.foldInfo?.isFoldable && line.foldInfo.foldType === 'import-block')
-    .map(line => line.num);
+    .filter((line) => line.foldInfo?.isFoldable && line.foldInfo.foldType === 'import-block')
+    .map((line) => line.num);
 }
 
 /**
@@ -23,11 +23,11 @@ export function calculateFoldRanges(
   const ranges: Array<{ start: number; end: number }> = [];
 
   for (const foldedLineNum of foldedLines) {
-    const foldedLine = processedLines.find(l => l.num === foldedLineNum);
+    const foldedLine = processedLines.find((l) => l.num === foldedLineNum);
     if (foldedLine?.foldInfo?.isFoldable) {
       ranges.push({
         start: foldedLine.foldInfo.foldStart,
-        end: foldedLine.foldInfo.foldEnd
+        end: foldedLine.foldInfo.foldEnd,
       });
     }
   }
@@ -38,11 +38,8 @@ export function calculateFoldRanges(
 /**
  * Check if a line is inside any fold range
  */
-export function isLineInsideFold(
-  lineNum: number,
-  foldRanges: Array<{ start: number; end: number }>
-): boolean {
-  return foldRanges.some(range => lineNum > range.start && lineNum <= range.end);
+export function isLineInsideFold(lineNum: number, foldRanges: Array<{ start: number; end: number }>): boolean {
+  return foldRanges.some((range) => lineNum > range.start && lineNum <= range.end);
 }
 
 /**
@@ -71,17 +68,10 @@ export function getFoldedCount(line: CodeLine): number | undefined {
  * @param maxDepth - Maximum depth to fold (1: import only, 2: import + top-level blocks, etc.)
  * @returns Array of line numbers to fold
  */
-export function getFoldableLinesByMaxDepth(
-  lines: CodeLine[],
-  maxDepth: number
-): number[] {
+export function getFoldableLinesByMaxDepth(lines: CodeLine[], maxDepth: number): number[] {
   return lines
-    .filter(line =>
-      line.foldInfo?.isFoldable &&
-      line.foldInfo.depth !== undefined &&
-      line.foldInfo.depth <= maxDepth
-    )
-    .map(line => line.num);
+    .filter((line) => line.foldInfo?.isFoldable && line.foldInfo.depth !== undefined && line.foldInfo.depth <= maxDepth)
+    .map((line) => line.num);
 }
 
 /**
@@ -90,15 +80,10 @@ export function getFoldableLinesByMaxDepth(
  * @param excludeDepth - Depth to exclude from folding (will be unfolded)
  * @returns Array of line numbers to fold
  */
-export function getFoldableLinesExcludingDepth(
-  lines: CodeLine[],
-  excludeDepth: number
-): number[] {
+export function getFoldableLinesExcludingDepth(lines: CodeLine[], excludeDepth: number): number[] {
   return lines
-    .filter(line =>
-      line.foldInfo?.isFoldable &&
-      line.foldInfo.depth !== undefined &&
-      line.foldInfo.depth !== excludeDepth
+    .filter(
+      (line) => line.foldInfo?.isFoldable && line.foldInfo.depth !== undefined && line.foldInfo.depth !== excludeDepth
     )
-    .map(line => line.num);
+    .map((line) => line.num);
 }

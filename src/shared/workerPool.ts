@@ -34,10 +34,7 @@ class WorkerPool {
 
   private initWorkers() {
     for (let i = 0; i < this.workerCount; i++) {
-      const worker = new Worker(
-        new URL('../workers/codeParser.worker.ts', import.meta.url),
-        { type: 'module' }
-      );
+      const worker = new Worker(new URL('../workers/codeParser.worker.ts', import.meta.url), { type: 'module' });
 
       worker.addEventListener('message', (event: MessageEvent<ParseResponse>) => {
         const { filePath, lines, parseTime } = event.data;
@@ -62,10 +59,7 @@ class WorkerPool {
   /**
    * 파일 파싱 요청 (Round-robin 방식으로 Worker 할당)
    */
-  public parse(
-    request: ParseRequest,
-    callback: ParseCallback
-  ): void {
+  public parse(request: ParseRequest, callback: ParseCallback): void {
     // Callback 등록
     this.callbacks.set(request.filePath, callback);
 
@@ -84,7 +78,7 @@ class WorkerPool {
    * 모든 Worker 종료
    */
   public terminate() {
-    this.workers.forEach(worker => worker.terminate());
+    this.workers.forEach((worker) => worker.terminate());
     this.workers = [];
     this.callbacks.clear();
     console.log('[WorkerPool] All workers terminated');

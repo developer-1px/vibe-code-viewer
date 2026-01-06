@@ -1,8 +1,8 @@
-import * as React from 'react'
-import { cn } from '@/components/lib/utils'
+import * as React from 'react';
+import { cn } from '@/components/lib/utils';
 
 export interface IndicatorProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'inactive' | 'active' | 'success' | 'warning' | 'error' | 'working'
+  variant?: 'inactive' | 'active' | 'success' | 'warning' | 'error' | 'working';
 }
 
 const Indicator = React.forwardRef<HTMLDivElement, IndicatorProps>(
@@ -24,9 +24,9 @@ const Indicator = React.forwardRef<HTMLDivElement, IndicatorProps>(
         )}
         {...props}
       />
-    )
+    );
   }
-)
-Indicator.displayName = 'Indicator'
+);
+Indicator.displayName = 'Indicator';
 
-export { Indicator }
+export { Indicator };

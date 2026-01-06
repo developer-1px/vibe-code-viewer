@@ -14,10 +14,11 @@ export function getDependencies(node: FileNode, files: Record<string, string>): 
   const dependencies: string[] = [];
 
   node.sourceFile.statements.forEach((statement) => {
-    if (ts.isImportDeclaration(statement) &&
-        statement.moduleSpecifier &&
-        ts.isStringLiteral(statement.moduleSpecifier)) {
-
+    if (
+      ts.isImportDeclaration(statement) &&
+      statement.moduleSpecifier &&
+      ts.isStringLiteral(statement.moduleSpecifier)
+    ) {
       // Type-only import는 스킵
       if (statement.importClause?.isTypeOnly) return;
 
@@ -36,16 +37,13 @@ export function getDependencies(node: FileNode, files: Record<string, string>): 
 /**
  * 특정 identifier의 import 정보를 가져옴
  */
-export function getImportSource(
-  node: FileNode,
-  identifierName: string,
-  files: Record<string, string>
-): string | null {
+export function getImportSource(node: FileNode, identifierName: string, files: Record<string, string>): string | null {
   for (const statement of node.sourceFile.statements) {
-    if (ts.isImportDeclaration(statement) &&
-        statement.moduleSpecifier &&
-        ts.isStringLiteral(statement.moduleSpecifier)) {
-
+    if (
+      ts.isImportDeclaration(statement) &&
+      statement.moduleSpecifier &&
+      ts.isStringLiteral(statement.moduleSpecifier)
+    ) {
       const clause = statement.importClause;
       if (!clause) continue;
 
@@ -59,18 +57,18 @@ export function getImportSource(
 
       // Named imports
       if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
-        const found = clause.namedBindings.elements.find(
-          el => el.name.text === identifierName
-        );
+        const found = clause.namedBindings.elements.find((el) => el.name.text === identifierName);
         if (found) {
           return resolvedPath || `npm:${source}`;
         }
       }
 
       // Namespace import
-      if (clause.namedBindings &&
-          ts.isNamespaceImport(clause.namedBindings) &&
-          clause.namedBindings.name.text === identifierName) {
+      if (
+        clause.namedBindings &&
+        ts.isNamespaceImport(clause.namedBindings) &&
+        clause.namedBindings.name.text === identifierName
+      ) {
         return resolvedPath || `npm:${source}`;
       }
     }

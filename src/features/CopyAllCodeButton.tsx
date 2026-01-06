@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
 import { useAtomValue } from 'jotai';
-import { Copy as IconCopy, Check as IconCheck } from 'lucide-react';
-import { layoutNodesAtom } from '../widgets/PipelineCanvas/model/atoms';
+import { Check as IconCheck, Copy as IconCopy } from 'lucide-react';
+import type React from 'react';
+import { useState } from 'react';
 import { fullNodeMapAtom } from '../app/model/atoms';
+import { layoutNodesAtom } from '../widgets/PipelineCanvas/model/atoms';
 
 const CopyAllCodeButton: React.FC = () => {
   const layoutNodes = useAtomValue(layoutNodesAtom);
@@ -19,7 +20,7 @@ const CopyAllCodeButton: React.FC = () => {
         const node = fullNodeMap.get(nodeId);
         if (!node || node.dependencies.length === 0) return 0;
 
-        const depths = node.dependencies.map(depId => getDepth(depId, new Set(visited)));
+        const depths = node.dependencies.map((depId) => getDepth(depId, new Set(visited)));
         return 1 + Math.max(...depths, 0);
       };
 
@@ -32,9 +33,9 @@ const CopyAllCodeButton: React.FC = () => {
       });
 
       // Simple format: Path -> Code
-      let text = `# Code Context (Dependency Order)\n\n`;
+      let text = '# Code Context (Dependency Order)\n\n';
       text += `Total: ${sortedNodes.length} blocks\n\n`;
-      text += `---\n\n`;
+      text += '---\n\n';
 
       sortedNodes.forEach((node, index) => {
         // File path and position

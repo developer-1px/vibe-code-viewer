@@ -2,24 +2,28 @@
  * DeadCodeCategory - Category section with collapsible tree
  * Renders each dead code item as individual node
  */
-import { ChevronDown, ChevronRight } from 'lucide-react';
+
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { collapsedFoldersAtom, expandedCategoriesAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
-import { targetLineAtom } from '@/features/File/Navigation/model/atoms';
-import { viewModeAtom, filesAtom } from '../../../app/model/atoms';
-import { buildDeadCodeTree } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/lib/buildDeadCodeTree';
-import { renderCategoryIcon } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/lib/categoryUtils';
-import { CategoryCheckbox } from '@/features/Code/CodeAnalyzer/DeadCodeSelection/ui/CategoryCheckbox';
-import { TreeView } from '../../../shared/ui/TreeView/TreeView';
-import { DeadCodeFolderItem } from './DeadCodeFolderItem';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useMemo } from 'react';
 import { FileTreeItem } from '@/components/ide/FileTreeItem';
 import { Checkbox } from '@/components/ui/Checkbox';
-import { getFileIcon } from '../../FileExplorer/lib/getFileIcon';
-import { useDeadCodeSelection } from '@/features/Code/CodeAnalyzer/DeadCodeSelection/lib/useDeadCodeSelection';
-import { useOpenFile } from '@/features/File/OpenFiles/lib/useOpenFile';
+import { buildDeadCodeTree } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/lib/buildDeadCodeTree';
+import { renderCategoryIcon } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/lib/categoryUtils';
+import {
+  collapsedFoldersAtom,
+  expandedCategoriesAtom,
+} from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
 import type { CategoryKey } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/types';
+import { useDeadCodeSelection } from '@/features/Code/CodeAnalyzer/DeadCodeSelection/lib/useDeadCodeSelection';
+import { CategoryCheckbox } from '@/features/Code/CodeAnalyzer/DeadCodeSelection/ui/CategoryCheckbox';
+import { targetLineAtom } from '@/features/File/Navigation/model/atoms';
+import { useOpenFile } from '@/features/File/OpenFiles/lib/useOpenFile';
+import { filesAtom, viewModeAtom } from '../../../app/model/atoms';
 import type { DeadCodeItem } from '../../../shared/deadCodeAnalyzer';
-import { useMemo } from 'react';
+import { TreeView } from '../../../shared/ui/TreeView/TreeView';
+import { getFileIcon } from '../../FileExplorer/lib/getFileIcon';
+import { DeadCodeFolderItem } from './DeadCodeFolderItem';
 
 export function DeadCodeCategory({
   title,
@@ -51,14 +55,14 @@ export function DeadCodeCategory({
   };
 
   const toggleCategory = () => {
-    setExpandedCategories(prev => ({
+    setExpandedCategories((prev) => ({
       ...prev,
       [categoryKey]: !prev[categoryKey],
     }));
   };
 
   const toggleFolder = (folderPath: string) => {
-    setCollapsedFolders(prev => {
+    setCollapsedFolders((prev) => {
       const next = new Set(prev);
       if (next.has(folderPath)) {
         next.delete(folderPath);
@@ -75,10 +79,7 @@ export function DeadCodeCategory({
     <div className="rounded overflow-hidden">
       {/* Category Header */}
       <div className="flex items-center gap-2 px-2 py-1.5 hover:bg-white/5 transition-colors border-b border-border-DEFAULT">
-        <button
-          onClick={toggleCategory}
-          className="flex items-center gap-1.5 flex-1"
-        >
+        <button onClick={toggleCategory} className="flex items-center gap-1.5 flex-1">
           {isExpanded ? (
             <ChevronDown size={14} className="text-text-muted shrink-0" />
           ) : (
@@ -164,9 +165,7 @@ export function DeadCodeCategory({
                         onDoubleClick={() => handleItemClick(item)}
                       />
                       {codeSnippet && (
-                        <span className="text-[10px] text-text-tertiary truncate flex-1 font-mono">
-                          {codeSnippet}
-                        </span>
+                        <span className="text-2xs text-text-tertiary truncate flex-1 font-mono">{codeSnippet}</span>
                       )}
                     </div>
                     <Checkbox
@@ -186,9 +185,7 @@ export function DeadCodeCategory({
       )}
 
       {isExpanded && items.length === 0 && (
-        <div className="px-4 py-3 text-xs text-text-muted text-center">
-          No issues found
-        </div>
+        <div className="px-4 py-3 text-xs text-text-muted text-center">No issues found</div>
       )}
     </div>
   );

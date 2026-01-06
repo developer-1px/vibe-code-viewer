@@ -13,8 +13,9 @@ export interface SearchResult {
   lineNumber?: number;
   score: number;
   matchType?: 'fuzzy'; // Match type for visual indication (always fuzzy)
-  matches?: Array<{ // Fuzzy match indices for highlighting
-    key: string;      // Which field matched (name, filePath, etc.)
+  matches?: Array<{
+    // Fuzzy match indices for highlighting
+    key: string; // Which field matched (name, filePath, etc.)
     indices: number[][]; // [start, end] pairs for highlighting
   }>;
   // Enriched metadata

@@ -3,11 +3,11 @@
  * Chevron icon button for folding/unfolding code blocks
  */
 
-import React from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { foldedLinesAtom } from '../model/atoms.ts';
-import type { CodeLine } from '../../../../widgets/CodeViewer/core/types/codeLine.ts';
+import type React from 'react';
 import type { CanvasNode } from '../../../../entities/CanvasNode/model/types.ts';
+import type { CodeLine } from '../../../../widgets/CodeViewer/core/types/codeLine.ts';
+import { foldedLinesAtom } from '../model/atoms.ts';
 
 interface FoldButtonProps {
   line: CodeLine;
@@ -52,9 +52,7 @@ const FoldButton: React.FC<FoldButtonProps> = ({ line, node }) => {
     <button
       onClick={handleToggle}
       className={`flex-shrink-0 w-3 h-3 flex items-center justify-center transition-colors cursor-pointer ${
-        isFolded
-          ? 'text-vibe-accent hover:text-vibe-accent/80'
-          : 'text-theme-text-tertiary hover:text-vibe-accent'
+        isFolded ? 'text-vibe-accent hover:text-vibe-accent/80' : 'text-theme-text-tertiary hover:text-vibe-accent'
       }`}
       title={isFolded ? 'Unfold' : 'Fold'}
     >

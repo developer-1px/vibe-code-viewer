@@ -4,7 +4,7 @@
  *
  * Note: Auto-scroll은 TreeView의 useTreeState에서 처리됩니다.
  */
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 
 const TREE_HOTKEYS = {
@@ -31,6 +31,8 @@ export interface UseTreeKeyboardNavigationProps<T extends TreeNavigationItem> {
   onItemAction: (item: T) => void; // Enter 키나 더블 클릭 시 실행할 액션
   onFolderFocus?: (folderPath: string) => void; // Folder Focus Mode - 폴더를 Root로 설정
   onExitFocus?: () => void; // Folder Focus Mode 종료 (Escape)
+  scope?: string; // react-hotkeys-hook scope (required for modal/conditional components)
+  enabled?: boolean; // Enable/disable navigation (default: true)
 }
 
 export function useTreeKeyboardNavigation<T extends TreeNavigationItem>({
@@ -40,6 +42,8 @@ export function useTreeKeyboardNavigation<T extends TreeNavigationItem>({
   onItemAction,
   onFolderFocus,
   onExitFocus,
+  scope,
+  enabled = true,
 }: UseTreeKeyboardNavigationProps<T>) {
   const [focusedIndex, setFocusedIndex] = useState(0);
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
@@ -118,7 +122,7 @@ export function useTreeKeyboardNavigation<T extends TreeNavigationItem>({
               console.log('[useTreeKeyboardNavigation] Arrow Left - Moving to parent folder from collapsed folder');
               // ✅ ID 기반 부모 찾기
               if (item.parentId) {
-                const parentIndex = flatItemList.findIndex(i => i.id === item.parentId);
+                const parentIndex = flatItemList.findIndex((i) => i.id === item.parentId);
                 if (parentIndex !== -1) {
                   setFocusedIndex(parentIndex);
                 }
@@ -129,7 +133,7 @@ export function useTreeKeyboardNavigation<T extends TreeNavigationItem>({
             console.log('[useTreeKeyboardNavigation] Arrow Left - Moving to parent folder from file/item');
             // ✅ ID 기반 부모 찾기
             if (item.parentId) {
-              const parentIndex = flatItemList.findIndex(i => i.id === item.parentId);
+              const parentIndex = flatItemList.findIndex((i) => i.id === item.parentId);
               if (parentIndex !== -1) {
                 setFocusedIndex(parentIndex);
               }
@@ -138,7 +142,10 @@ export function useTreeKeyboardNavigation<T extends TreeNavigationItem>({
           break;
       }
     },
-    {},
+    {
+      scopes: scope ? [scope] : undefined,
+      enabled,
+    },
     [flatItemList, focusedIndex, onItemAction, collapsedFolders, onToggleFolder, onFolderFocus, onExitFocus]
   );
 

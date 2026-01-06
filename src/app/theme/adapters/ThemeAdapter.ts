@@ -33,12 +33,12 @@ export interface ThemeJSON {
     number?: string;
 
     // Interactive element colors
-    self?: string;                    // Definition highlights
-    externalImport?: string;          // Import statements
-    externalClosure?: string;         // Closure variables
-    externalFunction?: string;        // External functions
-    parameter?: string;               // Function parameters
-    localVariable?: string;           // Local variables
+    self?: string; // Definition highlights
+    externalImport?: string; // Import statements
+    externalClosure?: string; // Closure variables
+    externalFunction?: string; // External functions
+    parameter?: string; // Function parameters
+    localVariable?: string; // Local variables
 
     [key: string]: string | undefined; // Allow additional custom colors
   };
@@ -67,19 +67,19 @@ export class ThemeAdapter {
    */
   private static readonly CSS_VAR_MAPPING: Record<string, string> = {
     // Basic syntax
-    'keyword': '--code-keyword',
-    'variable': '--code-variable',
-    'comment': '--code-comment',
-    'string': '--code-string',
-    'number': '--code-number',
+    keyword: '--code-keyword',
+    variable: '--code-variable',
+    comment: '--code-comment',
+    string: '--code-string',
+    number: '--code-number',
 
     // Interactive elements
-    'self': '--code-self',
-    'externalImport': '--code-external-import',
-    'externalClosure': '--code-external-closure',
-    'externalFunction': '--code-external-function',
-    'parameter': '--code-parameter',
-    'localVariable': '--code-local-variable',
+    self: '--code-self',
+    externalImport: '--code-external-import',
+    externalClosure: '--code-external-closure',
+    externalFunction: '--code-external-function',
+    parameter: '--code-parameter',
+    localVariable: '--code-local-variable',
   };
 
   /**
@@ -92,7 +92,7 @@ export class ThemeAdapter {
 
     // JSON의 각 색상을 CSS 변수로 설정
     Object.entries(themeJson.colors).forEach(([key, value]) => {
-      const cssVar = this.CSS_VAR_MAPPING[key];
+      const cssVar = ThemeAdapter.CSS_VAR_MAPPING[key];
       if (cssVar && value) {
         root.style.setProperty(cssVar, value);
         console.log(`[ThemeAdapter] Set ${cssVar} = ${value}`);
@@ -108,7 +108,7 @@ export class ThemeAdapter {
   static reset(): void {
     const root = document.documentElement;
 
-    Object.values(this.CSS_VAR_MAPPING).forEach(cssVar => {
+    Object.values(ThemeAdapter.CSS_VAR_MAPPING).forEach((cssVar) => {
       root.style.removeProperty(cssVar);
     });
 

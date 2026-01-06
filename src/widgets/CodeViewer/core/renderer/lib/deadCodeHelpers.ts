@@ -29,10 +29,10 @@ export const extractDeadIdentifiers = (
     ...deadCodeResults.unusedImports,
     ...deadCodeResults.unusedExports,
     ...deadCodeResults.deadFunctions,
-    ...deadCodeResults.unusedVariables
+    ...deadCodeResults.unusedVariables,
   ]
-    .filter(item => item.filePath === filePath)
-    .forEach(item => {
+    .filter((item) => item.filePath === filePath)
+    .forEach((item) => {
       deadIdentifiers.add(item.symbolName);
       if (__DEV__) {
         console.log(`[extractDeadIdentifiers] ${filePath} - DEAD: ${item.symbolName} (${item.category})`);

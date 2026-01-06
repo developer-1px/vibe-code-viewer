@@ -4,12 +4,12 @@
  * View Mode (IDE/Canvas)에 따라 자동으로 분기 처리
  */
 
-import { useSetAtom, useAtomValue } from 'jotai';
-import { viewModeAtom, focusedPaneAtom } from '../../../../app/model/atoms.ts';
-import { targetLineAtom } from '@/features/File/Navigation/model/atoms.ts';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { activeLocalVariablesAtom } from '@/features/Code/FocusMode/model/atoms.ts';
-import { openedTabsAtom, activeTabAtom } from '../model/atoms.ts';
+import { targetLineAtom } from '@/features/File/Navigation/model/atoms.ts';
+import { focusedPaneAtom, viewModeAtom } from '../../../../app/model/atoms.ts';
 import { openedFilesAtom } from '../../../../widgets/PipelineCanvas/model/atoms.ts';
+import { activeTabAtom, openedTabsAtom } from '../model/atoms.ts';
 
 export interface OpenFileOptions {
   /** 스크롤할 라인 번호 */
@@ -29,7 +29,7 @@ export function useOpenFile() {
   const setTargetLine = useSetAtom(targetLineAtom);
   const setActiveLocalVariables = useSetAtom(activeLocalVariablesAtom);
   const setFocusedPane = useSetAtom(focusedPaneAtom);
-  const setViewMode = useSetAtom(viewModeAtom);
+  const _setViewMode = useSetAtom(viewModeAtom);
 
   /**
    * 파일 열기
@@ -42,9 +42,7 @@ export function useOpenFile() {
     const { lineNumber, focusSymbol, focusPane } = options;
 
     // nodeId 형식 ("src/App.tsx::AppContent")이면 파일 경로만 추출
-    const actualFilePath = filePath.includes('::')
-      ? filePath.split('::')[0]
-      : filePath;
+    const actualFilePath = filePath.includes('::') ? filePath.split('::')[0] : filePath;
 
     // IDE/CodeDoc 모드: 탭으로 열기
     // 1. 이미 열려있는 파일이면 탭 추가하지 않음 (기존 탭 유지)
@@ -59,11 +57,7 @@ export function useOpenFile() {
         // 현재 활성 탭의 위치를 찾아서 그 다음에 삽입
         const activeIndex = activeTab ? prev.indexOf(activeTab) : -1;
         const insertIndex = activeIndex >= 0 ? activeIndex + 1 : prev.length;
-        return [
-          ...prev.slice(0, insertIndex),
-          actualFilePath,
-          ...prev.slice(insertIndex)
-        ];
+        return [...prev.slice(0, insertIndex), actualFilePath, ...prev.slice(insertIndex)];
       });
 
       // 활성 탭으로 설정 (이미 열려있든 새로 열든, 해당 탭으로 전환)
@@ -101,5 +95,50 @@ export function useOpenFile() {
     }
   };
 
-  return { openFile };
+  /**
+   * 파일 닫기
+   * 현재 활성화된 파일을 닫고, 다음 탭으로 이동
+   *
+   * @param filePath - 닫을 파일 경로 (지정 안 하면 현재 activeTab 닫기)
+   */
+  const closeFile = (filePath?: string) => {
+    const targetFilePath = filePath || activeTab;
+    if (!targetFilePath) return;
+
+    // IDE/CodeDoc 모드: 탭에서 제거
+    if (viewMode === 'ide' || viewMode === 'codeDoc') {
+      setOpenedTabs((prev) => {
+        const filtered = prev.filter((tab) => tab !== targetFilePath);
+
+        // 닫은 탭이 현재 활성 탭이면 다음 탭으로 이동
+        if (activeTab === targetFilePath && filtered.length > 0) {
+          const closedIndex = prev.indexOf(targetFilePath);
+          // 닫은 탭의 다음 탭으로 이동 (없으면 이전 탭)
+          const nextTab = filtered[Math.min(closedIndex, filtered.length - 1)];
+          setActiveTab(nextTab);
+        } else if (filtered.length === 0) {
+          // 마지막 탭을 닫으면 activeTab null
+          setActiveTab(null);
+        }
+
+        return filtered;
+      });
+    } else {
+      // Canvas 모드: openedFiles에서 제거
+      setOpenedFiles((prev) => {
+        const next = new Set(prev);
+        next.delete(targetFilePath);
+        return next;
+      });
+    }
+
+    // Focus mode 해제
+    setActiveLocalVariables((prev: Map<string, Set<string>>) => {
+      const next = new Map(prev);
+      next.delete(targetFilePath);
+      return next;
+    });
+  };
+
+  return { openFile, closeFile };
 }

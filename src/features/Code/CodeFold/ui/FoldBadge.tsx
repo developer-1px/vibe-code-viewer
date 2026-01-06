@@ -3,11 +3,11 @@
  * Shows {...} for statement blocks or ... /> for JSX elements
  */
 
-import React from 'react';
 import { useSetAtom } from 'jotai';
-import { foldedLinesAtom } from '../model/atoms.ts';
-import type { CodeLine } from '../../../../widgets/CodeViewer/core/types/codeLine.ts';
+import type React from 'react';
 import type { CanvasNode } from '../../../../entities/CanvasNode/model/types.ts';
+import type { CodeLine } from '../../../../widgets/CodeViewer/core/types/codeLine.ts';
+import { foldedLinesAtom } from '../model/atoms.ts';
 
 interface FoldBadgeProps {
   line: CodeLine;
@@ -52,7 +52,7 @@ const FoldBadge: React.FC<FoldBadgeProps> = ({ line, node, isFolded, foldedCount
   return (
     <span
       onClick={handleUnfold}
-      className="ml-1 px-1 py-1 rounded bg-theme-panel/40 text-theme-text-secondary text-[10px] border border-theme-border/30 cursor-pointer hover:bg-theme-hover hover:text-theme-text-primary hover:border-theme-border-strong/50 transition-colors"
+      className="ml-1 px-1 py-1 rounded bg-theme-panel/40 text-theme-text-secondary text-2xs border border-theme-border/30 cursor-pointer hover:bg-theme-hover hover:text-theme-text-primary hover:border-theme-border-strong/50 transition-colors"
       title="Click to unfold"
     >
       {badgeText}

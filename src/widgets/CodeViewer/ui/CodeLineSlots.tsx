@@ -3,8 +3,8 @@
  * identifier 토큰에 대한 input slot 표시
  */
 
-import React from 'react';
 import { useAtomValue } from 'jotai';
+import type React from 'react';
 import { fullNodeMapAtom } from '../../../app/model/atoms';
 import type { CodeLine } from '../core/types';
 import CodeSlot from './CodeSlot';
@@ -17,7 +17,7 @@ export const CodeLineSlots: React.FC<CodeLineSlotsProps> = ({ line }) => {
   const fullNodeMap = useAtomValue(fullNodeMapAtom);
 
   const slots = line.segments
-    .filter(seg => seg.kinds?.includes('identifier') && seg.nodeId)  // ✅ Bug fix: Optional chaining for kinds
+    .filter((seg) => seg.kinds?.includes('identifier') && seg.nodeId) // ✅ Bug fix: Optional chaining for kinds
     .map((seg, slotIdx) => {
       const depNode = fullNodeMap.get(seg.nodeId!);
 

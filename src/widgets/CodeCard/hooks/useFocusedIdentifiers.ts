@@ -5,13 +5,13 @@
  * Focus Mode의 identifier 관리 및 제거 로직을 Custom Hook으로 분리
  */
 
-import { useMemo, useCallback } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useMemo } from 'react';
+import { activeLocalVariablesAtom } from '@/features/Code/FocusMode/model/atoms';
+import { fullNodeMapAtom } from '../../../app/model/atoms';
 import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
 import type { CodeLine } from '../../../entities/CodeLine/model/types';
-import { activeLocalVariablesAtom } from '@/features/Code/FocusMode/model/atoms';
 import { visibleNodeIdsAtom } from '../../PipelineCanvas/model/atoms';
-import { fullNodeMapAtom } from '../../../app/model/atoms';
 import { pruneDetachedNodes } from '../../PipelineCanvas/utils';
 
 export interface IdentifierMetadata {
@@ -45,10 +45,7 @@ export interface UseFocusedIdentifiersReturn {
  *   </span>
  * ))
  */
-export function useFocusedIdentifiers(
-  node: CanvasNode,
-  processedLines: CodeLine[]
-): UseFocusedIdentifiersReturn {
+export function useFocusedIdentifiers(node: CanvasNode, processedLines: CodeLine[]): UseFocusedIdentifiersReturn {
   const activeLocalVariables = useAtomValue(activeLocalVariablesAtom);
   const setActiveLocalVariables = useSetAtom(activeLocalVariablesAtom);
   const [visibleNodeIds, setVisibleNodeIds] = useAtom(visibleNodeIdsAtom);
@@ -105,9 +102,7 @@ export function useFocusedIdentifiers(
   const removeIdentifier = useCallback(
     (identifierName: string, definedIn?: string) => {
       const isExternal = !!definedIn;
-      const isActive =
-        definedIn &&
-        (visibleNodeIds.has(definedIn) || visibleNodeIds.has(definedIn.split('::')[0]));
+      const isActive = definedIn && (visibleNodeIds.has(definedIn) || visibleNodeIds.has(definedIn.split('::')[0]));
 
       // 1. Focus에서 제거
       setActiveLocalVariables((prev: Map<string, Set<string>>) => {

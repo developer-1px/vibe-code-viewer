@@ -1,14 +1,18 @@
-
-import React from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { getTokenStyle } from '../../../entities/SourceFileNode/lib/styleUtils';
-import { visibleNodeIdsAtom, cardPositionsAtom, transformAtom } from '../../PipelineCanvas/model/atoms';
-import { fullNodeMapAtom } from '../../../app/model/atoms';
+import type React from 'react';
 import { activeLocalVariablesAtom } from '@/features/Code/FocusMode/model/atoms';
-import { pruneDetachedNodes } from '../../PipelineCanvas/utils';
 import { useGotoDefinition } from '@/features/File/GotoDefinition/lib/useGotoDefinition';
+import { fullNodeMapAtom } from '../../../app/model/atoms';
+import { getTokenStyle } from '../../../entities/SourceFileNode/lib/styleUtils';
+import { cardPositionsAtom, transformAtom, visibleNodeIdsAtom } from '../../PipelineCanvas/model/atoms';
+import { pruneDetachedNodes } from '../../PipelineCanvas/utils';
 
-const CodeToken = ({text, tokenId, nodeId, lineHasFocusedVariable }: {
+const CodeToken = ({
+  text,
+  tokenId,
+  nodeId,
+  lineHasFocusedVariable,
+}: {
   text: string;
   tokenId: string;
   nodeId: string;
@@ -27,10 +31,10 @@ const CodeToken = ({text, tokenId, nodeId, lineHasFocusedVariable }: {
   // Focus mode check (line이 focused면 무시)
   const focusedVariables = activeLocalVariables.get(nodeId);
   const hasFocusMode = !lineHasFocusedVariable && focusedVariables && focusedVariables.size > 0;
-  
+
   // Check if this token refers to a Component
   const targetNode = fullNodeMap.get(tokenId);
-  const isComponent = targetNode 
+  const isComponent = targetNode
     ? /^[A-Z]/.test(targetNode.label) // e.g. "UserList", "Header"
     : /^[A-Z]/.test(text); // Fallback to text if node lookup fails
 
@@ -92,7 +96,7 @@ const CodeToken = ({text, tokenId, nodeId, lineHasFocusedVariable }: {
           const newX = currentNode.x + currentOffset.x - HORIZONTAL_SPACING;
           const newY = currentNode.y + currentOffset.y + relativeY - 100; // Align with clicked line (offset for header)
 
-          setCardPositions(prev => {
+          setCardPositions((prev) => {
             const next = new Map(prev);
             next.set(tokenId, { x: newX, y: newY });
             return next;
@@ -108,11 +112,12 @@ const CodeToken = ({text, tokenId, nodeId, lineHasFocusedVariable }: {
       className={`
         inline-block px-0.5 rounded transition-all duration-200 select-text
         ${isLinkable ? 'cursor-pointer border' : 'cursor-default'}
-        ${hasFocusMode
-          ? 'text-slate-600' // Focus mode: grayscale
-          : isLinkable
-            ? getTokenStyle(isActive, isComponent)
-            : (isComponent ? 'text-emerald-300' : 'text-blue-300') // Fallback style for broken/missing links
+        ${
+          hasFocusMode
+            ? 'text-slate-600' // Focus mode: grayscale
+            : isLinkable
+              ? getTokenStyle(isActive, isComponent)
+              : (isComponent ? 'text-emerald-300' : 'text-blue-300') // Fallback style for broken/missing links
         }
       `}
       onClick={isLinkable ? handleTokenClick : undefined}

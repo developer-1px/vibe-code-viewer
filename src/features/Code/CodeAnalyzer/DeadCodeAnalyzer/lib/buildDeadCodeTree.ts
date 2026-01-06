@@ -2,15 +2,16 @@
  * Build nested folder tree from flat dead code items
  * Each DeadCodeItem becomes an independent node for keyboard navigation
  */
-import type { FolderNode } from '../../../../../widgets/FileExplorer/model/types.ts';
+
 import type { DeadCodeItem } from '../../../../../shared/deadCodeAnalyzer.ts';
+import type { FolderNode } from '../../../../../widgets/FileExplorer/model/types.ts';
 
 export function buildDeadCodeTree(items: DeadCodeItem[]): FolderNode[] {
   const rootChildren: FolderNode[] = [];
   const folderMap = new Map<string, FolderNode>();
 
   // Each DeadCodeItem becomes an independent node
-  items.forEach(item => {
+  items.forEach((item) => {
     const parts = item.filePath.split('/');
     const fileName = parts[parts.length - 1];
 
@@ -24,16 +25,16 @@ export function buildDeadCodeTree(items: DeadCodeItem[]): FolderNode[] {
       currentPath = currentPath ? `${currentPath}/${folderName}` : folderName;
 
       // Find or create folder at current level
-      let folder = currentParent.find(n => n.id === currentPath);
+      let folder = currentParent.find((n) => n.id === currentPath);
 
       if (!folder) {
         folder = {
-          id: currentPath,              // 고유 ID
-          parentId: parentId,           // 부모 ID
+          id: currentPath, // 고유 ID
+          parentId: parentId, // 부모 ID
           type: 'folder',
           name: folderName,
           path: currentPath,
-          children: []
+          children: [],
         };
         currentParent.push(folder);
         folderMap.set(currentPath, folder);
@@ -45,13 +46,13 @@ export function buildDeadCodeTree(items: DeadCodeItem[]): FolderNode[] {
 
     // Create dead-code-item node
     const itemNode: FolderNode = {
-      id: `${item.filePath}:${item.line}:${item.symbolName}`,  // 고유 ID
-      parentId: parentId,           // 부모 ID
+      id: `${item.filePath}:${item.line}:${item.symbolName}`, // 고유 ID
+      parentId: parentId, // 부모 ID
       type: 'dead-code-item',
       name: `${fileName}:${item.line} - ${item.symbolName}`,
       path: `${item.filePath}:${item.line}:${item.symbolName}`,
       filePath: item.filePath,
-      deadCodeItem: item
+      deadCodeItem: item,
     };
 
     // If no folders (root file), add to root
@@ -84,7 +85,7 @@ export function buildDeadCodeTree(items: DeadCodeItem[]): FolderNode[] {
       return a.name.localeCompare(b.name);
     });
 
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       if (node.type === 'folder' && node.children) {
         sortNodes(node.children);
       }

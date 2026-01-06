@@ -1,35 +1,37 @@
 /**
  * DeadCodeFileItem - Dead code items rendering for a file
  */
-import React from 'react';
-import { Checkbox } from '@/components/ui/Checkbox';
-import { FileTreeItem } from '@/components/ide/FileTreeItem';
-import { useSetAtom } from 'jotai';
-import { targetLineAtom } from '@/features/File/Navigation/model/atoms';
-import { viewModeAtom } from '../../../app/model/atoms';
-import { useDeadCodeSelection } from '@/features/Code/CodeAnalyzer/DeadCodeSelection/lib/useDeadCodeSelection';
-import { useOpenFile } from '@/features/File/OpenFiles/lib/useOpenFile';
-import { getFileIcon } from '../../FileExplorer/lib/getFileIcon';
-import type { DeadCodeItem } from '../../../shared/deadCodeAnalyzer';
 
-export const DeadCodeFileItem = React.forwardRef<HTMLDivElement, {
-  items: DeadCodeItem[];
-  fileName: string;
-  depth: number;
-  focused?: boolean;
-  globalItemIndex: number;
-  itemRefs: React.MutableRefObject<Map<number, HTMLDivElement>>;
-  onFocus?: () => void;
-}>((props, ref) => {
+import { useSetAtom } from 'jotai';
+import React from 'react';
+import { FileTreeItem } from '@/components/ide/FileTreeItem';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { useDeadCodeSelection } from '@/features/Code/CodeAnalyzer/DeadCodeSelection/lib/useDeadCodeSelection';
+import { targetLineAtom } from '@/features/File/Navigation/model/atoms';
+import { useOpenFile } from '@/features/File/OpenFiles/lib/useOpenFile';
+import { viewModeAtom } from '../../../app/model/atoms';
+import type { DeadCodeItem } from '../../../shared/deadCodeAnalyzer';
+import { getFileIcon } from '../../FileExplorer/lib/getFileIcon';
+
+export const DeadCodeFileItem = React.forwardRef<
+  HTMLDivElement,
+  {
+    items: DeadCodeItem[];
+    fileName: string;
+    depth: number;
+    focused?: boolean;
+    globalItemIndex: number;
+    itemRefs: React.MutableRefObject<Map<number, HTMLDivElement>>;
+    onFocus?: () => void;
+  }
+>((props, ref) => {
   const { items, fileName, depth, focused, globalItemIndex, itemRefs, onFocus } = props;
   const setTargetLine = useSetAtom(targetLineAtom);
   const setViewMode = useSetAtom(viewModeAtom);
   const { openFile } = useOpenFile();
   const { toggleItemSelection, isItemSelected } = useDeadCodeSelection();
 
-  const fileExtension = fileName.includes('.')
-    ? '.' + fileName.split('.').pop()
-    : undefined;
+  const fileExtension = fileName.includes('.') ? `.${fileName.split('.').pop()}` : undefined;
   const fileIcon = getFileIcon(fileName);
 
   const handleItemClick = (item: DeadCodeItem) => {
@@ -72,9 +74,7 @@ export const DeadCodeFileItem = React.forwardRef<HTMLDivElement, {
               />
             </div>
             {item.from && (
-              <span className="text-2xs text-text-tertiary truncate max-w-[150px] mr-2">
-                from "{item.from}"
-              </span>
+              <span className="text-2xs text-text-tertiary truncate max-w-[150px] mr-2">from "{item.from}"</span>
             )}
             <Checkbox
               checked={isSelected}

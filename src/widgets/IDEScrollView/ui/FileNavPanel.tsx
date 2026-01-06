@@ -3,7 +3,6 @@
  * 파일 목록 표시 및 스크롤 네비게이션
  */
 
-import React from 'react';
 import { getFileName } from '../../../shared/pathUtils';
 import { getFileIcon } from '../../FileExplorer/lib/getFileIcon';
 
@@ -16,7 +15,6 @@ const FileNavPanel = ({
   currentFilePath: string | null;
   onFileClick: (filePath: string) => void;
 }) => {
-
   return (
     <div className="w-48 border-l border-border-DEFAULT bg-bg-elevated overflow-y-auto">
       {/* 헤더 */}
@@ -47,9 +45,7 @@ const FileNavPanel = ({
               />
               <div className="flex flex-col min-w-0">
                 <span
-                  className={`text-xs truncate ${
-                    isActive ? 'text-text-primary font-medium' : 'text-text-secondary'
-                  }`}
+                  className={`text-xs truncate ${isActive ? 'text-text-primary font-medium' : 'text-text-secondary'}`}
                 >
                   {fileName}
                 </span>

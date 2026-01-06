@@ -3,8 +3,8 @@
  * 통합 검색 기능 관련 상태 atoms (Shift+Shift 검색 모달)
  */
 import { atom } from 'jotai';
-import type { SearchResult } from './types.ts';
 import type { CodeSymbolMetadata } from '../../../../entities/CodeSymbol/model/types.ts';
+import type { SearchResult } from './types.ts';
 
 // 검색 모달 열림/닫힘 상태
 export const searchModalOpenAtom = atom(false);

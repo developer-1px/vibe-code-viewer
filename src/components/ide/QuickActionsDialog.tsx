@@ -1,18 +1,17 @@
-import * as React from 'react'
 import {
+  Code,
+  Command as CommandIcon,
+  FileCode,
   FileText,
+  FolderOpen,
+  GitBranch,
+  Palette,
   Search,
   Settings,
-  GitBranch,
-  Terminal,
   Sparkles,
-  Code,
-  FolderOpen,
-  FileCode,
-  Command as CommandIcon,
-  Palette,
+  Terminal,
   Zap,
-} from 'lucide-react'
+} from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -22,11 +21,11 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from '@/components/ui/Command'
+} from '@/components/ui/Command';
 
 export interface QuickActionsDialogProps {
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 /**
@@ -144,5 +143,5 @@ export function QuickActionsDialog({ open, onOpenChange }: QuickActionsDialogPro
         </CommandGroup>
       </CommandList>
     </CommandDialog>
-  )
+  );
 }

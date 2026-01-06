@@ -10,12 +10,10 @@
  * Feature 레이어는 activeTabAtom만 변경하고, Widget이 스크롤로 반응합니다.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function useScrollNavigation(filePaths: string[]) {
-  const [currentFilePath, setCurrentFilePath] = useState<string | null>(
-    filePaths.length > 0 ? filePaths[0] : null
-  );
+  const [currentFilePath, setCurrentFilePath] = useState<string | null>(filePaths.length > 0 ? filePaths[0] : null);
   const sectionRefsRef = useRef<Map<string, HTMLDivElement>>(new Map());
   const observerRef = useRef<IntersectionObserver | null>(null);
 

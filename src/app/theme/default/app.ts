@@ -9,43 +9,43 @@ export const defaultAppTheme: AppTheme = {
   name: 'default',
 
   colors: {
-    // Main backgrounds - Figma Dark style
-    background: '#0e0e0e',    // Very dark background
-    canvas: '#1e1e1e',        // Canvas/workspace
-    sidebar: '#1e1e1e',       // AppSidebar
-    header: '#181818',        // Header (slightly darker)
-    panel: '#2c2c2c',         // Panel/card (lighter for hierarchy)
+    // Main backgrounds - Figma Dark style (1단계 밝게)
+    background: '#141414', // 0e → 14 (약간 밝게)
+    canvas: '#242424', // 1e → 24 (약간 밝게)
+    sidebar: '#242424', // 1e → 24 (약간 밝게)
+    header: '#1e1e1e', // 18 → 1e (약간 밝게)
+    panel: '#323232', // 2c → 32 (약간 밝게)
 
-    // Borders - Minimal, Figma style
+    // Borders - Minimal, Figma style (1단계 밝게)
     border: {
-      DEFAULT: '#333333',     // Subtle border
-      subtle: '#282828',      // Very subtle
-      strong: '#444444',      // Strong border
+      DEFAULT: '#3d3d3d', // 33 → 3d (약간 밝게)
+      subtle: '#2e2e2e', // 28 → 2e (약간 밝게)
+      strong: '#4e4e4e', // 44 → 4e (약간 밝게)
     },
 
-    // Text - High contrast
+    // Text - High contrast (1단계 밝게)
     text: {
-      primary: '#f5f5f5',     // Very bright primary
-      secondary: '#b3b3b3',   // Clear secondary
-      tertiary: '#8c8c8c',    // Muted but readable
-      accent: '#22d3ee',      // Cyan accent (AI identity)
+      primary: '#ffffff', // f5 → ff (최대 밝기)
+      secondary: '#c7c7c7', // b3 → c7 (약간 밝게)
+      tertiary: '#9a9a9a', // 8c → 9a (약간 밝게)
+      accent: '#22d3ee', // Cyan accent (유지)
     },
 
-    // Interactive states
-    hover: 'rgba(255, 255, 255, 0.06)',   // Subtle hover
-    active: 'rgba(255, 255, 255, 0.10)',  // Active state
-    focus: 'rgba(255, 255, 255, 0.12)',   // Focus state
+    // Interactive states (1단계 밝게)
+    hover: 'rgba(255, 255, 255, 0.08)', // 0.06 → 0.08
+    active: 'rgba(255, 255, 255, 0.14)', // 0.10 → 0.14
+    focus: 'rgba(255, 255, 255, 0.16)', // 0.12 → 0.16
 
-    // Status colors - Vibrant on dark
-    success: '#5fb76b',       // Green
-    warning: '#f5a623',       // Figma orange
-    error: '#f24822',         // Figma red
-    info: '#18a0fb',          // Figma blue
+    // Status colors - Vibrant on dark (밝기 유지)
+    success: '#5fb76b', // Green
+    warning: '#f5a623', // Figma orange
+    error: '#f24822', // Figma red
+    info: '#18a0fb', // Figma blue
 
     // Special colors
-    purple: '#b58bf7',        // Figma purple
-    amber: '#f5a623',         // Figma amber
-    emerald: '#5fb76b',       // Emerald green
+    purple: '#b58bf7', // Figma purple
+    amber: '#f5a623', // Figma amber
+    emerald: '#5fb76b', // Emerald green
   },
 
   effects: {

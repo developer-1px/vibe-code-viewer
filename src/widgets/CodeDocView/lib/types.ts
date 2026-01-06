@@ -6,19 +6,19 @@
 /**
  * 주석 스타일 종류
  * - line: 일반 한줄 주석 (//)
- * - block: 블록 주석 (/* */)
- * - jsdoc: JSDoc 스타일 주석 (/** */)
+ * - block: 블록 주석 (slash-star ... star-slash)
+ * - jsdoc: JSDoc 스타일 주석 (slash-star-star ... star-slash)
  * - separator: 구분선 스타일 주석 (// ==== Title ====)
  * - xml: XML Doc 주석 (///)
  */
 export type CommentStyle = 'line' | 'block' | 'jsdoc' | 'separator' | 'xml';
 
 /**
- * CodeDoc 섹션 (주석, 코드, export, jsx, 제어문, 또는 파일 헤더)
+ * CodeDoc 섹션 (주석, 코드, export, jsx, 제어문, 테스트, 또는 파일 헤더)
  */
 export interface CodeDocSection {
   /** 섹션 타입 */
-  type: 'comment' | 'code' | 'export' | 'jsx' | 'control' | 'fileHeader';
+  type: 'comment' | 'code' | 'export' | 'jsx' | 'control' | 'fileHeader' | 'test-suite' | 'test-case' | 'test-hook';
 
   /** 섹션 내용 (주석의 경우 텍스트, 코드의 경우 원본 코드) */
   content: string;
@@ -44,6 +44,18 @@ export interface CodeDocSection {
 
   /** Export signature 바로 앞의 주석 (빈 줄 없이 연속된 경우) */
   relatedComment?: CodeDocSection;
+
+  // Test specific fields
+
+  /** 테스트 이름 (test-suite, test-case, test-hook의 경우) */
+  testName?: string;
+
+  /** 테스트 메타데이터 (URL, selectors, expectations 등) */
+  testMetadata?: {
+    url?: string;
+    selectors?: string[];
+    expectations?: string[];
+  };
 }
 
 /**
@@ -60,7 +72,16 @@ export interface CodeDocFile {
 /**
  * Import 심볼 종류
  */
-export type SymbolKind = 'function' | 'type' | 'const' | 'component' | 'hook' | 'class' | 'interface' | 'enum' | 'unknown';
+export type SymbolKind =
+  | 'function'
+  | 'type'
+  | 'const'
+  | 'component'
+  | 'hook'
+  | 'class'
+  | 'interface'
+  | 'enum'
+  | 'unknown';
 
 /**
  * Import된 심볼 정보

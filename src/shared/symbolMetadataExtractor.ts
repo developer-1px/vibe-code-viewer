@@ -3,8 +3,8 @@
  * Uses TypeScript Language Service to enrich symbols with metadata
  */
 
-import type { SourceFileNode } from '../entities/SourceFileNode/model/types';
 import type { CodeSymbolMetadata } from '../entities/CodeSymbol/model/types';
+import type { SourceFileNode } from '../entities/SourceFileNode/model/types';
 import { getQuickInfoAtPosition } from '../widgets/CodeViewer/core/renderer/tsLanguageService';
 
 /**
@@ -50,7 +50,7 @@ function isTsxFile(filePath: string): boolean {
  */
 export function extractSymbolMetadata(
   fullNodeMap: Map<string, SourceFileNode>,
-  files: Record<string, string>
+  _files: Record<string, string>
 ): Map<string, CodeSymbolMetadata> {
   console.log('[symbolMetadataExtractor] Starting extraction, fullNodeMap size:', fullNodeMap.size);
   const metadata = new Map<string, CodeSymbolMetadata>();
@@ -63,11 +63,7 @@ export function extractSymbolMetadata(
     }
 
     // Skip root nodes (TEMPLATE_ROOT, JSX_ROOT, FILE_ROOT)
-    if (
-      node.id.endsWith('::TEMPLATE_ROOT') ||
-      node.id.endsWith('::JSX_ROOT') ||
-      node.id.endsWith('::FILE_ROOT')
-    ) {
+    if (node.id.endsWith('::TEMPLATE_ROOT') || node.id.endsWith('::JSX_ROOT') || node.id.endsWith('::FILE_ROOT')) {
       console.log('[symbolMetadataExtractor] Skipping root node:', node.id);
       return;
     }
@@ -83,19 +79,14 @@ export function extractSymbolMetadata(
 
     if (node.codeSnippet && node.filePath) {
       const isTsx = isTsxFile(node.filePath);
-      const startLine = node.startLine || 1;
+      const _startLine = node.startLine || 1;
 
       // Try to get type info from the first identifier in the code
       // Position 0 is usually the declaration keyword, so we try position after that
       const firstIdentifierPos = node.codeSnippet.search(/\b[a-zA-Z_$][a-zA-Z0-9_$]*\b/);
 
       if (firstIdentifierPos >= 0) {
-        typeInfo = getQuickInfoAtPosition(
-          node.codeSnippet,
-          node.filePath,
-          firstIdentifierPos,
-          isTsx
-        );
+        typeInfo = getQuickInfoAtPosition(node.codeSnippet, node.filePath, firstIdentifierPos, isTsx);
       }
     }
 

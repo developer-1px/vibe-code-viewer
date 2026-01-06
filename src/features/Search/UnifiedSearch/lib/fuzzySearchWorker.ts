@@ -3,7 +3,7 @@
  * Performs expensive fuzzy matching in background thread
  */
 
-import Fuse, { IFuseOptions } from 'fuse.js';
+import Fuse, { type IFuseOptions } from 'fuse.js';
 import { getFileName } from '../../../../shared/pathUtils.ts';
 
 // Worker용 경량 검색 아이템 (검색에 필요한 최소한의 정보만)
@@ -33,18 +33,18 @@ export interface FuzzySearchResponse {
 // Fuse.js configuration for fuzzy search (name only)
 // More strict settings to avoid results too different from query
 const fuseOptions: IFuseOptions<SearchItem> = {
-  keys: ['name'],           // Only search by name
-  threshold: 0.2,           // Much stricter (0.4 → 0.2)
-  location: 0,              // Search from the beginning of the string
-  distance: 30,             // Shorter distance (100 → 30)
-  minMatchCharLength: 2,    // Require at least 2 char matches (1 → 2)
-  includeScore: true,       // Include match score in results
-  includeMatches: true,     // Include match indices for highlighting
+  keys: ['name'], // Only search by name
+  threshold: 0.2, // Much stricter (0.4 → 0.2)
+  location: 0, // Search from the beginning of the string
+  distance: 30, // Shorter distance (100 → 30)
+  minMatchCharLength: 2, // Require at least 2 char matches (1 → 2)
+  includeScore: true, // Include match score in results
+  includeMatches: true, // Include match indices for highlighting
   useExtendedSearch: false, // Disable extended search syntax
-  ignoreLocation: false,    // Give priority to matches at the start
-  ignoreFieldNorm: false,   // Consider field length in scoring
-  fieldNormWeight: 1.0,     // Prefer shorter names
-  findAllMatches: false,    // Only find best matches
+  ignoreLocation: false, // Give priority to matches at the start
+  ignoreFieldNorm: false, // Consider field length in scoring
+  fieldNormWeight: 1.0, // Prefer shorter names
+  findAllMatches: false, // Only find best matches
 };
 
 // Handle messages from main thread
@@ -64,7 +64,7 @@ self.onmessage = (event: MessageEvent<FuzzySearchRequest>) => {
   }
 
   // Parse query: support "symbol/file" or "symbol file" syntax
-  const parts = query.split(/[\/\s]+/).filter(p => p.trim());
+  const parts = query.split(/[/\s]+/).filter((p) => p.trim());
   const symbolQuery = parts[0] || query;
   const fileFilter = parts[1] || null;
 
@@ -72,7 +72,7 @@ self.onmessage = (event: MessageEvent<FuzzySearchRequest>) => {
   let filteredItems = items;
   if (fileFilter) {
     const lowerFileFilter = fileFilter.toLowerCase();
-    filteredItems = filteredItems.filter(item => {
+    filteredItems = filteredItems.filter((item) => {
       // Extract filename from path and check
       const fileName = getFileName(item.filePath).toLowerCase();
       return fileName.includes(lowerFileFilter);
@@ -85,15 +85,16 @@ self.onmessage = (event: MessageEvent<FuzzySearchRequest>) => {
 
   // Extract only IDs and match indices (Main thread will fetch full data)
   // Use Fuse.js ordering as-is
-  const results = fuseResults.map(result => {
-    const matches: FuzzyMatch[] = result.matches?.map(match => ({
-      key: match.key || '',
-      indices: [...match.indices] // Copy to make mutable
-    })) || [];
+  const results = fuseResults.map((result) => {
+    const matches: FuzzyMatch[] =
+      result.matches?.map((match) => ({
+        key: match.key || '',
+        indices: [...match.indices], // Copy to make mutable
+      })) || [];
 
     return {
       id: result.item.id,
-      matches: matches.length > 0 ? matches : undefined
+      matches: matches.length > 0 ? matches : undefined,
     };
   });
 

@@ -1,9 +1,9 @@
-import React from 'react';
 import { useSetAtom } from 'jotai';
 import { Eraser as IconEraser } from 'lucide-react';
+import type React from 'react';
+import { activeTabAtom, openedTabsAtom } from '@/features/File/OpenFiles/model/atoms';
 import { filesAtom } from '../app/model/atoms';
-import { openedTabsAtom, activeTabAtom } from '@/features/File/OpenFiles/model/atoms';
-import { DEFAULT_FILES, DEFAULT_ENTRY_FILE } from '../constants';
+import { DEFAULT_ENTRY_FILE, DEFAULT_FILES } from '../constants';
 
 const ResetFilesButton: React.FC = () => {
   const setFiles = useSetAtom(filesAtom);
@@ -11,7 +11,7 @@ const ResetFilesButton: React.FC = () => {
   const setActiveTab = useSetAtom(activeTabAtom);
 
   const handleReset = () => {
-    if (window.confirm("Reset all files to default?")) {
+    if (window.confirm('Reset all files to default?')) {
       setFiles(DEFAULT_FILES);
       setOpenedTabs([DEFAULT_ENTRY_FILE]);
       setActiveTab(DEFAULT_ENTRY_FILE);

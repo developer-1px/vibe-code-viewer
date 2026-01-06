@@ -3,22 +3,23 @@
  * Adapted for vibe-code-viewer UnifiedSearch
  */
 
-import * as React from 'react';
 import {
-  Search,
+  Calculator,
+  Code2,
+  CodeXml,
+  CornerDownLeft,
+  Database,
+  Eye,
   File,
   Folder,
-  Code2,
-  Database,
-  Calculator,
-  Eye,
+  Search,
+  SquareFunction,
   Upload,
-  CornerDownLeft,
-  CodeXml,
-  SquareFunction
 } from 'lucide-react';
+import * as React from 'react';
 import { cn } from '@/components/lib/utils';
 import type { SearchResult } from '@/features/Search/UnifiedSearch/model/types';
+import { useListKeyboardNavigation } from '@/shared/hooks/useListKeyboardNavigation';
 import { getFileName } from '../../shared/pathUtils';
 
 export interface CommandPaletteProps {
@@ -44,6 +45,17 @@ export function CommandPalette({
 }: CommandPaletteProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  // Headless keyboard navigation with auto-scroll
+  const { focusedIndex, itemRefs, scrollContainerRef } = useListKeyboardNavigation({
+    items: results,
+    onSelect: (result) => onSelectResult(result),
+    onClose: () => onOpenChange(false),
+    scope: 'search',
+    enabled: open,
+    enableOnFormTags: true,
+    debug: true, // Enable debug logs
+  });
+
   // Auto-focus input when opened
   React.useEffect(() => {
     if (open && inputRef.current) {
@@ -52,36 +64,10 @@ export function CommandPalette({
     }
   }, [open]);
 
-  // Keyboard navigation
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!open) return;
-
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onOpenChange(false);
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        onSelectedIndexChange(Math.min(selectedIndex + 1, results.length - 1));
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        onSelectedIndexChange(Math.max(selectedIndex - 1, 0));
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        if (results.length > 0) {
-          onSelectResult(results[selectedIndex]);
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, selectedIndex, results, onOpenChange, onSelectedIndexChange, onSelectResult]);
-
   // Get icon for result type
   const getIcon = (result: SearchResult) => {
     if (result.type === 'file') {
-      const ext = result.filePath.includes('.') ? '.' + result.filePath.split('.').pop() : '';
+      const ext = result.filePath.includes('.') ? `.${result.filePath.split('.').pop()}` : '';
 
       switch (ext.toLowerCase()) {
         case '.tsx':
@@ -128,7 +114,7 @@ export function CommandPalette({
     if (isSelected) return 'text-warm-300';
 
     if (result.type === 'file') {
-      const ext = result.filePath.includes('.') ? '.' + result.filePath.split('.').pop() : '';
+      const ext = result.filePath.includes('.') ? `.${result.filePath.split('.').pop()}` : '';
 
       switch (ext.toLowerCase()) {
         case '.tsx':
@@ -229,7 +215,7 @@ export function CommandPalette({
       return (
         <>
           <span>{snippet.slice(0, index)}</span>
-          <span className={isSelected ? 'text-warm-300 font-semibold' : 'text-text-secondary'}>
+          <span className={cn('font-semibold', isSelected ? 'text-warm-300' : 'text-text-secondary')}>
             {highlightText(symbolName, 'name', result, isSelected)}
           </span>
           <span>{snippet.slice(index + symbolName.length)}</span>
@@ -258,12 +244,6 @@ export function CommandPalette({
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-50 bg-bg-overlay backdrop-blur-sm"
-        onClick={() => onOpenChange(false)}
-      />
-
       {/* Command Palette */}
       <div className="fixed left-1/2 top-[15%] z-50 w-full max-w-3xl -translate-x-1/2">
         <div className="mx-4 rounded-lg border border-border-active bg-bg-elevated shadow-xl">
@@ -284,34 +264,44 @@ export function CommandPalette({
           </div>
 
           {/* Results */}
-          <div className="max-h-[500px] overflow-y-auto p-1">
+          <div ref={scrollContainerRef} className="max-h-[500px] overflow-y-auto p-1">
             {results.length === 0 ? (
-              <div className="px-4 py-8 text-center text-text-secondary text-xs">
-                No results found
-              </div>
+              <div className="px-4 py-8 text-center text-text-secondary text-xs">No results found</div>
             ) : (
               results.map((result, index) => {
                 const Icon = getIcon(result);
-                const isSelected = index === selectedIndex;
+                const isSelected = index === focusedIndex;
 
                 return (
                   <div
                     key={result.id}
+                    role="button"
+                    tabIndex={-1}
+                    ref={(el) => {
+                      if (el) {
+                        itemRefs.current.set(index, el);
+                      } else {
+                        itemRefs.current.delete(index);
+                      }
+                    }}
                     className={cn(
-                      'group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 transition-all',
+                      'group flex cursor-pointer items-center gap-2 rounded-md px-2 py-1',
                       isSelected
                         ? 'bg-warm-glow/30 border border-warm-300/20'
                         : 'border border-transparent hover:bg-white/5'
                     )}
                     onClick={() => onSelectResult(result)}
-                    onMouseEnter={() => onSelectedIndexChange(index)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelectResult(result);
+                      }
+                    }}
                   >
                     <div
                       className={cn(
                         'flex h-5 w-5 shrink-0 items-center justify-center rounded',
-                        isSelected
-                          ? 'bg-warm-glow/30'
-                          : 'bg-bg-surface group-hover:bg-bg-base'
+                        isSelected ? 'bg-warm-glow/30' : 'bg-bg-surface group-hover:bg-bg-base'
                       )}
                     >
                       <Icon size={11} strokeWidth={1.5} className={getIconColor(result, isSelected)} />
@@ -331,16 +321,14 @@ export function CommandPalette({
                             {highlightText(result.name, 'name', result, isSelected)}
                           </span>
                         </div>
-                        <span className="text-2xs text-text-muted truncate">
-                          {renderSubtitle(result, isSelected)}
-                        </span>
+                        <span className="text-2xs text-text-muted truncate">{renderSubtitle(result, isSelected)}</span>
                       </>
                     ) : (
                       // SYMBOL: Code snippet with symbol name highlighted
                       <>
                         <div className="flex-1 min-w-0 text-2xs text-text-muted truncate">
                           {renderSubtitle(result, isSelected) || (
-                            <span className={isSelected ? 'text-warm-300 font-semibold' : 'text-text-secondary'}>
+                            <span className={cn('font-semibold', isSelected ? 'text-warm-300' : 'text-text-secondary')}>
                               {highlightText(result.name, 'name', result, isSelected)}
                             </span>
                           )}
@@ -349,9 +337,7 @@ export function CommandPalette({
                       </>
                     )}
 
-                    {isSelected && (
-                      <CornerDownLeft size={12} className="shrink-0 text-text-muted" />
-                    )}
+                    {isSelected && <CornerDownLeft size={12} className="shrink-0 text-text-muted" />}
                   </div>
                 );
               })

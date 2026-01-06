@@ -8,44 +8,44 @@ import type { EditorTheme } from '../types';
 export const jetbrainsEditorTheme: EditorTheme = {
   name: 'jetbrains',
   typography: {
-    fontSize: 'text-sm',        // Slightly larger than default
+    fontSize: 'text-sm', // Slightly larger than default
     fontFamily: 'font-mono',
-    lineHeight: 'leading-[1.4]' // More spacious line height
+    lineHeight: 'leading-[1.4]', // More spacious line height
   },
   colors: {
-    background: 'bg-[#1e1f22]',  // Islands Dark canvas
+    background: 'bg-[#1e1f22]', // Islands Dark canvas
     lineNumber: {
-      text: 'text-[#6c6e75]',           // Muted gray
-      background: 'bg-[#191a1c]',       // Darker background
-      border: 'border-[#2b2b2b]'        // Subtle border
+      text: 'text-[#6c6e75]', // Muted gray
+      background: 'bg-[#191a1c]', // Darker background
+      border: 'border-[#2b2b2b]', // Subtle border
     },
     code: {
-      normal: 'text-[#bcbec4]',         // Islands Dark default text
+      normal: 'text-[#bcbec4]', // Islands Dark default text
       comment: {
-        normal: 'text-[#7a7e85]',       // Muted gray comments
-        focus: 'text-[#868a91]'         // Slightly brighter in focus
-      }
+        normal: 'text-[#7a7e85]', // Muted gray comments
+        focus: 'text-[#868a91]', // Slightly brighter in focus
+      },
     },
     template: {
       text: 'text-[#bcbec4]',
       clickable: {
-        bg: 'bg-[#56a8f5]/20',          // Blue selection
-        border: 'border-[#56a8f5]',     // Islands blue
-        text: 'text-[#cf8e6d]',         // Warm orange for components
+        bg: 'bg-[#56a8f5]/20', // Blue selection
+        border: 'border-[#56a8f5]', // Islands blue
+        text: 'text-[#cf8e6d]', // Warm orange for components
         hoverBg: 'hover:bg-[#56a8f5]/30',
-        hoverBorder: 'hover:border-[#56a8f5]/80'
-      }
-    }
+        hoverBorder: 'hover:border-[#56a8f5]/80',
+      },
+    },
   },
   spacing: {
-    containerY: 'py-3',           // More padding
-    lineX: 'px-4',                // More horizontal padding
-    lineY: 'py-1',                // More vertical padding per line
-    lineNumberX: 'pr-3'
+    containerY: 'py-3', // More padding
+    lineX: 'px-4', // More horizontal padding
+    lineY: 'py-1', // More vertical padding per line
+    lineNumberX: 'pr-3',
   },
   dimensions: {
-    lineNumberWidth: 'w-20',      // Wider line number column
-    slotSize: 'w-1.5 h-1.5',      // Reduced from w-2 h-2 (8px → 6px)
-    slotSpacing: 4                // Reduced spacing for smaller slots
-  }
+    lineNumberWidth: 'w-20', // Wider line number column
+    slotSize: 'w-1.5 h-1.5', // Reduced from w-2 h-2 (8px → 6px)
+    slotSpacing: 4, // Reduced spacing for smaller slots
+  },
 };

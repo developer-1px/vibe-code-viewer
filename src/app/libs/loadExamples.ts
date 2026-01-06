@@ -1,4 +1,3 @@
-
 /**
  * Load example files using import.meta.glob if available,
  * otherwise fallback to hardcoded examples.
@@ -282,7 +281,7 @@ export default function App() {
       </p>
     </div>
   );
-}`
+}`,
 };
 
 /**
@@ -292,10 +291,10 @@ const loadDynamicFiles = (): Record<string, string> | null => {
   try {
     const files: Record<string, string> = {};
 
-    // @ts-ignore - import.meta.glob is a Vite feature
+    // @ts-expect-error - import.meta.glob is a Vite feature
     const srcFiles = import.meta.glob('/src/**/*.{tsx,ts,vue}', {
       query: '?raw',
-      eager: true
+      eager: true,
     });
 
     // Process src files
@@ -308,7 +307,7 @@ const loadDynamicFiles = (): Record<string, string> | null => {
       return files;
     }
     return null;
-  } catch (error) {
+  } catch (_error) {
     // import.meta.glob not available or failed
     return null;
   }
@@ -348,53 +347,53 @@ export const findEntryFile = (files: Record<string, string>): string => {
     throw new Error('No files available to find entry point');
   }
 
-  const appTsx = filePaths.find(path => path.endsWith('App.tsx'));
+  const appTsx = filePaths.find((path) => path.endsWith('App.tsx'));
   if (appTsx) {
     console.log('📍 Entry file detected: App.tsx ->', appTsx);
     return appTsx;
   }
 
   // Priority 1: Look for App.vue or App.tsx
-  const appVue = filePaths.find(path => path.endsWith('App.vue'));
+  const appVue = filePaths.find((path) => path.endsWith('App.vue'));
   if (appVue) {
     console.log('📍 Entry file detected: App.vue ->', appVue);
     return appVue;
   }
 
   // Priority 2: Look for main.vue or main.tsx
-  const mainVue = filePaths.find(path => path.endsWith('main.vue'));
+  const mainVue = filePaths.find((path) => path.endsWith('main.vue'));
   if (mainVue) {
     console.log('📍 Entry file detected: main.vue ->', mainVue);
     return mainVue;
   }
 
-  const mainTsx = filePaths.find(path => path.endsWith('main.tsx'));
+  const mainTsx = filePaths.find((path) => path.endsWith('main.tsx'));
   if (mainTsx) {
     console.log('📍 Entry file detected: main.tsx ->', mainTsx);
     return mainTsx;
   }
 
   // Priority 3: Look for index.vue or index.tsx
-  const indexVue = filePaths.find(path => path.endsWith('index.vue'));
+  const indexVue = filePaths.find((path) => path.endsWith('index.vue'));
   if (indexVue) {
     console.log('📍 Entry file detected: index.vue ->', indexVue);
     return indexVue;
   }
 
-  const indexTsx = filePaths.find(path => path.endsWith('index.tsx'));
+  const indexTsx = filePaths.find((path) => path.endsWith('index.tsx'));
   if (indexTsx) {
     console.log('📍 Entry file detected: index.tsx ->', indexTsx);
     return indexTsx;
   }
 
   // Priority 4: Fallback to first .vue or .tsx file
-  const firstVue = filePaths.find(path => path.endsWith('.vue'));
+  const firstVue = filePaths.find((path) => path.endsWith('.vue'));
   if (firstVue) {
     console.log('📍 Entry file detected: first .vue ->', firstVue);
     return firstVue;
   }
 
-  const firstTsx = filePaths.find(path => path.endsWith('.tsx'));
+  const firstTsx = filePaths.find((path) => path.endsWith('.tsx'));
   if (firstTsx) {
     console.log('📍 Entry file detected: first .tsx ->', firstTsx);
     return firstTsx;

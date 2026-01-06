@@ -41,56 +41,56 @@ export function getCommentTagInfo(tag: CommentTag): CommentTagInfo {
         tag,
         colorClass: 'text-blue-700',
         bgClass: 'bg-blue-50',
-        borderClass: 'border-blue-200'
+        borderClass: 'border-blue-200',
       };
     case 'FIXME':
       return {
         tag,
         colorClass: 'text-red-700',
         bgClass: 'bg-red-50',
-        borderClass: 'border-red-200'
+        borderClass: 'border-red-200',
       };
     case 'NOTE':
       return {
         tag,
         colorClass: 'text-green-700',
         bgClass: 'bg-green-50',
-        borderClass: 'border-green-200'
+        borderClass: 'border-green-200',
       };
     case 'HACK':
       return {
         tag,
         colorClass: 'text-orange-700',
         bgClass: 'bg-orange-50',
-        borderClass: 'border-orange-200'
+        borderClass: 'border-orange-200',
       };
     case 'XXX':
       return {
         tag,
         colorClass: 'text-purple-700',
         bgClass: 'bg-purple-50',
-        borderClass: 'border-purple-200'
+        borderClass: 'border-purple-200',
       };
     case 'BUG':
       return {
         tag,
         colorClass: 'text-rose-700',
         bgClass: 'bg-rose-50',
-        borderClass: 'border-rose-200'
+        borderClass: 'border-rose-200',
       };
     case 'OPTIMIZE':
       return {
         tag,
         colorClass: 'text-teal-700',
         bgClass: 'bg-teal-50',
-        borderClass: 'border-teal-200'
+        borderClass: 'border-teal-200',
       };
     case 'REVIEW':
       return {
         tag,
         colorClass: 'text-indigo-700',
         bgClass: 'bg-indigo-50',
-        borderClass: 'border-indigo-200'
+        borderClass: 'border-indigo-200',
       };
   }
 }

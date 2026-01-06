@@ -1,14 +1,22 @@
-
-import React, { useMemo } from 'react';
-import { useSetAtom, useAtomValue } from 'jotai';
-import { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
-import { getSlotColor } from '../../../entities/SourceFileNode/lib/styleUtils';
+import { useAtomValue, useSetAtom } from 'jotai';
+import type React from 'react';
+import { useMemo } from 'react';
 import { targetLineAtom } from '@/features/File/Navigation/model/atoms';
-import { visibleNodeIdsAtom, layoutLinksAtom } from '../../PipelineCanvas/model/atoms';
-import { lastExpandedIdAtom } from '../../PipelineCanvas/model/atoms';
 import { useEditorTheme } from '../../../app/theme/EditorThemeProvider';
+import { getSlotColor } from '../../../entities/SourceFileNode/lib/styleUtils';
+import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
+import { lastExpandedIdAtom, layoutLinksAtom, visibleNodeIdsAtom } from '../../PipelineCanvas/model/atoms';
 
-const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine, symbolName, isOutputSlot = false, isDead = false }: {
+const CodeSlot = ({
+  tokenId,
+  lineNum,
+  slotIdx,
+  depNode,
+  definitionLine,
+  symbolName,
+  isOutputSlot = false,
+  isDead = false,
+}: {
   tokenId: string;
   lineNum: number;
   slotIdx: number;
@@ -26,7 +34,7 @@ const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine, symbolNam
 
   // Check if this slot has an active connection
   const hasConnection = useMemo(() => {
-    return layoutLinks.some(link => link.source === tokenId);
+    return layoutLinks.some((link) => link.source === tokenId);
   }, [layoutLinks, tokenId]);
 
   // ✅ Dead identifier slot: 회색 + 점선 테두리
@@ -48,7 +56,7 @@ const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine, symbolNam
       // Node is already visible - go to definition line
       setTargetLine({
         nodeId: tokenId,
-        lineNum: depNode.startLine
+        lineNum: depNode.startLine,
       });
     } else {
       // Node is not visible - expand it first, then go to definition
@@ -57,7 +65,7 @@ const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine, symbolNam
       setTimeout(() => {
         setTargetLine({
           nodeId: tokenId,
-          lineNum: depNode.startLine
+          lineNum: depNode.startLine,
         });
       }, 700); // Wait for expansion animation + layout
     }
@@ -71,7 +79,7 @@ const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine, symbolNam
   // Horizontal Position:
   // Input slots: left side (starting at 2px)
   // Output slots: right side (starting at 2px from right edge)
-  const horizontalPos = 2 + (slotIdx * theme.dimensions.slotSpacing);
+  const horizontalPos = 2 + slotIdx * theme.dimensions.slotSpacing;
   const positionStyle = isOutputSlot
     ? { top: '5px', right: `${horizontalPos}px` }
     : { top: '5px', left: `${horizontalPos}px` };
@@ -84,14 +92,14 @@ const CodeSlot = ({tokenId, lineNum, slotIdx, depNode, definitionLine, symbolNam
         'data-output-slot-for': tokenId,
         'data-output-slot-line': lineNum,
         'data-output-slot-def-line': definitionLine,
-        'data-output-slot-unique': `${tokenId}::line${lineNum}`
+        'data-output-slot-unique': `${tokenId}::line${lineNum}`,
       }
     : {
         'data-input-slot-for': tokenId,
         'data-input-slot-line': lineNum,
         'data-input-slot-def-line': definitionLine,
         'data-input-slot-symbol': symbolName,
-        'data-input-slot-unique': `${tokenId}::line${lineNum}`
+        'data-input-slot-unique': `${tokenId}::line${lineNum}`,
       };
 
   // Border style: connected (solid) vs dead (dashed) vs none

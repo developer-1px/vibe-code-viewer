@@ -2,14 +2,14 @@
  * Category Indices Hook
  * Calculates start index for each category in the global flatItemList
  */
-import { useMemo } from 'react';
+
 import { useAtomValue } from 'jotai';
-import { deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
-import { collapsedFoldersAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
+import { useMemo } from 'react';
 import { buildDeadCodeTree } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/lib/buildDeadCodeTree';
-import { getDeadCodeFlatList } from './getDeadCodeFlatList';
+import { collapsedFoldersAtom, deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
 import type { CategoryKey } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/types';
 import type { DeadCodeItem } from '../../../shared/deadCodeAnalyzer';
+import { getDeadCodeFlatList } from './getDeadCodeFlatList';
 
 interface CategoryInfo {
   title: string;

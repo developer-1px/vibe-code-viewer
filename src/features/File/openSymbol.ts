@@ -14,11 +14,7 @@ interface OpenSymbolParams {
  * Open a symbol in the canvas
  * Expands the node and centers the camera on it
  */
-export function openSymbol({
-  nodeId,
-  setVisibleNodeIds,
-  setLastExpandedId,
-}: OpenSymbolParams): void {
+export function openSymbol({ nodeId, setVisibleNodeIds, setLastExpandedId }: OpenSymbolParams): void {
   // Expand symbol node in canvas
   setVisibleNodeIds((prev) => {
     const next = new Set(prev);

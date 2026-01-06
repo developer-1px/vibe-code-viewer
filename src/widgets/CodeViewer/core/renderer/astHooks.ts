@@ -5,7 +5,7 @@
 import * as ts from 'typescript';
 import type { CodeLine, SegmentKind } from '../types/codeLine';
 import type { RenderContext } from './lib/types';
-import { isDeclarationNode, getDeclarationName } from './segmentUtils';
+import { getDeclarationName, isDeclarationNode } from './segmentUtils';
 
 export type AddKindFunction = (
   start: number,
@@ -28,12 +28,12 @@ function forEachBindingIdentifier(
     callback(bindingName);
   } else if (ts.isObjectBindingPattern(bindingName)) {
     // const { a, b: c } = obj;
-    bindingName.elements.forEach(element => {
+    bindingName.elements.forEach((element) => {
       forEachBindingIdentifier(element.name, sourceFile, callback);
     });
   } else if (ts.isArrayBindingPattern(bindingName)) {
     // const [a, b] = arr;
-    bindingName.elements.forEach(element => {
+    bindingName.elements.forEach((element) => {
       if (ts.isBindingElement(element)) {
         forEachBindingIdentifier(element.name, sourceFile, callback);
       }
@@ -56,9 +56,9 @@ function isExportedNode(node: ts.Node): boolean {
   }
 
   // Method 2: Use ts.canHaveModifiers and ts.getModifiers (newer TS versions)
-  if (ts.canHaveModifiers && ts.canHaveModifiers(node)) {
-    const mods = ts.getModifiers && ts.getModifiers(node);
-    if (mods && mods.some(mod => mod.kind === ts.SyntaxKind.ExportKeyword)) {
+  if (ts.canHaveModifiers?.(node)) {
+    const mods = ts.getModifiers?.(node);
+    if (mods?.some((mod) => mod.kind === ts.SyntaxKind.ExportKeyword)) {
       return true;
     }
   }
@@ -104,8 +104,8 @@ export function processDeclarationNode(
   // 선언 이름 추출 및 glow 표시
   if (ts.isVariableStatement(node)) {
     // VariableStatement은 여러 declaration을 가질 수 있고, destructuring도 지원
-    node.declarationList.declarations.forEach(declaration => {
-      forEachBindingIdentifier(declaration.name, sourceFile, id => {
+    node.declarationList.declarations.forEach((declaration) => {
+      forEachBindingIdentifier(declaration.name, sourceFile, (id) => {
         const nameStart = id.getStart(sourceFile);
         const nameEnd = id.getEnd();
         addKind(nameStart, nameEnd, 'self', undefined, true, id); // isDeclarationName = true
@@ -134,11 +134,7 @@ export function processDeclarationNode(
  *
  * @returns true if processed, false otherwise
  */
-export function processTemplateLiteral(
-  node: ts.Node,
-  sourceFile: ts.SourceFile,
-  addKind: AddKindFunction
-): boolean {
+export function processTemplateLiteral(node: ts.Node, sourceFile: ts.SourceFile, addKind: AddKindFunction): boolean {
   const start = node.getStart(sourceFile);
   const end = node.getEnd();
 
@@ -149,7 +145,8 @@ export function processTemplateLiteral(
       // } 부분은 punctuation
       addKind(start, start + 1, 'punctuation');
       // 중간 텍스트는 string
-      if (text.length > 3) { // } + text + ${
+      if (text.length > 3) {
+        // } + text + ${
         addKind(start + 1, end - 2, 'string');
       }
       // ${ 부분은 punctuation
@@ -177,6 +174,52 @@ export function processTemplateLiteral(
 }
 
 /**
+ * Check if an identifier is in a type position (not a value position)
+ * Examples:
+ * - const x: React.FC → React is in type position
+ * - typeof React → React is in type position
+ * - React.useCallback() → React is NOT in type position (value)
+ */
+function isInTypePosition(node: ts.Identifier): boolean {
+  const parent = (node as any).parent;
+
+  // Direct TypeReference: const x: React
+  if (ts.isTypeReferenceNode(parent)) {
+    return true;
+  }
+
+  // TypeQuery: typeof React
+  if (ts.isTypeQueryNode(parent)) {
+    return true;
+  }
+
+  // PropertyAccess in type position: React.FC
+  if (ts.isPropertyAccessExpression(parent) || ts.isPropertyAccessChain(parent)) {
+    let current: ts.Node = parent;
+    // Walk up to find if this PropertyAccess is inside a type
+    while (current) {
+      const p = (current as any).parent;
+
+      // Found a type node parent
+      if (ts.isTypeReferenceNode(p) || ts.isTypeNode(p)) {
+        return true;
+      }
+
+      // Continue walking up if still in PropertyAccess chain
+      if (ts.isPropertyAccessExpression(p) || ts.isQualifiedName(p)) {
+        current = p;
+        continue;
+      }
+
+      // Stop if we've left the PropertyAccess chain
+      break;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Hook 2: Identifier 분류 및 처리
  * Phase 2-B: Refactored to use RenderContext (13 params → 4 params)
  */
@@ -189,6 +232,17 @@ export function processIdentifier(
   const start = node.getStart(sourceFile);
   const end = node.getEnd();
   const name = node.text;
+
+  // ✅ Skip JSX attribute names (e.g., store={store} - first "store" is attribute name)
+  const parent = (node as any).parent;
+  if (ts.isJsxAttribute(parent) && parent.name === node) {
+    return; // Skip - this is an attribute name, not a value
+  }
+
+  // ✅ Skip type positions (e.g., React in React.FC)
+  if (isInTypePosition(node)) {
+    return; // Skip - this is in a type position, display as plain text
+  }
 
   // Self reference (사용처)
   if (name === ctx.nodeShortId) {
@@ -219,7 +273,7 @@ export function processIdentifier(
 
   if (importSource) {
     const isNpm = importSource.startsWith('npm:');
-    const kind: SegmentKind = isNpm ? 'identifier' : 'external-import';
+    const kind: SegmentKind = isNpm ? 'external-npm' : 'external-import'; // ✅ npm 모듈은 external-npm으로 분류
     addKind(start, end, kind, undefined, importSource, node);
     addKind(start, end, 'identifier', importSource, undefined, node);
   } else if (ctx.dependencyMap.has(name)) {
@@ -273,7 +327,7 @@ export function processExportDeclaration(
   node: ts.Node,
   sourceFile: ts.SourceFile,
   result: CodeLine[],
-  filePath: string
+  _filePath: string
 ): void {
   if (!ts.isExportDeclaration(node)) return;
 
@@ -292,14 +346,14 @@ export function processExportDeclaration(
   }
 
   // Process each exported identifier: export { foo, bar as baz }
-  exportClause.elements.forEach(element => {
+  exportClause.elements.forEach((element) => {
     const name = element.name.text;
     const elementStart = element.name.getStart(sourceFile);
     const offset = sourceFile.getLineAndCharacterOfPosition(elementStart).character;
 
     // TODO: nodeId 매핑은 나중에 추가 (원본 선언을 찾아서 연결)
     // 현재는 이름만 저장
-    result[lineIdx].exportSlots!.push({
+    result[lineIdx].exportSlots?.push({
       name,
       offset,
       // nodeId will be resolved later
@@ -314,7 +368,7 @@ export function processExportDeclaration(
  */
 export function processExportDefault(
   node: ts.Node,
-  sourceFile: ts.SourceFile,
+  _sourceFile: ts.SourceFile,
   result: CodeLine[],
   declarationMap: Map<string, number>
 ): void {

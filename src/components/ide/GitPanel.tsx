@@ -1,49 +1,39 @@
-import * as React from 'react'
 import {
-  GitBranch,
-  GitCommit,
-  GitPullRequest,
-  GitMerge,
-  Plus,
-  Minus,
-  FileText,
+  Check,
   ChevronDown,
   ChevronRight,
-  Check,
-  X,
+  Download,
+  FileText,
+  GitBranch,
+  GitCommit,
+  Minus,
+  Plus,
   RotateCw,
   Upload,
-  Download,
-} from 'lucide-react'
-import { Input } from '@/components/ui/Input'
-import { Button } from '@/components/ui/Button'
-import { Textarea } from '@/components/ui/Textarea'
-import { ScrollArea } from '@/components/ui/ScrollArea'
-import { Separator } from '@/components/ui/Separator'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/Select'
-import { cn } from '@/components/lib/utils'
+} from 'lucide-react';
+import * as React from 'react';
+import { cn } from '@/components/lib/utils';
+import { Button } from '@/components/ui/Button';
+import { ScrollArea } from '@/components/ui/ScrollArea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { Separator } from '@/components/ui/Separator';
+import { Textarea } from '@/components/ui/Textarea';
 
 export interface GitPanelProps {
-  className?: string
+  className?: string;
 }
 
 interface FileChange {
-  path: string
-  status: 'added' | 'modified' | 'deleted' | 'renamed'
-  staged: boolean
+  path: string;
+  status: 'added' | 'modified' | 'deleted' | 'renamed';
+  staged: boolean;
 }
 
 interface Commit {
-  hash: string
-  message: string
-  author: string
-  date: string
+  hash: string;
+  message: string;
+  author: string;
+  date: string;
 }
 
 /**
@@ -58,11 +48,11 @@ interface Commit {
  * - Commit history
  */
 export function GitPanel({ className }: GitPanelProps) {
-  const [commitMessage, setCommitMessage] = React.useState('')
-  const [currentBranch, setCurrentBranch] = React.useState('main')
-  const [showStagedChanges, setShowStagedChanges] = React.useState(true)
-  const [showUnstagedChanges, setShowUnstagedChanges] = React.useState(true)
-  const [showCommitHistory, setShowCommitHistory] = React.useState(false)
+  const [commitMessage, setCommitMessage] = React.useState('');
+  const [currentBranch, setCurrentBranch] = React.useState('main');
+  const [showStagedChanges, setShowStagedChanges] = React.useState(true);
+  const [showUnstagedChanges, setShowUnstagedChanges] = React.useState(true);
+  const [showCommitHistory, setShowCommitHistory] = React.useState(false);
 
   const [fileChanges, setFileChanges] = React.useState<FileChange[]>([
     { path: 'src/components/ide/CodeView.tsx', status: 'modified', staged: true },
@@ -71,7 +61,7 @@ export function GitPanel({ className }: GitPanelProps) {
     { path: 'src/App.tsx', status: 'modified', staged: false },
     { path: 'src/utils/helpers.ts', status: 'added', staged: false },
     { path: 'README.md', status: 'deleted', staged: false },
-  ])
+  ]);
 
   const commits: Commit[] = [
     {
@@ -92,50 +82,48 @@ export function GitPanel({ className }: GitPanelProps) {
       author: 'You',
       date: 'yesterday',
     },
-  ]
+  ];
 
-  const stagedChanges = fileChanges.filter((f) => f.staged)
-  const unstagedChanges = fileChanges.filter((f) => !f.staged)
+  const stagedChanges = fileChanges.filter((f) => f.staged);
+  const unstagedChanges = fileChanges.filter((f) => !f.staged);
 
   const toggleStage = (path: string) => {
-    setFileChanges((prev) =>
-      prev.map((f) => (f.path === path ? { ...f, staged: !f.staged } : f))
-    )
-  }
+    setFileChanges((prev) => prev.map((f) => (f.path === path ? { ...f, staged: !f.staged } : f)));
+  };
 
   const stageAll = () => {
-    setFileChanges((prev) => prev.map((f) => ({ ...f, staged: true })))
-  }
+    setFileChanges((prev) => prev.map((f) => ({ ...f, staged: true })));
+  };
 
   const unstageAll = () => {
-    setFileChanges((prev) => prev.map((f) => ({ ...f, staged: false })))
-  }
+    setFileChanges((prev) => prev.map((f) => ({ ...f, staged: false })));
+  };
 
   const getStatusIcon = (status: FileChange['status']) => {
     switch (status) {
       case 'added':
-        return <Plus size={12} className="text-status-success" />
+        return <Plus size={12} className="text-status-success" />;
       case 'modified':
-        return <FileText size={12} className="text-yellow-500" />
+        return <FileText size={12} className="text-yellow-500" />;
       case 'deleted':
-        return <Minus size={12} className="text-red-500" />
+        return <Minus size={12} className="text-red-500" />;
       case 'renamed':
-        return <RotateCw size={12} className="text-blue-500" />
+        return <RotateCw size={12} className="text-blue-500" />;
     }
-  }
+  };
 
   const getStatusColor = (status: FileChange['status']) => {
     switch (status) {
       case 'added':
-        return 'text-status-success'
+        return 'text-status-success';
       case 'modified':
-        return 'text-yellow-500'
+        return 'text-yellow-500';
       case 'deleted':
-        return 'text-red-500'
+        return 'text-red-500';
       case 'renamed':
-        return 'text-blue-500'
+        return 'text-blue-500';
     }
-  }
+  };
 
   const renderFileChange = (file: FileChange) => (
     <button
@@ -152,7 +140,7 @@ export function GitPanel({ className }: GitPanelProps) {
         <Plus size={12} className="text-text-muted opacity-0 group-hover:opacity-100" />
       )}
     </button>
-  )
+  );
 
   return (
     <div className={cn('flex h-full flex-col bg-bg-surface border-r border-border-DEFAULT', className)}>
@@ -161,9 +149,7 @@ export function GitPanel({ className }: GitPanelProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <GitBranch size={14} className="text-text-muted" />
-            <span className="text-xs font-medium text-text-primary uppercase tracking-wide">
-              Source Control
-            </span>
+            <span className="text-xs font-medium text-text-primary uppercase tracking-wide">Source Control</span>
           </div>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Pull">
@@ -236,9 +222,7 @@ export function GitPanel({ className }: GitPanelProps) {
               ) : (
                 <ChevronRight size={14} className="text-text-muted" />
               )}
-              <span className="text-xs font-medium text-text-primary flex-1 text-left">
-                Staged Changes
-              </span>
+              <span className="text-xs font-medium text-text-primary flex-1 text-left">Staged Changes</span>
               <span className="text-xs text-text-muted">{stagedChanges.length}</span>
               {stagedChanges.length > 0 && (
                 <Button
@@ -246,8 +230,8 @@ export function GitPanel({ className }: GitPanelProps) {
                   size="sm"
                   className="h-5 px-1 text-2xs"
                   onClick={(e) => {
-                    e.stopPropagation()
-                    unstageAll()
+                    e.stopPropagation();
+                    unstageAll();
                   }}
                 >
                   <Minus size={10} className="mr-0.5" />
@@ -261,9 +245,7 @@ export function GitPanel({ className }: GitPanelProps) {
                 {stagedChanges.length > 0 ? (
                   stagedChanges.map(renderFileChange)
                 ) : (
-                  <div className="px-2 py-3 text-xs text-text-muted text-center">
-                    No staged changes
-                  </div>
+                  <div className="px-2 py-3 text-xs text-text-muted text-center">No staged changes</div>
                 )}
               </div>
             )}
@@ -280,9 +262,7 @@ export function GitPanel({ className }: GitPanelProps) {
               ) : (
                 <ChevronRight size={14} className="text-text-muted" />
               )}
-              <span className="text-xs font-medium text-text-primary flex-1 text-left">
-                Changes
-              </span>
+              <span className="text-xs font-medium text-text-primary flex-1 text-left">Changes</span>
               <span className="text-xs text-text-muted">{unstagedChanges.length}</span>
               {unstagedChanges.length > 0 && (
                 <Button
@@ -290,8 +270,8 @@ export function GitPanel({ className }: GitPanelProps) {
                   size="sm"
                   className="h-5 px-1 text-2xs"
                   onClick={(e) => {
-                    e.stopPropagation()
-                    stageAll()
+                    e.stopPropagation();
+                    stageAll();
                   }}
                 >
                   <Plus size={10} className="mr-0.5" />
@@ -305,9 +285,7 @@ export function GitPanel({ className }: GitPanelProps) {
                 {unstagedChanges.length > 0 ? (
                   unstagedChanges.map(renderFileChange)
                 ) : (
-                  <div className="px-2 py-3 text-xs text-text-muted text-center">
-                    No changes
-                  </div>
+                  <div className="px-2 py-3 text-xs text-text-muted text-center">No changes</div>
                 )}
               </div>
             )}
@@ -326,9 +304,7 @@ export function GitPanel({ className }: GitPanelProps) {
               ) : (
                 <ChevronRight size={14} className="text-text-muted" />
               )}
-              <span className="text-xs font-medium text-text-primary flex-1 text-left">
-                Recent Commits
-              </span>
+              <span className="text-xs font-medium text-text-primary flex-1 text-left">Recent Commits</span>
               <span className="text-xs text-text-muted">{commits.length}</span>
             </button>
 
@@ -360,5 +336,5 @@ export function GitPanel({ className }: GitPanelProps) {
         </div>
       </ScrollArea>
     </div>
-  )
+  );
 }

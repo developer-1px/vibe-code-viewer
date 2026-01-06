@@ -2,13 +2,14 @@
  * FocusedIdentifierItem - Focus mode의 active identifier 표시 및 제거
  */
 
-import React, { useRef } from 'react';
-import { useSetAtom, useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
+import type React from 'react';
+import { useRef } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { activeLocalVariablesAtom } from '../model/atoms.ts';
-import { visibleNodeIdsAtom } from '../../../../widgets/PipelineCanvas/model/atoms.ts';
 import { fullNodeMapAtom } from '../../../../app/model/atoms.ts';
+import { visibleNodeIdsAtom } from '../../../../widgets/PipelineCanvas/model/atoms.ts';
 import { pruneDetachedNodes } from '../../../../widgets/PipelineCanvas/utils.ts';
+import { activeLocalVariablesAtom } from '../model/atoms.ts';
 import type { IdentifierMetadata } from './FocusedIdentifiers.tsx';
 
 interface FocusedIdentifierItemProps {
@@ -66,14 +67,13 @@ export const FocusedIdentifierItem: React.FC<FocusedIdentifierItemProps> = ({ me
   // Delete/Backspace to remove
   useHotkeys('delete,backspace', handleRemove, {
     enabled: () => chipRef.current === document.activeElement,
-    enableOnFormTags: false
+    enableOnFormTags: false,
   });
 
   return (
     <div
       ref={chipRef}
       onClick={handleClick}
-      tabIndex={0}
       className="
         group relative flex items-start gap-2 px-3 py-1.5 text-xs font-mono
         border-l-2 border-l-cyan-400 rounded-r transition-all duration-200
@@ -82,21 +82,15 @@ export const FocusedIdentifierItem: React.FC<FocusedIdentifierItemProps> = ({ me
       title="Click or press Delete/Backspace to close"
     >
       {/* Identifier name */}
-      <span className="flex-shrink-0 font-semibold text-cyan-100">
-        {metadata.name}
-      </span>
+      <span className="flex-shrink-0 font-semibold text-cyan-100">{metadata.name}</span>
 
       {/* Type info summary */}
       {metadata.hoverInfo && (
-        <span className="flex-1 text-theme-text-secondary truncate opacity-70">
-          {metadata.hoverInfo}
-        </span>
+        <span className="flex-1 text-theme-text-secondary truncate opacity-70">{metadata.hoverInfo}</span>
       )}
 
       {/* Close icon */}
-      <span className="ml-auto text-cyan-400/60 group-hover:text-cyan-300 transition-colors">
-        ✕
-      </span>
+      <span className="ml-auto text-cyan-400/60 group-hover:text-cyan-300 transition-colors">✕</span>
 
       {/* Active indicator */}
       <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 rounded-full bg-cyan-400 ring-2 ring-theme-panel" />

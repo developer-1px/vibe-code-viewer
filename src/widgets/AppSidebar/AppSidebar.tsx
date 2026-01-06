@@ -2,22 +2,23 @@
  * AppSidebar - Sidebar container with FileExplorer
  * Provides resizable sidebar layout for file navigation
  */
-import React, { useRef, useState } from 'react';
+
 import { useAtomValue } from 'jotai';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import type React from 'react';
+import { useRef, useState } from 'react';
 import { Sidebar } from '@/components/ide/Sidebar';
-import { isSidebarOpenAtom } from './model/atoms';
-import { viewModeAtom } from '../../app/model/atoms';
-import { openedTabsAtom, activeTabAtom } from '@/features/File/OpenFiles/model/atoms';
-import UploadFolderButton from '../../features/UploadFolderButton';
-import { FileExplorer } from '../FileExplorer/FileExplorer';
-import { getFileName } from '../../shared/pathUtils';
-import { getFileIcon } from '../FileExplorer/lib/getFileIcon';
 import { useOpenFile } from '@/features/File/OpenFiles/lib/useOpenFile';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+import { activeTabAtom, openedTabsAtom } from '@/features/File/OpenFiles/model/atoms';
+import { viewModeAtom } from '../../app/model/atoms';
+import { getFileName } from '../../shared/pathUtils';
+import { FileExplorer } from '../FileExplorer/FileExplorer';
+import { getFileIcon } from '../FileExplorer/lib/getFileIcon';
+import { isSidebarOpenAtom } from './model/atoms';
 
 export const AppSidebar: React.FC = () => {
   const isSidebarOpen = useAtomValue(isSidebarOpenAtom);
-  const viewMode = useAtomValue(viewModeAtom);
+  const _viewMode = useAtomValue(viewModeAtom);
   const openedTabs = useAtomValue(openedTabsAtom);
   const activeTab = useAtomValue(activeTabAtom);
   const { openFile } = useOpenFile();
@@ -31,25 +32,12 @@ export const AppSidebar: React.FC = () => {
     return null;
   }
 
-  // ViewMode에 따라 헤더 텍스트 변경
-  const headerLabel = viewMode === 'codeDoc' ? 'DOCUMENTS' : 'FILES';
   const workspaceLabel = 'Workspace';
   const projectLabel = 'Project';
 
   return (
-    <div ref={containerRef} tabIndex={0} className="relative focus:outline-none">
-      <Sidebar
-        resizable
-        defaultWidth={250}
-        minWidth={200}
-        maxWidth={800}
-        className="h-full shadow-2xl"
-      >
-        <Sidebar.Header>
-          <span className="text-2xs font-medium text-text-secondary normal-case">{headerLabel}</span>
-          <UploadFolderButton />
-        </Sidebar.Header>
-
+    <div ref={containerRef} className="relative focus:outline-none">
+      <Sidebar resizable defaultWidth={250} minWidth={200} maxWidth={800} className="h-full shadow-2xl">
         {/* WORKSPACE */}
         {openedTabs.length > 0 && (
           <div className={isFileExplorerCollapsed ? 'flex-1 flex flex-col overflow-hidden' : ''}>
@@ -57,11 +45,11 @@ export const AppSidebar: React.FC = () => {
               onClick={() => setIsOpenedFilesCollapsed(!isOpenedFilesCollapsed)}
               className="flex w-full h-8 items-center justify-between border-b border-border-DEFAULT px-2 flex-shrink-0 hover:bg-bg-deep transition-colors"
             >
-              <span className="text-2xs font-medium text-text-secondary normal-case">{workspaceLabel}</span>
+              <span className="text-2xs font-medium text-text-tertiary normal-case">{workspaceLabel}</span>
               {isOpenedFilesCollapsed ? (
-                <ChevronRight className="w-3 h-3 text-text-tertiary" />
+                <ChevronRight className="w-3 h-3 text-text-muted" />
               ) : (
-                <ChevronDown className="w-3 h-3 text-text-tertiary" />
+                <ChevronDown className="w-3 h-3 text-text-muted" />
               )}
             </button>
             {!isOpenedFilesCollapsed && (
@@ -96,11 +84,11 @@ export const AppSidebar: React.FC = () => {
             onClick={() => setIsFileExplorerCollapsed(!isFileExplorerCollapsed)}
             className="flex w-full h-8 items-center justify-between border-b border-border-DEFAULT px-2 flex-shrink-0 hover:bg-bg-deep transition-colors"
           >
-            <span className="text-2xs font-medium text-text-secondary normal-case">{projectLabel}</span>
+            <span className="text-2xs font-medium text-text-tertiary normal-case">{projectLabel}</span>
             {isFileExplorerCollapsed ? (
-              <ChevronRight className="w-3 h-3 text-text-tertiary" />
+              <ChevronRight className="w-3 h-3 text-text-muted" />
             ) : (
-              <ChevronDown className="w-3 h-3 text-text-tertiary" />
+              <ChevronDown className="w-3 h-3 text-text-muted" />
             )}
           </button>
           {!isFileExplorerCollapsed && <FileExplorer containerRef={containerRef} />}

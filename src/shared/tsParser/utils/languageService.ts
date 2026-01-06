@@ -9,13 +9,11 @@ import * as ts from 'typescript';
 /**
  * 메모리 기반 Language Service Host 생성
  */
-export function createLanguageServiceHost(
-  files: Record<string, string>
-): ts.LanguageServiceHost {
+export function createLanguageServiceHost(files: Record<string, string>): ts.LanguageServiceHost {
   const fileVersions = new Map<string, number>();
 
   // 모든 파일의 초기 버전을 0으로 설정
-  Object.keys(files).forEach(fileName => {
+  Object.keys(files).forEach((fileName) => {
     fileVersions.set(fileName, 0);
   });
 
@@ -49,16 +47,16 @@ export function createLanguageServiceHost(
 
     getDefaultLibFileName: () => 'lib.d.ts', // 브라우저 환경에서는 더미 값 반환
 
-    fileExists: (fileName: string) => files.hasOwnProperty(fileName),
+    fileExists: (fileName: string) => Object.hasOwn(files, fileName),
 
     readFile: (fileName: string) => files[fileName],
 
     resolveModuleNames: (moduleNames: string[], containingFile: string) => {
-      return moduleNames.map(moduleName => {
+      return moduleNames.map((moduleName) => {
         // 상대 경로 해석
         if (moduleName.startsWith('.')) {
           const dir = containingFile.substring(0, containingFile.lastIndexOf('/'));
-          let resolved = `${dir}/${moduleName}`;
+          const resolved = `${dir}/${moduleName}`;
 
           // 확장자 추가 시도
           if (files[resolved]) return { resolvedFileName: resolved };
@@ -80,9 +78,7 @@ export function createLanguageServiceHost(
 /**
  * Language Service 생성
  */
-export function createLanguageService(
-  files: Record<string, string>
-): ts.LanguageService {
+export function createLanguageService(files: Record<string, string>): ts.LanguageService {
   const host = createLanguageServiceHost(files);
   const registry = ts.createDocumentRegistry();
   return ts.createLanguageService(host, registry);
@@ -105,7 +101,7 @@ export function findAllLocalVariables(
   const variables = new Set<string>();
 
   // 1. 파라미터 추출 (destructuring 지원)
-  functionNode.parameters.forEach(param => {
+  functionNode.parameters.forEach((param) => {
     extractVariableNames(param.name, (name) => {
       variables.add(name);
     });
@@ -126,10 +122,10 @@ export function findAllLocalVariables(
       }
 
       // 중첩 함수는 스킵 (중첩 함수의 내부 변수는 제외)
-      if (node !== functionNode.body &&
-          (ts.isFunctionDeclaration(node) ||
-           ts.isFunctionExpression(node) ||
-           ts.isArrowFunction(node))) {
+      if (
+        node !== functionNode.body &&
+        (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isArrowFunction(node))
+      ) {
         return;
       }
 
@@ -163,11 +159,11 @@ export function findReferencesToVariable(
 
   const result: Array<{ position: number; fileName: string; isWriteAccess: boolean }> = [];
 
-  references.forEach(ref => {
+  references.forEach((ref) => {
     result.push({
       position: ref.textSpan.start,
       fileName: ref.fileName,
-      isWriteAccess: ref.isWriteAccess || false
+      isWriteAccess: ref.isWriteAccess || false,
     });
   });
 
@@ -196,7 +192,7 @@ export function getSymbolAtPosition(
       return undefined;
     }
 
-    return ts.forEachChild(node, child => findNodeAtPosition(child, pos)) || node;
+    return ts.forEachChild(node, (child) => findNodeAtPosition(child, pos)) || node;
   }
 
   const node = findNodeAtPosition(sourceFile, position);
@@ -232,25 +228,22 @@ export function getDefinitionAtPosition(
 
   return {
     filePath: def.fileName,
-    line: lineAndChar.line + 1 // 0-based → 1-based
+    line: lineAndChar.line + 1, // 0-based → 1-based
   };
 }
 
 /**
  * 변수 이름 추출 헬퍼 (destructuring 지원)
  */
-function extractVariableNames(
-  name: ts.BindingName,
-  callback: (name: string) => void
-): void {
+function extractVariableNames(name: ts.BindingName, callback: (name: string) => void): void {
   if (ts.isIdentifier(name)) {
     callback(name.text);
   } else if (ts.isObjectBindingPattern(name)) {
-    name.elements.forEach(element => {
+    name.elements.forEach((element) => {
       extractVariableNames(element.name, callback);
     });
   } else if (ts.isArrayBindingPattern(name)) {
-    name.elements.forEach(element => {
+    name.elements.forEach((element) => {
       if (ts.isBindingElement(element)) {
         extractVariableNames(element.name, callback);
       }

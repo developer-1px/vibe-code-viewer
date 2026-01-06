@@ -17,10 +17,11 @@ export function getDependencies(
   const dependencies: string[] = [];
 
   node.sourceFile.statements.forEach((statement) => {
-    if (ts.isImportDeclaration(statement) &&
-        statement.moduleSpecifier &&
-        ts.isStringLiteral(statement.moduleSpecifier)) {
-
+    if (
+      ts.isImportDeclaration(statement) &&
+      statement.moduleSpecifier &&
+      ts.isStringLiteral(statement.moduleSpecifier)
+    ) {
       // Type-only import는 스킵
       if (statement.importClause?.isTypeOnly) return;
 
@@ -46,10 +47,11 @@ export function getImportSource(
   resolvePath: (from: string, to: string, files: Record<string, string>) => string | null
 ): string | null {
   for (const statement of node.sourceFile.statements) {
-    if (ts.isImportDeclaration(statement) &&
-        statement.moduleSpecifier &&
-        ts.isStringLiteral(statement.moduleSpecifier)) {
-
+    if (
+      ts.isImportDeclaration(statement) &&
+      statement.moduleSpecifier &&
+      ts.isStringLiteral(statement.moduleSpecifier)
+    ) {
       const clause = statement.importClause;
       if (!clause) continue;
 
@@ -63,18 +65,18 @@ export function getImportSource(
 
       // Named imports
       if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
-        const found = clause.namedBindings.elements.find(
-          el => el.name.text === identifierName
-        );
+        const found = clause.namedBindings.elements.find((el) => el.name.text === identifierName);
         if (found) {
           return resolvedPath || `npm:${source}`;
         }
       }
 
       // Namespace import
-      if (clause.namedBindings &&
-          ts.isNamespaceImport(clause.namedBindings) &&
-          clause.namedBindings.name.text === identifierName) {
+      if (
+        clause.namedBindings &&
+        ts.isNamespaceImport(clause.namedBindings) &&
+        clause.namedBindings.name.text === identifierName
+      ) {
         return resolvedPath || `npm:${source}`;
       }
     }
@@ -92,7 +94,7 @@ export function getLocalIdentifiers(node: SourceFileNode): Set<string> {
   function visit(n: ts.Node) {
     // Variable declarations
     if (ts.isVariableStatement(n)) {
-      n.declarationList.declarations.forEach(decl => {
+      n.declarationList.declarations.forEach((decl) => {
         if (ts.isIdentifier(decl.name)) {
           locals.add(decl.name.text);
         }

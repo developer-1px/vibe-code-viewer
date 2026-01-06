@@ -10,12 +10,9 @@ import type { SourceFileNode } from './types';
 /**
  * Check if all dependencies of a node are expanded (visible)
  */
-export const checkAllDepsExpanded = (
-  dependencies: string[],
-  visibleNodeIds: Set<string>
-): boolean => {
+export const checkAllDepsExpanded = (dependencies: string[], visibleNodeIds: Set<string>): boolean => {
   if (dependencies.length === 0) return false;
-  return dependencies.every(depId => visibleNodeIds.has(depId));
+  return dependencies.every((depId) => visibleNodeIds.has(depId));
 };
 
 /**
@@ -38,7 +35,7 @@ export const expandDependenciesRecursive = (
       // Stop expanding if we hit a template node
       if (depNode.type === 'template') return;
 
-      depNode.dependencies.forEach(depId => {
+      depNode.dependencies.forEach((depId) => {
         if (fullNodeMap.has(depId)) {
           expandRecursive(depId);
         }
@@ -48,7 +45,7 @@ export const expandDependenciesRecursive = (
 
   const node = fullNodeMap.get(nodeId);
   if (node) {
-    node.dependencies.forEach(depId => {
+    node.dependencies.forEach((depId) => {
       if (fullNodeMap.has(depId)) {
         expandRecursive(depId);
       }
@@ -84,7 +81,7 @@ export const collapseDependencies = (
     toRemove.add(id);
     const depNode = fullNodeMap.get(id);
     if (depNode) {
-      depNode.dependencies.forEach(depId => {
+      depNode.dependencies.forEach((depId) => {
         if (fullNodeMap.has(depId)) {
           collectSubtree(depId);
         }
@@ -94,7 +91,7 @@ export const collapseDependencies = (
 
   const node = fullNodeMap.get(nodeId);
   if (node) {
-    node.dependencies.forEach(depId => {
+    node.dependencies.forEach((depId) => {
       if (fullNodeMap.has(depId)) {
         collectSubtree(depId);
       }
@@ -102,7 +99,7 @@ export const collapseDependencies = (
   }
 
   // Step 2: Remove candidates temporarily
-  toRemove.forEach(id => next.delete(id));
+  toRemove.forEach((id) => next.delete(id));
 
   // Step 3: Find which candidates are still reachable from other visible nodes
   const stillReachable = new Set<string>();
@@ -111,7 +108,7 @@ export const collapseDependencies = (
     const n = fullNodeMap.get(searchNodeId);
     if (!n) return;
 
-    n.dependencies.forEach(depId => {
+    n.dependencies.forEach((depId) => {
       if (toRemove.has(depId) && !stillReachable.has(depId)) {
         stillReachable.add(depId);
         // Recursively mark this subtree as reachable
@@ -122,14 +119,14 @@ export const collapseDependencies = (
 
   // Check from all remaining visible nodes EXCEPT the node we're collapsing
   // (otherwise it would immediately mark its own dependencies as reachable)
-  next.forEach(visibleId => {
+  next.forEach((visibleId) => {
     if (visibleId !== nodeId) {
       findReachableFromNode(visibleId);
     }
   });
 
   // Step 4: Restore nodes that are still reachable
-  stillReachable.forEach(id => next.add(id));
+  stillReachable.forEach((id) => next.add(id));
 
   return next;
 };
@@ -137,10 +134,7 @@ export const collapseDependencies = (
 /**
  * Get the first dependency ID (used for centering after expand)
  */
-export const getFirstDependency = (
-  nodeId: string,
-  fullNodeMap: Map<string, SourceFileNode>
-): string | null => {
+export const getFirstDependency = (nodeId: string, fullNodeMap: Map<string, SourceFileNode>): string | null => {
   const node = fullNodeMap.get(nodeId);
   if (!node || node.dependencies.length === 0) return null;
   return node.dependencies[0];

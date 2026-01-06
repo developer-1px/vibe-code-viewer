@@ -19,7 +19,12 @@ export type SymbolKind =
   | 'function'
   | 'class'
   | 'method'
-  | 'property';
+  | 'property'
+  | 'comment'
+  | 'block'
+  | 'test-suite'
+  | 'test-case'
+  | 'test-hook';
 
 export interface SymbolModifier {
   export?: boolean;
@@ -37,6 +42,12 @@ export interface SymbolParam {
   optional?: boolean;
 }
 
+export interface FoldInfo {
+  foldStart: number;
+  foldEnd: number;
+  foldType: 'function-block' | 'class-block' | 'interface-block' | 'arrow-function-block' | 'enum-block';
+}
+
 export interface DefinitionSymbol {
   kind: SymbolKind;
   name: string;
@@ -48,6 +59,26 @@ export interface DefinitionSymbol {
   children?: DefinitionSymbol[];
   value?: string;
   from?: string;
+  foldInfo?: FoldInfo;
+
+  // CodeDocView integration fields
+  signature?: string; // Function/Class signature
+  description?: string; // JSDoc description text
+  returns?: string; // Return type
+  complexity?: number; // Cyclomatic complexity
+  flowchart?: string; // Mermaid flowchart (for functions)
+  blocks?: Array<{ type: string; content: string; label?: string; lines?: string }>; // Function body blocks
+
+  // Test-specific fields
+  testMetadata?: {
+    url?: string;
+    selectors?: string[];
+    expectations?: string[];
+  };
+
+  // Blank line detection (for comment spacing)
+  hasBlankLineBefore?: boolean;
+  hasBlankLineAfter?: boolean;
 }
 
 /**
@@ -110,12 +141,145 @@ function extractParameters(node: ts.FunctionLikeDeclaration): SymbolParam[] {
 }
 
 /**
+ * Extract string argument from CallExpression (for test names)
+ */
+function extractStringArgument(arg: ts.Expression | undefined): string {
+  if (!arg) return '';
+
+  if (ts.isStringLiteral(arg)) {
+    return arg.text;
+  }
+
+  if (ts.isTemplateLiteral(arg)) {
+    return arg.getText();
+  }
+
+  return '';
+}
+
+/**
+ * Calculate Cyclomatic Complexity
+ */
+function calculateComplexity(node: ts.Node): number {
+  let complexity = 1;
+  function visit(n: ts.Node) {
+    if (
+      ts.isIfStatement(n) ||
+      ts.isConditionalExpression(n) ||
+      ts.isForStatement(n) ||
+      ts.isWhileStatement(n) ||
+      ts.isCaseClause(n) ||
+      ts.isCatchClause(n)
+    ) {
+      complexity++;
+    }
+    ts.forEachChild(n, visit);
+  }
+  ts.forEachChild(node, visit);
+  return complexity;
+}
+
+/**
+ * Extract test metadata (page.goto, getByTestId, expect)
+ */
+function extractTestMetadata(code: string): {
+  url?: string;
+  selectors?: string[];
+  expectations?: string[];
+} {
+  const metadata: {
+    url?: string;
+    selectors?: string[];
+    expectations?: string[];
+  } = {};
+
+  // Extract URL from page.goto('...')
+  const gotoMatch = code.match(/page\.goto\s*\(\s*['"`](.+?)['"`]/);
+  if (gotoMatch) {
+    metadata.url = gotoMatch[1];
+  }
+
+  // Extract selectors from getByTestId('...')
+  const selectorMatches = code.matchAll(/getByTestId\s*\(\s*['"`](.+?)['"`]/g);
+  const selectors = Array.from(selectorMatches).map((match) => match[1]);
+  if (selectors.length > 0) {
+    metadata.selectors = selectors;
+  }
+
+  // Extract expectations from expect(...).toXXX
+  const expectationMatches = code.matchAll(/expect\(.+?\)\.(\w+)/g);
+  const expectations = Array.from(expectationMatches).map((match) => match[1]);
+  if (expectations.length > 0) {
+    metadata.expectations = [...new Set(expectations)]; // Remove duplicates
+  }
+
+  return metadata;
+}
+
+/**
+ * Extract blocks from test body (comments → PROSE, code → CODE)
+ */
+function extractTestBlocks(
+  sourceFile: ts.SourceFile,
+  testBody: ts.Node
+): Array<{ type: string; content: string; label?: string; lines?: string }> {
+  const blocks: Array<{ type: string; content: string; label?: string; lines?: string }> = [];
+
+  // Get full text of the test body
+  const fullText = sourceFile.text;
+
+  // If test body is a block, process its statements
+  if (ts.isBlock(testBody)) {
+    testBody.statements.forEach((stmt) => {
+      const stmtStart = stmt.getFullStart();
+      const stmtEnd = stmt.getEnd();
+
+      // Extract leading comments
+      const leadingComments = ts.getLeadingCommentRanges(fullText, stmtStart);
+      if (leadingComments && leadingComments.length > 0) {
+        leadingComments.forEach((comment) => {
+          let commentText = fullText.substring(comment.pos, comment.end);
+
+          // Clean up comment markers
+          commentText = commentText
+            .replace(/^\s*\/\/\s?/gm, '') // Remove //
+            .replace(/^\s*\/\*\*?\s?/, '') // Remove /* or /**
+            .replace(/\s*\*\/\s*$/, '') // Remove */
+            .replace(/^\s*\*\s?/gm, '') // Remove leading * in each line
+            .trim();
+
+          if (commentText) {
+            const commentStartLine = sourceFile.getLineAndCharacterOfPosition(comment.pos).line + 1;
+            blocks.push({
+              type: 'PROSE',
+              content: commentText,
+              lines: `L${commentStartLine}`,
+            });
+          }
+        });
+      }
+
+      // Add the statement as code block
+      const stmtText = stmt.getText(sourceFile).trim();
+      if (stmtText) {
+        const stmtStartLine = sourceFile.getLineAndCharacterOfPosition(stmt.getStart()).line + 1;
+        const stmtEndLine = sourceFile.getLineAndCharacterOfPosition(stmtEnd).line + 1;
+        blocks.push({
+          type: 'CODE',
+          content: stmtText,
+          lines: `L${stmtStartLine}-${stmtEndLine}`,
+        });
+      }
+    });
+  }
+
+  return blocks;
+}
+
+/**
  * Extract type annotation from node (with type inference)
  */
-function extractType(
-  node: ts.Node,
-  typeChecker?: ts.TypeChecker
-): string | undefined {
+function extractType(node: ts.Node, typeChecker?: ts.TypeChecker): string | undefined {
   // 1. Explicit type annotation (명시적 타입)
   if (ts.isVariableDeclaration(node) && node.type) {
     return node.type.getText();
@@ -141,7 +305,7 @@ function extractType(
         const typeString = typeChecker.typeToString(type, node, ts.TypeFormatFlags.NoTruncation);
         // 너무 긴 타입은 생략
         if (typeString.length > 100) {
-          return typeString.substring(0, 97) + '...';
+          return `${typeString.substring(0, 97)}...`;
         }
         return typeString;
       }
@@ -232,11 +396,10 @@ export function groupDefinitionsByPhysicalBlock(
   const result: DefinitionSymbol[] = blocks.map((block, idx) => {
     // Determine block type (majority kind in block)
     const kindCounts: Record<string, number> = {};
-    block.forEach(sym => {
+    block.forEach((sym) => {
       kindCounts[sym.kind] = (kindCounts[sym.kind] || 0) + 1;
     });
-    const dominantKind = Object.entries(kindCounts)
-      .sort((a, b) => b[1] - a[1])[0][0] as SymbolKind;
+    const dominantKind = Object.entries(kindCounts).sort((a, b) => b[1] - a[1])[0][0] as SymbolKind;
 
     // Create descriptive name
     const kindLabels: Record<SymbolKind, string> = {
@@ -252,9 +415,8 @@ export function groupDefinitionsByPhysicalBlock(
       property: 'Properties',
     };
 
-    const blockName = block.length === 1
-      ? block[0].name
-      : `${kindLabels[dominantKind]} Block ${idx + 1} (${block.length})`;
+    const blockName =
+      block.length === 1 ? block[0].name : `${kindLabels[dominantKind]} Block ${idx + 1} (${block.length})`;
 
     return {
       kind: dominantKind,
@@ -325,12 +487,68 @@ export function groupDefinitionsByKind(symbols: DefinitionSymbol[]): DefinitionS
 }
 
 /**
+ * Extract all items (definitions, comments, blocks) in source order
+ */
+function extractAllItemsInOrder(sourceFile: ts.SourceFile, _typeChecker?: ts.TypeChecker): DefinitionSymbol[] {
+  const items: Array<{ line: number; symbol: DefinitionSymbol }> = [];
+
+  // Extract comments by scanning entire file text
+  const fullText = sourceFile.getFullText();
+  const lines = fullText.split('\n');
+
+  lines.forEach((lineText, idx) => {
+    const trimmed = lineText.trim();
+    const lineNum = idx + 1;
+
+    // Check for blank lines before and after
+    const prevLine = idx > 0 ? lines[idx - 1].trim() : '';
+    const nextLine = idx < lines.length - 1 ? lines[idx + 1].trim() : '';
+    const hasBlankLineBefore = prevLine === '';
+    const hasBlankLineAfter = nextLine === '';
+
+    // Single-line comment
+    if (trimmed.startsWith('//')) {
+      const text = trimmed.substring(2).trim();
+      if (text) {
+        items.push({
+          line: lineNum,
+          symbol: {
+            kind: 'comment',
+            name: text.substring(0, 60) + (text.length > 60 ? '...' : ''),
+            line: lineNum,
+            value: text,
+            hasBlankLineBefore,
+            hasBlankLineAfter,
+          },
+        });
+      }
+    }
+    // Multi-line comment start
+    else if (trimmed.startsWith('/*')) {
+      const text = trimmed.substring(2).replace(/\*\/$/, '').trim();
+      if (text) {
+        items.push({
+          line: lineNum,
+          symbol: {
+            kind: 'comment',
+            name: text.substring(0, 60) + (text.length > 60 ? '...' : ''),
+            line: lineNum,
+            value: text,
+            hasBlankLineBefore,
+            hasBlankLineAfter,
+          },
+        });
+      }
+    }
+  });
+
+  return items.sort((a, b) => a.line - b.line).map((item) => item.symbol);
+}
+
+/**
  * Extract definitions (types, interfaces, functions, classes, exports) from SourceFileNode
  */
-export function extractDefinitions(
-  node: SourceFileNode,
-  files?: Record<string, string>
-): DefinitionSymbol[] {
+export function extractDefinitions(node: SourceFileNode, files?: Record<string, string>): DefinitionSymbol[] {
   if (!node.sourceFile) {
     console.warn('[definitionExtractor] No sourceFile available for:', node.filePath);
     return [];
@@ -370,7 +588,7 @@ export function extractDefinitions(
         // Named imports: import { useState } from 'react'
         else if (importClause.namedBindings) {
           if (ts.isNamedImports(importClause.namedBindings)) {
-            const names = importClause.namedBindings.elements.map(e => e.name.text);
+            const names = importClause.namedBindings.elements.map((e) => e.name.text);
             importName = `{ ${names.join(', ')} }`;
           }
           // Namespace import: import * as React from 'react'
@@ -406,6 +624,14 @@ export function extractDefinitions(
     // Interface Declarations
     if (ts.isInterfaceDeclaration(astNode)) {
       const children: DefinitionSymbol[] = [];
+      const startLine = getLineNumber(sourceFile, astNode);
+      const endLine = sourceFile.getLineAndCharacterOfPosition(astNode.getEnd()).line + 1;
+
+      const foldInfo: FoldInfo = {
+        foldStart: startLine,
+        foldEnd: endLine,
+        foldType: 'interface-block',
+      };
 
       astNode.members.forEach((member) => {
         if (ts.isPropertySignature(member) && member.name) {
@@ -434,12 +660,21 @@ export function extractDefinitions(
         modifiers: extractModifiers(astNode),
         jsDoc: extractJsDoc(astNode),
         children: children.length > 0 ? children : undefined,
+        foldInfo,
       });
     }
 
     // Enum Declarations
     if (ts.isEnumDeclaration(astNode)) {
       const children: DefinitionSymbol[] = [];
+      const startLine = getLineNumber(sourceFile, astNode);
+      const endLine = sourceFile.getLineAndCharacterOfPosition(astNode.getEnd()).line + 1;
+
+      const foldInfo: FoldInfo = {
+        foldStart: startLine,
+        foldEnd: endLine,
+        foldType: 'enum-block',
+      };
 
       astNode.members.forEach((member) => {
         children.push({
@@ -456,6 +691,7 @@ export function extractDefinitions(
         line: getLineNumber(sourceFile, astNode),
         modifiers: extractModifiers(astNode),
         children: children.length > 0 ? children : undefined,
+        foldInfo,
       });
     }
 
@@ -468,7 +704,7 @@ export function extractDefinitions(
           const isConst = (astNode.declarationList.flags & ts.NodeFlags.Const) !== 0;
           const isLet = (astNode.declarationList.flags & ts.NodeFlags.Let) !== 0;
 
-          let children: DefinitionSymbol[] | undefined = undefined;
+          let children: DefinitionSymbol[] | undefined;
 
           // Check if it's an arrow function (React component)
           if (declaration.initializer && ts.isArrowFunction(declaration.initializer)) {
@@ -485,7 +721,7 @@ export function extractDefinitions(
                       const innerIsConst = (statement.declarationList.flags & ts.NodeFlags.Const) !== 0;
                       const innerIsLet = (statement.declarationList.flags & ts.NodeFlags.Let) !== 0;
 
-                      children!.push({
+                      children?.push({
                         kind: innerIsConst ? 'const' : innerIsLet ? 'let' : 'let',
                         name: innerDecl.name.text,
                         line: getLineNumber(sourceFile, innerDecl),
@@ -497,7 +733,7 @@ export function extractDefinitions(
 
                 // Nested function declarations inside arrow function
                 if (ts.isFunctionDeclaration(statement) && statement.name) {
-                  children!.push({
+                  children?.push({
                     kind: 'function',
                     name: statement.name.text,
                     line: getLineNumber(sourceFile, statement),
@@ -513,7 +749,7 @@ export function extractDefinitions(
             children = [];
             declaration.initializer.properties.forEach((prop) => {
               if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name)) {
-                children!.push({
+                children?.push({
                   kind: 'property',
                   name: prop.name.text,
                   line: getLineNumber(sourceFile, prop),
@@ -543,9 +779,22 @@ export function extractDefinitions(
     // Function Declarations
     if (ts.isFunctionDeclaration(astNode) && astNode.name) {
       const children: DefinitionSymbol[] = [];
+      let foldInfo: FoldInfo | undefined;
 
       // Extract function body contents (variables, nested functions)
       if (astNode.body) {
+        // Calculate fold range
+        const _bodyStart = astNode.body.getStart(sourceFile);
+        const bodyEnd = astNode.body.getEnd();
+        const startLine = getLineNumber(sourceFile, astNode);
+        const endLine = sourceFile.getLineAndCharacterOfPosition(bodyEnd).line + 1;
+
+        foldInfo = {
+          foldStart: startLine,
+          foldEnd: endLine,
+          foldType: 'function-block',
+        };
+
         astNode.body.statements.forEach((statement) => {
           // Variable declarations inside function
           if (ts.isVariableStatement(statement)) {
@@ -577,6 +826,17 @@ export function extractDefinitions(
         });
       }
 
+      // Generate signature (up to body start)
+      const signatureEnd = astNode.body ? astNode.body.getStart() : astNode.getEnd();
+      const signature = sourceFile.text.substring(astNode.getStart(), signatureEnd).trim();
+
+      // Extract JSDoc description
+      const jsDocText = extractJsDoc(astNode);
+      const description = jsDocText || '';
+
+      // Calculate complexity
+      const complexity = astNode.body ? calculateComplexity(astNode.body) : undefined;
+
       symbols.push({
         kind: 'function',
         name: astNode.name.text,
@@ -584,8 +844,13 @@ export function extractDefinitions(
         modifiers: extractModifiers(astNode),
         type: extractType(astNode, typeChecker),
         params: extractParameters(astNode),
-        jsDoc: extractJsDoc(astNode),
+        jsDoc: jsDocText,
         children: children.length > 0 ? children : undefined,
+        foldInfo,
+        signature,
+        description,
+        complexity,
+        returns: astNode.type?.getText(sourceFile),
       });
 
       // Don't visit function body children (already extracted manually)
@@ -595,6 +860,14 @@ export function extractDefinitions(
     // Class Declarations
     if (ts.isClassDeclaration(astNode) && astNode.name) {
       const children: DefinitionSymbol[] = [];
+      const startLine = getLineNumber(sourceFile, astNode);
+      const endLine = sourceFile.getLineAndCharacterOfPosition(astNode.getEnd()).line + 1;
+
+      const foldInfo: FoldInfo = {
+        foldStart: startLine,
+        foldEnd: endLine,
+        foldType: 'class-block',
+      };
 
       astNode.members.forEach((member) => {
         // Constructor
@@ -633,14 +906,138 @@ export function extractDefinitions(
         }
       });
 
+      // Generate class signature
+      const signature = `class ${astNode.name.text}`;
+
+      // Extract JSDoc description
+      const jsDocText = extractJsDoc(astNode);
+      const description = jsDocText || '';
+
+      // Calculate complexity
+      const complexity = calculateComplexity(astNode);
+
       symbols.push({
         kind: 'class',
         name: astNode.name.text,
         line: getLineNumber(sourceFile, astNode),
         modifiers: extractModifiers(astNode),
-        jsDoc: extractJsDoc(astNode),
+        jsDoc: jsDocText,
         children: children.length > 0 ? children : undefined,
+        foldInfo,
+        signature,
+        description,
+        complexity,
       });
+    }
+
+    // Test Calls (Playwright, Jest, Vitest)
+    if (ts.isCallExpression(astNode)) {
+      const expression = astNode.expression;
+      let testKind: SymbolKind | null = null;
+      let testName = '';
+
+      // test.describe('suite name', () => {})
+      if (
+        ts.isPropertyAccessExpression(expression) &&
+        ts.isIdentifier(expression.expression) &&
+        expression.expression.text === 'test' &&
+        expression.name.text === 'describe'
+      ) {
+        testKind = 'test-suite';
+        testName = extractStringArgument(astNode.arguments[0]);
+      }
+      // describe('suite name', () => {})
+      else if (ts.isIdentifier(expression) && expression.text === 'describe') {
+        testKind = 'test-suite';
+        testName = extractStringArgument(astNode.arguments[0]);
+      }
+      // test.beforeEach(async () => {})
+      else if (
+        ts.isPropertyAccessExpression(expression) &&
+        ts.isIdentifier(expression.expression) &&
+        expression.expression.text === 'test' &&
+        (expression.name.text === 'beforeEach' || expression.name.text === 'afterEach')
+      ) {
+        testKind = 'test-hook';
+        testName = expression.name.text;
+      }
+      // beforeEach(async () => {})
+      else if (ts.isIdentifier(expression) && (expression.text === 'beforeEach' || expression.text === 'afterEach')) {
+        testKind = 'test-hook';
+        testName = expression.text;
+      }
+      // test('test case', async () => {})
+      else if (ts.isIdentifier(expression) && expression.text === 'test') {
+        testKind = 'test-case';
+        testName = extractStringArgument(astNode.arguments[0]);
+      }
+      // it('test case', async () => {})
+      else if (ts.isIdentifier(expression) && expression.text === 'it') {
+        testKind = 'test-case';
+        testName = extractStringArgument(astNode.arguments[0]);
+      }
+
+      if (testKind && testName) {
+        const startLine = getLineNumber(sourceFile, astNode);
+        const endLine = sourceFile.getLineAndCharacterOfPosition(astNode.getEnd()).line + 1;
+
+        const foldInfo: FoldInfo = {
+          foldStart: startLine,
+          foldEnd: endLine,
+          foldType: 'function-block',
+        };
+
+        // Generate signature
+        const signature =
+          testKind === 'test-suite'
+            ? `test.describe('${testName}', ...)`
+            : testKind === 'test-hook'
+              ? `${testName}(...)`
+              : `test('${testName}', ...)`;
+
+        // Extract test metadata from code
+        const testCode = astNode.getText(sourceFile);
+        const testMetadata = extractTestMetadata(testCode);
+
+        // Description from test name
+        const description =
+          testKind === 'test-suite' ? 'E2E Test Suite' : testKind === 'test-hook' ? 'Test Setup Hook' : 'Test Case';
+
+        // Extract blocks from test body (comments + code)
+        let blocks: Array<{ type: string; content: string; label?: string; lines?: string }> | undefined;
+
+        // Find the function body (arrow function or regular function)
+        // Test structure: test('name', async () => { ... }) or test('name', function() { ... })
+        const callbackArg = astNode.arguments[1] || astNode.arguments[0]; // 2nd or 1st argument
+
+        if (callbackArg) {
+          let testBody: ts.Node | undefined;
+
+          // Arrow function: () => { ... }
+          if (ts.isArrowFunction(callbackArg) && ts.isBlock(callbackArg.body)) {
+            testBody = callbackArg.body;
+          }
+          // Regular function: function() { ... }
+          else if (ts.isFunctionExpression(callbackArg) && callbackArg.body) {
+            testBody = callbackArg.body;
+          }
+
+          if (testBody) {
+            blocks = extractTestBlocks(sourceFile, testBody);
+          }
+        }
+
+        symbols.push({
+          kind: testKind,
+          name: testName,
+          line: startLine,
+          foldInfo,
+          signature,
+          description,
+          testMetadata,
+          blocks: blocks && blocks.length > 0 ? blocks : undefined,
+        });
+      }
     }
 
     // Only visit children if not already processed manually
@@ -651,23 +1048,27 @@ export function extractDefinitions(
 
   visit(sourceFile);
 
-  console.log('[definitionExtractor] Extracted definitions:', symbols.length, 'from', node.filePath);
+  // Extract comments
+  const comments = extractAllItemsInOrder(sourceFile, typeChecker);
 
-  // Group imports into a single collapsible group
-  const imports = symbols.filter(s => s.kind === 'import');
-  const nonImports = symbols.filter(s => s.kind !== 'import');
+  // Flatten: Extract all children to root level
+  const flattenedSymbols: DefinitionSymbol[] = [];
 
-  if (imports.length === 0) {
-    return symbols;
-  }
+  symbols.forEach((symbol) => {
+    // Add parent symbol
+    flattenedSymbols.push(symbol);
 
-  // Create imports group
-  const importsGroup: DefinitionSymbol = {
-    kind: 'import',
-    name: `Imports (${imports.length})`,
-    line: imports[0].line,
-    children: imports,
-  };
+    // Add all children (if any)
+    if (symbol.children && symbol.children.length > 0) {
+      flattenedSymbols.push(...symbol.children);
+    }
+  });
 
-  return [importsGroup, ...nonImports];
+  // Merge all items and sort by line number
+  const allItems = [...flattenedSymbols, ...comments].sort((a, b) => a.line - b.line);
+
+  console.log('[definitionExtractor] Extracted definitions:', allItems.length, 'from', node.filePath);
+
+  // Return flat list in source order
+  return allItems;
 }

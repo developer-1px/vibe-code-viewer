@@ -6,11 +6,14 @@ import type { DefinitionLocation } from '../types/codeLine';
 
 // Cache Language Services by file path to avoid recreating them for every identifier
 // Key: filePath, Value: { languageService, sourceFile, code }
-const languageServiceCache = new Map<string, {
-  languageService: ts.LanguageService;
-  sourceFile: ts.SourceFile;
-  code: string;
-}>();
+const languageServiceCache = new Map<
+  string,
+  {
+    languageService: ts.LanguageService;
+    sourceFile: ts.SourceFile;
+    code: string;
+  }
+>();
 
 /**
  * Get or create a cached Language Service for a file
@@ -95,10 +98,7 @@ export function findDefinitionLocation(
     const { languageService, sourceFile } = getOrCreateLanguageService(code, filePath, isTsx);
 
     // Get definition at position
-    const definitions = languageService.getDefinitionAtPosition(
-      sourceFile.fileName,
-      position
-    );
+    const definitions = languageService.getDefinitionAtPosition(sourceFile.fileName, position);
 
     if (!definitions || definitions.length === 0) {
       return null;
@@ -146,9 +146,7 @@ export function getQuickInfoAtPosition(
     }
 
     // Extract display parts
-    const displayString = quickInfo.displayParts
-      ?.map(part => part.text)
-      .join('');
+    const displayString = quickInfo.displayParts?.map((part) => part.text).join('');
 
     return displayString || null;
   } catch (error) {

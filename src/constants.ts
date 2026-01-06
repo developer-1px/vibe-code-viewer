@@ -1,5 +1,4 @@
-
-import { loadExampleFiles, findEntryFile } from '@/app/libs/loadExamples'
+import { findEntryFile, loadExampleFiles } from '@/app/libs/loadExamples';
 
 // Load all files from examples and src folders automatically
 export const DEFAULT_FILES = loadExampleFiles();

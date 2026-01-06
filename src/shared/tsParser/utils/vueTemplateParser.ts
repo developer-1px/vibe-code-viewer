@@ -4,8 +4,8 @@
  * @vue/compiler-sfc를 사용한 template 분석
  */
 
-import { parse, type SFCTemplateBlock } from '@vue/compiler-sfc';
 import { type ElementNode, type Node, NodeTypes } from '@vue/compiler-core';
+import { parse } from '@vue/compiler-sfc';
 
 export interface TemplateComponent {
   name: string;
@@ -18,10 +18,7 @@ export interface TemplateComponent {
 /**
  * Vue template에서 사용된 컴포넌트 추출 (AST 기반)
  */
-export function extractTemplateComponents(
-  vueContent: string,
-  filePath: string
-): TemplateComponent[] {
+export function extractTemplateComponents(vueContent: string, filePath: string): TemplateComponent[] {
   try {
     const { descriptor } = parse(vueContent, { filename: filePath });
 
@@ -60,7 +57,7 @@ export function extractTemplateComponents(
 
       // 자식 노드 순회
       if ('children' in node && Array.isArray(node.children)) {
-        node.children.forEach(child => visit(child));
+        node.children.forEach((child) => visit(child));
       }
     }
 
@@ -114,7 +111,7 @@ export function extractTemplateVariables(
       // Directives: v-for, v-if, v-model 등
       if (node.type === NodeTypes.ELEMENT) {
         const elementNode = node as ElementNode;
-        elementNode.props.forEach(prop => {
+        elementNode.props.forEach((prop) => {
           if (prop.type === NodeTypes.DIRECTIVE) {
             // v-for="item in items" 같은 경우
             if (prop.exp && 'content' in prop.exp) {
@@ -138,7 +135,7 @@ export function extractTemplateVariables(
 
       // 자식 노드 순회
       if ('children' in node && Array.isArray(node.children)) {
-        node.children.forEach(child => visit(child));
+        node.children.forEach((child) => visit(child));
       }
     }
 

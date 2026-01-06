@@ -3,15 +3,16 @@
  * CodeCardReferences와 유사한 스타일
  */
 
-import React, { useMemo } from 'react';
 import { useAtomValue } from 'jotai';
-import { CanvasNode } from '../../../../entities/CanvasNode/model/types.ts';
-import { activeLocalVariablesAtom } from '../model/atoms.ts';
-import { filesAtom } from '../../../../app/model/atoms.ts';
+import type React from 'react';
+import { useMemo } from 'react';
 import { deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms.ts';
-import { FocusedIdentifierItem } from './FocusedIdentifierItem.tsx';
+import { filesAtom } from '../../../../app/model/atoms.ts';
+import type { CanvasNode } from '../../../../entities/CanvasNode/model/types.ts';
 import { renderCodeLinesDirect } from '../../../../widgets/CodeViewer/core/renderer/renderCodeLinesDirect.ts';
 import { renderVueFile } from '../../../../widgets/CodeViewer/core/renderer/renderVueFile.ts';
+import { activeLocalVariablesAtom } from '../model/atoms.ts';
+import { FocusedIdentifierItem } from './FocusedIdentifierItem.tsx';
 
 interface FocusedIdentifiersProps {
   node: CanvasNode;
@@ -48,12 +49,12 @@ export const FocusedIdentifiers: React.FC<FocusedIdentifiersProps> = ({ node }) 
     focusedVariables.forEach((identifier) => {
       // Find first occurrence of this identifier in segments
       for (const line of processedLines) {
-        const segment = line.segments.find(seg => seg.text === identifier);
+        const segment = line.segments.find((seg) => seg.text === identifier);
         if (segment) {
           metadata.push({
             name: identifier,
             hoverInfo: segment.hoverInfo,
-            kinds: segment.kinds
+            kinds: segment.kinds,
           });
           return; // Found, move to next identifier
         }
@@ -62,7 +63,7 @@ export const FocusedIdentifiers: React.FC<FocusedIdentifiersProps> = ({ node }) 
       // If not found in segments, add without metadata
       metadata.push({
         name: identifier,
-        kinds: []
+        kinds: [],
       });
     });
 
@@ -76,15 +77,11 @@ export const FocusedIdentifiers: React.FC<FocusedIdentifiersProps> = ({ node }) 
 
   return (
     <div className="flex flex-col gap-0.5 bg-theme-panel border-y border-theme-border py-2">
-      <div className="px-3 text-[10px] uppercase tracking-wider text-theme-text-tertiary font-semibold mb-1">
+      <div className="px-3 text-2xs uppercase tracking-wider text-theme-text-tertiary font-semibold mb-1">
         Focused Identifiers
       </div>
       {identifiersWithMetadata.map((metadata) => (
-        <FocusedIdentifierItem
-          key={metadata.name}
-          metadata={metadata}
-          nodeId={node.id}
-        />
+        <FocusedIdentifierItem key={metadata.name} metadata={metadata} nodeId={node.id} />
       ))}
     </div>
   );

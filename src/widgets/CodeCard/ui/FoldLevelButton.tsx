@@ -5,8 +5,8 @@
  * CodeCardHeader의 Fold 버튼을 별도 컴포넌트로 분리
  */
 
-import React from 'react';
-import { Maximize as IconMaximize, AlignJustify as IconCompact, Minimize as IconMinimize } from 'lucide-react';
+import { AlignJustify as IconCompact, Maximize as IconMaximize, Minimize as IconMinimize } from 'lucide-react';
+import type React from 'react';
 import type { FoldLevel } from '../hooks/useFoldLevel';
 
 export interface FoldLevelButtonProps {

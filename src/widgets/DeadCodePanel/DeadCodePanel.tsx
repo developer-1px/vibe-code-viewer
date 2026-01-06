@@ -2,18 +2,22 @@
  * DeadCodePanel - Dead Code Analyzer Panel Container
  * Provides panel layout for dead code exploration
  */
-import { useState, useRef } from 'react';
+
 import { useAtomValue } from 'jotai';
 import { Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { useRef, useState } from 'react';
 import { Sidebar } from '@/components/ide/Sidebar';
-import { deadCodeResultsAtom, selectedDeadCodeItemsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
+import { Button } from '@/components/ui/Button';
 import { useDeadCodeAnalysis } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/lib/useDeadCodeAnalysis';
+import {
+  deadCodeResultsAtom,
+  selectedDeadCodeItemsAtom,
+} from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
 import { RefactoringPromptDialog } from '../../features/RefactoringPrompt/RefactoringPromptDialog';
-import { DeadCodePanelHeader } from './ui/DeadCodePanelHeader';
-import { DeadCodePanelSummary } from './ui/DeadCodePanelSummary';
 import { DeadCodeExplorer } from '../DeadCodeExplorer/DeadCodeExplorer';
 import IDEScrollView from '../IDEScrollView/IDEScrollView';
+import { DeadCodePanelHeader } from './ui/DeadCodePanelHeader';
+import { DeadCodePanelSummary } from './ui/DeadCodePanelSummary';
 
 export function DeadCodePanel({ className }: { className?: string }) {
   useDeadCodeAnalysis(); // Auto-analyze on mount
@@ -25,14 +29,8 @@ export function DeadCodePanel({ className }: { className?: string }) {
   return (
     <div className="flex h-full w-full overflow-hidden">
       {/* 좌측: Dead Code Panel */}
-      <div ref={containerRef} tabIndex={0} className="relative focus:outline-none">
-        <Sidebar
-          resizable
-          defaultWidth={280}
-          minWidth={200}
-          maxWidth={600}
-          className="h-full shadow-2xl"
-        >
+      <div ref={containerRef} className="relative focus:outline-none">
+        <Sidebar resizable defaultWidth={280} minWidth={200} maxWidth={600} className="h-full shadow-2xl">
           <Sidebar.Header>
             <DeadCodePanelHeader />
           </Sidebar.Header>

@@ -12,31 +12,31 @@ export interface AppTheme {
 
   colors: {
     // Main backgrounds (hex values)
-    background: string;      // Main app background
-    canvas: string;          // Canvas/workspace area
-    sidebar: string;         // AppSidebar background
-    header: string;          // Header background
-    panel: string;           // Panel/card background
+    background: string; // Main app background
+    canvas: string; // Canvas/workspace area
+    sidebar: string; // AppSidebar background
+    header: string; // Header background
+    panel: string; // Panel/card background
 
     // Borders (hex values)
     border: {
-      DEFAULT: string;       // Default border
-      subtle: string;        // Subtle border
-      strong: string;        // Strong border
+      DEFAULT: string; // Default border
+      subtle: string; // Subtle border
+      strong: string; // Strong border
     };
 
     // Text colors (hex values)
     text: {
-      primary: string;       // Main text
-      secondary: string;     // Secondary/muted text
-      tertiary: string;      // Tertiary/muted text
-      accent: string;        // Accent/highlight text
+      primary: string; // Main text
+      secondary: string; // Secondary/muted text
+      tertiary: string; // Tertiary/muted text
+      accent: string; // Accent/highlight text
     };
 
     // Interactive states (rgba values)
-    hover: string;           // Hover state
-    active: string;          // Active/selected state
-    focus: string;           // Focus state
+    hover: string; // Hover state
+    active: string; // Active/selected state
+    focus: string; // Focus state
 
     // Status colors (hex values)
     success: string;
@@ -52,8 +52,8 @@ export interface AppTheme {
 
   // Tailwind utility classes (not injected as CSS vars)
   effects: {
-    blur: string;            // Backdrop blur
-    shadow: string;          // Box shadow
+    blur: string; // Backdrop blur
+    shadow: string; // Box shadow
   };
 }
 
@@ -120,5 +120,3 @@ export interface UnifiedTheme {
   app: AppTheme;
   editor: EditorTheme;
 }
-
-

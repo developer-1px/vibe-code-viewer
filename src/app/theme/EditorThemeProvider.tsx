@@ -3,7 +3,8 @@
  * Provides theme configuration to Code Editor components
  */
 
-import React, { createContext, useContext } from 'react';
+import type React from 'react';
+import { createContext, useContext } from 'react';
 import { defaultEditorTheme } from './default/editor';
 import type { EditorTheme } from './types';
 
@@ -22,9 +23,5 @@ export const EditorThemeProvider: React.FC<{
   theme?: EditorTheme;
   children: React.ReactNode;
 }> = ({ theme = defaultEditorTheme, children }) => {
-  return (
-    <EditorThemeContext.Provider value={theme}>
-      {children}
-    </EditorThemeContext.Provider>
-  );
+  return <EditorThemeContext.Provider value={theme}>{children}</EditorThemeContext.Provider>;
 };

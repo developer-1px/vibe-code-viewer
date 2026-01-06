@@ -32,14 +32,14 @@ export function findDefinitionLocation(
   if (targetNode.type === 'module') {
     return {
       nodeId: targetNode.id,
-      lineNum: targetNode.startLine || 1
+      lineNum: targetNode.startLine || 1,
     };
   }
 
   // 다른 타입의 노드는 해당 노드의 startLine으로 이동
   return {
     nodeId: targetNode.id,
-    lineNum: targetNode.startLine || 1
+    lineNum: targetNode.startLine || 1,
   };
 }
 

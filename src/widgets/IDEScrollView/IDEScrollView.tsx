@@ -6,15 +6,18 @@
  * 2. Tabs 모드: 열린 탭들의 파일 표시 (IDEView 대체)
  */
 
-import React, { useMemo, useEffect } from 'react';
 import { useAtomValue } from 'jotai';
-import { selectedDeadCodeItemsAtom, deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
-import { openedTabsAtom, activeTabAtom } from '@/features/File/OpenFiles/model/atoms';
-import { fullNodeMapAtom, filesAtom } from '../../app/model/atoms';
+import { useEffect, useMemo } from 'react';
 import { getItemKey } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/lib/categoryUtils';
-import FileSection from './ui/FileSection';
-import { useScrollNavigation } from './lib/useScrollNavigation';
+import {
+  deadCodeResultsAtom,
+  selectedDeadCodeItemsAtom,
+} from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
+import { activeTabAtom, openedTabsAtom } from '@/features/File/OpenFiles/model/atoms';
+import { filesAtom, fullNodeMapAtom } from '../../app/model/atoms';
 import type { DeadCodeItem } from '../../shared/deadCodeAnalyzer';
+import { useScrollNavigation } from './lib/useScrollNavigation';
+import FileSection from './ui/FileSection';
 
 const IDEScrollView = () => {
   const selectedItems = useAtomValue(selectedDeadCodeItemsAtom);
@@ -32,20 +35,18 @@ const IDEScrollView = () => {
     if (isDeadCodeMode) {
       // Dead Code 모드: 선택된 항목들에서 파일 경로 추출
       const allItems: DeadCodeItem[] = [
-        ...deadCodeResults!.unusedExports,
-        ...deadCodeResults!.unusedImports,
-        ...deadCodeResults!.deadFunctions,
-        ...deadCodeResults!.unusedVariables,
-        ...deadCodeResults!.unusedProps,
-        ...deadCodeResults!.unusedArguments,
+        ...deadCodeResults?.unusedExports,
+        ...deadCodeResults?.unusedImports,
+        ...deadCodeResults?.deadFunctions,
+        ...deadCodeResults?.unusedVariables,
+        ...deadCodeResults?.unusedProps,
+        ...deadCodeResults?.unusedArguments,
       ];
 
-      const selectedDeadCodeItems = allItems.filter(item =>
-        selectedItems.has(getItemKey(item))
-      );
+      const selectedDeadCodeItems = allItems.filter((item) => selectedItems.has(getItemKey(item)));
 
       const filePathsSet = new Set<string>();
-      selectedDeadCodeItems.forEach(item => {
+      selectedDeadCodeItems.forEach((item) => {
         filePathsSet.add(item.filePath);
       });
 
@@ -65,23 +66,23 @@ const IDEScrollView = () => {
 
     // Dead Code 모드: 선택된 항목의 라인 번호
     const allItems: DeadCodeItem[] = [
-      ...deadCodeResults!.unusedExports,
-      ...deadCodeResults!.unusedImports,
-      ...deadCodeResults!.deadFunctions,
-      ...deadCodeResults!.unusedVariables,
-      ...deadCodeResults!.unusedProps,
-      ...deadCodeResults!.unusedArguments,
+      ...deadCodeResults?.unusedExports,
+      ...deadCodeResults?.unusedImports,
+      ...deadCodeResults?.deadFunctions,
+      ...deadCodeResults?.unusedVariables,
+      ...deadCodeResults?.unusedProps,
+      ...deadCodeResults?.unusedArguments,
     ];
 
     const linesByFile = new Map<string, Set<number>>();
 
     allItems
-      .filter(item => selectedItems.has(getItemKey(item)))
-      .forEach(item => {
+      .filter((item) => selectedItems.has(getItemKey(item)))
+      .forEach((item) => {
         if (!linesByFile.has(item.filePath)) {
           linesByFile.set(item.filePath, new Set<number>());
         }
-        linesByFile.get(item.filePath)!.add(item.line);
+        linesByFile.get(item.filePath)?.add(item.line);
       });
 
     return linesByFile;

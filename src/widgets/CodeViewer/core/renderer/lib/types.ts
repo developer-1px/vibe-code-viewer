@@ -2,7 +2,7 @@
  * Internal types for renderCodeLinesDirect
  */
 
-import * as ts from 'typescript';
+import type * as ts from 'typescript';
 import type { SegmentKind } from '../../types/codeLine';
 
 export interface SegmentToAdd {
@@ -48,9 +48,6 @@ export interface RenderContext {
 /**
  * 위치를 라인 번호와 오프셋으로 변환
  */
-export const getLinePosition = (
-  position: number,
-  sourceFile: ts.SourceFile
-): LinePosition => {
+export const getLinePosition = (position: number, sourceFile: ts.SourceFile): LinePosition => {
   return sourceFile.getLineAndCharacterOfPosition(position);
 };

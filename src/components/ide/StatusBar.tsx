@@ -1,32 +1,35 @@
-import * as React from 'react'
-import { cn } from '@/components/lib/utils'
-import { GitBranch, ArrowUp, ArrowDown } from 'lucide-react'
-import { Indicator } from '@/components/ui/Indicator'
+import { ArrowDown, ArrowUp, GitBranch } from 'lucide-react';
+import * as React from 'react';
+import { cn } from '@/components/lib/utils';
+import { Indicator } from '@/components/ui/Indicator';
 
 export interface StatusBarProps extends React.HTMLAttributes<HTMLDivElement> {
-  branch?: string
-  ahead?: number
-  behind?: number
-  line?: number
-  column?: number
-  encoding?: string
-  language?: string
-  aiActive?: boolean
+  branch?: string;
+  ahead?: number;
+  behind?: number;
+  line?: number;
+  column?: number;
+  encoding?: string;
+  language?: string;
+  aiActive?: boolean;
 }
 
 const StatusBar = React.forwardRef<HTMLDivElement, StatusBarProps>(
-  ({
-    className,
-    branch = 'main',
-    ahead = 0,
-    behind = 0,
-    line = 1,
-    column = 1,
-    encoding = 'UTF-8',
-    language = 'TS',
-    aiActive = false,
-    ...props
-  }, ref) => {
+  (
+    {
+      className,
+      branch = 'main',
+      ahead = 0,
+      behind = 0,
+      line = 1,
+      column = 1,
+      encoding = 'UTF-8',
+      language = 'TS',
+      aiActive = false,
+      ...props
+    },
+    ref
+  ) => {
     return (
       <div
         ref={ref}
@@ -63,7 +66,9 @@ const StatusBar = React.forwardRef<HTMLDivElement, StatusBarProps>(
 
         {/* Right Side */}
         <div className="flex items-center gap-3">
-          <span>Ln {line}, Col {column}</span>
+          <span>
+            Ln {line}, Col {column}
+          </span>
           <span>{encoding}</span>
           <span>{language}</span>
           {aiActive && (
@@ -74,9 +79,9 @@ const StatusBar = React.forwardRef<HTMLDivElement, StatusBarProps>(
           )}
         </div>
       </div>
-    )
+    );
   }
-)
-StatusBar.displayName = 'StatusBar'
+);
+StatusBar.displayName = 'StatusBar';
 
-export { StatusBar }
+export { StatusBar };

@@ -1,7 +1,7 @@
 /**
  * Category utility functions
  */
-import { AlertTriangle, Package, FunctionSquare, Box } from 'lucide-react';
+import { AlertTriangle, Box, FunctionSquare, Package } from 'lucide-react';
 
 export function renderCategoryIcon(category: string) {
   switch (category) {

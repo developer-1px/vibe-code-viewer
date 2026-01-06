@@ -3,24 +3,24 @@
  * Shows files in tabs like a traditional IDE
  */
 
-import React, { useMemo, useEffect, useRef } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useHotkeys, useHotkeysContext } from 'react-hotkeys-hook';
 import { FileText } from 'lucide-react';
-import { viewModeAtom, fullNodeMapAtom, filesAtom } from '../../app/model/atoms';
-import { targetLineAtom } from '@/features/File/Navigation/model/atoms';
+import { useEffect, useMemo, useRef } from 'react';
+import { useHotkeys, useHotkeysContext } from 'react-hotkeys-hook';
+import { OutlinePanel } from '@/components/ide/OutlinePanel';
+import { Tab, TabBar } from '@/components/ide/TabBar';
 import { deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
-import { openedTabsAtom, activeTabAtom } from '@/features/File/OpenFiles/model/atoms';
-import { outlinePanelOpenAtom } from './model/atoms';
+import { targetLineAtom } from '@/features/File/Navigation/model/atoms';
+import { activeTabAtom, openedTabsAtom } from '@/features/File/OpenFiles/model/atoms';
+import { filesAtom, fullNodeMapAtom, viewModeAtom } from '../../app/model/atoms';
+import { useTabNavigation } from '../../features/File/useTabNavigation';
+import { extractDefinitions } from '../../shared/definitionExtractor';
+import { extractOutlineStructure } from '../../shared/outlineExtractor';
+import { getFileName } from '../../shared/pathUtils';
+import CodeViewer from '../CodeViewer/CodeViewer';
 import { renderCodeLinesDirect } from '../CodeViewer/core/renderer/renderCodeLinesDirect';
 import { renderVueFile } from '../CodeViewer/core/renderer/renderVueFile';
-import CodeViewer from '../CodeViewer/CodeViewer';
-import { getFileName } from '../../shared/pathUtils';
-import { TabBar, Tab } from '@/components/ide/TabBar';
-import { OutlinePanel } from '@/components/ide/OutlinePanel';
-import { extractOutlineStructure } from '../../shared/outlineExtractor';
-import { extractDefinitions } from '../../shared/definitionExtractor';
-import { useTabNavigation } from '../../features/File/useTabNavigation';
+import { outlinePanelOpenAtom } from './model/atoms';
 
 const IDE_HOTKEYS = {
   ESC: 'esc',
@@ -68,30 +68,35 @@ const IDEView = () => {
   }, [activeTab, openedTabs, setActiveTab]);
 
   // IDE hotkeys with 'ide' scope
-  const ideRef = useHotkeys(Object.values(IDE_HOTKEYS), (e, { hotkey }) => {
-    console.log('[IDEView] Hotkey pressed:', hotkey);
-    e.preventDefault();
+  const ideRef = useHotkeys(
+    Object.values(IDE_HOTKEYS),
+    (e, { hotkey }) => {
+      console.log('[IDEView] Hotkey pressed:', hotkey);
+      e.preventDefault();
 
-    switch (hotkey) {
-      case IDE_HOTKEYS.TOGGLE_OUTLINE:
-        setOutlinePanelOpen(prev => !prev);
-        break;
-      case IDE_HOTKEYS.PREV_TAB:
-        goToPreviousTab();
-        break;
-      case IDE_HOTKEYS.NEXT_TAB:
-        goToNextTab();
-        break;
-    }
-  }, {
-    scopes: ['ide'],
-    preventDefault: true
-  }, [setViewMode, setOutlinePanelOpen, goToPreviousTab, goToNextTab]);
+      switch (hotkey) {
+        case IDE_HOTKEYS.TOGGLE_OUTLINE:
+          setOutlinePanelOpen((prev) => !prev);
+          break;
+        case IDE_HOTKEYS.PREV_TAB:
+          goToPreviousTab();
+          break;
+        case IDE_HOTKEYS.NEXT_TAB:
+          goToNextTab();
+          break;
+      }
+    },
+    {
+      scopes: ['ide'],
+      preventDefault: true,
+    },
+    [setViewMode, setOutlinePanelOpen, goToPreviousTab, goToNextTab]
+  );
 
   // Close tab
   const handleCloseTab = (tabPath: string) => {
     const tabIndex = openedTabs.indexOf(tabPath);
-    const newTabs = openedTabs.filter(t => t !== tabPath);
+    const newTabs = openedTabs.filter((t) => t !== tabPath);
 
     setOpenedTabs(newTabs);
 
@@ -206,16 +211,8 @@ const IDEView = () => {
           )
         ) : (
           /* Scrollable code content (full width) */
-          <div
-            ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto"
-          >
-            {activeNode && (
-              <CodeViewer
-                processedLines={processedLines}
-                node={activeNode}
-              />
-            )}
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+            {activeNode && <CodeViewer processedLines={processedLines} node={activeNode} />}
           </div>
         )}
       </div>

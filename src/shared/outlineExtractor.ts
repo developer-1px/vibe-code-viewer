@@ -178,7 +178,7 @@ function getStatementKind(stmt: ts.Node): OutlineNodeKind {
 function formatParameters(params: ts.NodeArray<ts.ParameterDeclaration>, sourceFile: ts.SourceFile): string {
   if (params.length === 0) return '()';
 
-  const paramNames = params.map(p => {
+  const paramNames = params.map((p) => {
     const name = p.name.getText(sourceFile);
     // Optional parameter
     if (p.questionToken) return `${name}?`;
@@ -221,7 +221,7 @@ function getStatementName(stmt: ts.Node, sourceFile: ts.SourceFile): string {
   }
   if (ts.isVariableStatement(stmt)) {
     const names = stmt.declarationList.declarations
-      .map(d => ts.isIdentifier(d.name) ? d.name.text : '...')
+      .map((d) => (ts.isIdentifier(d.name) ? d.name.text : '...'))
       .join(', ');
     return names;
   }
@@ -244,7 +244,7 @@ function getStatementName(stmt: ts.Node, sourceFile: ts.SourceFile): string {
   }
   if (ts.isIfStatement(stmt)) {
     const condition = stmt.expression.getText(sourceFile);
-    return `if (${condition.length > 30 ? condition.slice(0, 30) + '...' : condition})`;
+    return `if (${condition.length > 30 ? `${condition.slice(0, 30)}...` : condition})`;
   }
   if (ts.isForOfStatement(stmt)) {
     const variable = stmt.initializer.getText(sourceFile);
@@ -261,7 +261,7 @@ function getStatementName(stmt: ts.Node, sourceFile: ts.SourceFile): string {
   }
   if (ts.isWhileStatement(stmt)) {
     const condition = stmt.expression.getText(sourceFile);
-    return `while (${condition.length > 30 ? condition.slice(0, 30) + '...' : condition})`;
+    return `while (${condition.length > 30 ? `${condition.slice(0, 30)}...` : condition})`;
   }
   if (ts.isDoStatement(stmt)) {
     const condition = stmt.expression.getText(sourceFile);
@@ -276,23 +276,23 @@ function getStatementName(stmt: ts.Node, sourceFile: ts.SourceFile): string {
   }
   if (ts.isReturnStatement(stmt)) {
     const value = stmt.expression?.getText(sourceFile) || '';
-    return `return ${value.length > 30 ? value.slice(0, 30) + '...' : value}`;
+    return `return ${value.length > 30 ? `${value.slice(0, 30)}...` : value}`;
   }
   if (ts.isThrowStatement(stmt)) {
     const value = stmt.expression.getText(sourceFile);
-    return `throw ${value.length > 30 ? value.slice(0, 30) + '...' : value}`;
+    return `throw ${value.length > 30 ? `${value.slice(0, 30)}...` : value}`;
   }
   if (ts.isExpressionStatement(stmt) && ts.isCallExpression(stmt.expression)) {
     const expression = stmt.expression.expression.getText(sourceFile);
     return `${expression}()`;
   }
-  return stmt.getText(sourceFile).split('\n')[0].slice(0, 50) + '...';
+  return `${stmt.getText(sourceFile).split('\n')[0].slice(0, 50)}...`;
 }
 
 /**
  * Get child statements from a node (for recursion)
  */
-function getChildStatements(node: ts.Node, sourceFile: ts.SourceFile): ts.Node[] {
+function getChildStatements(node: ts.Node, _sourceFile: ts.SourceFile): ts.Node[] {
   const children: ts.Node[] = [];
 
   // Function: process body statements
@@ -325,7 +325,7 @@ function getChildStatements(node: ts.Node, sourceFile: ts.SourceFile): ts.Node[]
 
   // Variable Statement: check if initializer is arrow function
   else if (ts.isVariableStatement(node)) {
-    node.declarationList.declarations.forEach(decl => {
+    node.declarationList.declarations.forEach((decl) => {
       if (decl.initializer) {
         if (ts.isArrowFunction(decl.initializer)) {
           // Treat arrow function as child for recursion
@@ -340,7 +340,7 @@ function getChildStatements(node: ts.Node, sourceFile: ts.SourceFile): ts.Node[]
 
   // Class: process members
   else if (ts.isClassDeclaration(node)) {
-    node.members.forEach(member => {
+    node.members.forEach((member) => {
       if (ts.isMethodDeclaration(member) || ts.isPropertyDeclaration(member) || ts.isConstructorDeclaration(member)) {
         children.push(member);
       }
@@ -371,8 +371,7 @@ function getChildStatements(node: ts.Node, sourceFile: ts.SourceFile): ts.Node[]
     } else {
       children.push(node.statement);
     }
-  }
-  else if (ts.isWhileStatement(node) || ts.isDoStatement(node)) {
+  } else if (ts.isWhileStatement(node) || ts.isDoStatement(node)) {
     if (ts.isBlock(node.statement)) {
       children.push(...node.statement.statements);
     } else {
@@ -382,7 +381,7 @@ function getChildStatements(node: ts.Node, sourceFile: ts.SourceFile): ts.Node[]
 
   // Switch: process cases
   else if (ts.isSwitchStatement(node)) {
-    node.caseBlock.clauses.forEach(clause => {
+    node.caseBlock.clauses.forEach((clause) => {
       children.push(...clause.statements);
     });
   }
@@ -417,7 +416,7 @@ function visitStatement(stmt: ts.Node, sourceFile: ts.SourceFile, processedComme
 
   // Extract leading comments for this statement (add to result first)
   const comments = extractComments(sourceFile, stmt);
-  comments.forEach(comment => {
+  comments.forEach((comment) => {
     if (!processedComments.has(comment.line)) {
       processedComments.add(comment.line);
       result.push(comment);
@@ -449,7 +448,7 @@ function visitStatement(stmt: ts.Node, sourceFile: ts.SourceFile, processedComme
   const children: OutlineNode[] = [];
 
   // Process child statements recursively
-  childStatements.forEach(childStmt => {
+  childStatements.forEach((childStmt) => {
     const childNodes = visitStatement(childStmt, sourceFile, processedComments);
     children.push(...childNodes); // Spread to include comments and statement
   });
@@ -477,7 +476,7 @@ export function extractOutlineStructure(node: SourceFileNode): OutlineNode[] {
   const processedComments = new Set<number>();
 
   // Process top-level statements
-  sourceFile.statements.forEach(stmt => {
+  sourceFile.statements.forEach((stmt) => {
     // Collect imports separately
     if (ts.isImportDeclaration(stmt)) {
       const importNodes = visitStatement(stmt, sourceFile, processedComments);
@@ -506,4 +505,71 @@ export function extractOutlineStructure(node: SourceFileNode): OutlineNode[] {
 
   console.log('[outlineExtractor] Extracted structure nodes:', nodes.length, 'from', node.filePath);
   return nodes;
+}
+
+/**
+ * Check if outline node is a function-related block
+ */
+function isFunctionNode(node: OutlineNode): boolean {
+  return (
+    node.kind === 'function' ||
+    node.kind === 'arrow-function' ||
+    node.kind === 'method' ||
+    node.kind === 'const' || // const foo = () => {} 같은 경우
+    node.kind === 'let' ||
+    node.kind === 'var'
+  );
+}
+
+/**
+ * Recursively find function hierarchy for a given line number
+ */
+function findFunctionHierarchy(
+  nodes: OutlineNode[],
+  lineNumber: number,
+  hierarchy: OutlineNode[] = []
+): OutlineNode[] | null {
+  for (const node of nodes) {
+    // Check if this line is within this node's range
+    const inRange = node.line <= lineNumber && (!node.endLine || node.endLine >= lineNumber);
+
+    if (inRange) {
+      // If this is a function node, add to hierarchy
+      if (isFunctionNode(node)) {
+        const newHierarchy = [...hierarchy, node];
+
+        // If this node has children, search recursively
+        if (node.children) {
+          const childResult = findFunctionHierarchy(node.children, lineNumber, newHierarchy);
+          if (childResult) {
+            return childResult;
+          }
+        }
+
+        // No deeper function found, return current hierarchy
+        return newHierarchy;
+      }
+
+      // Not a function node, but in range - search children
+      if (node.children) {
+        const childResult = findFunctionHierarchy(node.children, lineNumber, hierarchy);
+        if (childResult) {
+          return childResult;
+        }
+      }
+    }
+  }
+
+  // No matching function found at this level
+  return hierarchy.length > 0 ? hierarchy : null;
+}
+
+/**
+ * Get function hierarchy for a specific line number
+ * Returns array of function blocks (top-level → innermost)
+ */
+export function getFunctionHierarchyForLine(node: SourceFileNode, lineNumber: number): OutlineNode[] {
+  const structure = extractOutlineStructure(node);
+  const hierarchy = findFunctionHierarchy(structure, lineNumber);
+  return hierarchy || [];
 }

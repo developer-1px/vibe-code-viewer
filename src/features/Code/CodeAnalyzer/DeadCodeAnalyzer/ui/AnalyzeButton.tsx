@@ -1,9 +1,10 @@
 /**
  * Re-analyze Button Component
  */
+
+import { useAtomValue } from 'jotai';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button.tsx';
-import { useAtomValue } from 'jotai';
 import { graphDataAtom } from '../../../../../app/model/atoms.ts';
 import { useDeadCodeAnalysis } from '../lib/useDeadCodeAnalysis.ts';
 
@@ -18,13 +19,9 @@ export function AnalyzeButton() {
       className="h-5 w-5 p-0"
       onClick={reanalyze}
       disabled={isAnalyzing || !graphData}
-      title={isAnalyzing ? "Analyzing..." : "Re-analyze"}
+      title={isAnalyzing ? 'Analyzing...' : 'Re-analyze'}
     >
-      {isAnalyzing ? (
-        <Loader2 size={12} className="animate-spin" />
-      ) : (
-        <AlertTriangle size={12} />
-      )}
+      {isAnalyzing ? <Loader2 size={12} className="animate-spin" /> : <AlertTriangle size={12} />}
     </Button>
   );
 }

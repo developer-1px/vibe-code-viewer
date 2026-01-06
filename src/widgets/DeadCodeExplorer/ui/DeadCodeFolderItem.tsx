@@ -1,20 +1,24 @@
 /**
  * DeadCodeFolderItem - Folder rendering in category tree
  */
-import React from 'react';
+
 import { Folder, FolderOpen } from 'lucide-react';
+import React from 'react';
 import { FileTreeItem } from '@/components/ide/FileTreeItem';
 
-export const DeadCodeFolderItem = React.forwardRef<HTMLDivElement, {
-  name: string;
-  depth: number;
-  isCollapsed: boolean;
-  focused?: boolean;
-  globalItemIndex: number;
-  itemRefs: React.MutableRefObject<Map<number, HTMLDivElement>>;
-  onFocus?: () => void;
-  onDoubleClick: () => void;
-}>((props, ref) => {
+export const DeadCodeFolderItem = React.forwardRef<
+  HTMLDivElement,
+  {
+    name: string;
+    depth: number;
+    isCollapsed: boolean;
+    focused?: boolean;
+    globalItemIndex: number;
+    itemRefs: React.MutableRefObject<Map<number, HTMLDivElement>>;
+    onFocus?: () => void;
+    onDoubleClick: () => void;
+  }
+>((props, ref) => {
   const { name, depth, isCollapsed, focused, globalItemIndex, itemRefs, onFocus, onDoubleClick } = props;
   const icon = isCollapsed ? Folder : FolderOpen;
 

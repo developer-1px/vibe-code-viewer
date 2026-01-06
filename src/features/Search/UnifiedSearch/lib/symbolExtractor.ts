@@ -3,10 +3,10 @@
  */
 
 import * as ts from 'typescript';
-import type { SourceFileNode } from '../../../../entities/SourceFileNode/model/types.ts';
-import type { SearchResult } from '../model/types.ts';
 import type { CodeSymbolMetadata } from '../../../../entities/CodeSymbol/model/types.ts';
+import type { SourceFileNode } from '../../../../entities/SourceFileNode/model/types.ts';
 import { getFileName } from '../../../../shared/pathUtils.ts';
+import type { SearchResult } from '../model/types.ts';
 
 /**
  * Get display name for file
@@ -99,7 +99,7 @@ function getExportMap(fullNodeMap: Map<string, SourceFileNode>): Map<string, boo
       }
 
       visitNode(sourceFile);
-    } catch (e) {
+    } catch (_e) {
       // Skip files that fail to parse
     }
   });
@@ -128,11 +128,10 @@ export function getAllSearchableItems(
     const isFile = !node.id.includes('::');
 
     // Skip ROOT nodes (parser metadata nodes)
-    if (!isFile && (
-      node.id.endsWith('::TEMPLATE_ROOT') ||
-      node.id.endsWith('::JSX_ROOT') ||
-      node.id.endsWith('::FILE_ROOT')
-    )) {
+    if (
+      !isFile &&
+      (node.id.endsWith('::TEMPLATE_ROOT') || node.id.endsWith('::JSX_ROOT') || node.id.endsWith('::FILE_ROOT'))
+    ) {
       return;
     }
 
@@ -140,9 +139,8 @@ export function getAllSearchableItems(
     const codeSnippet = metadata?.codeSnippet || node.codeSnippet;
 
     // Check export status using TypeScript AST-based export map
-    const isExported = !isFile && node.startLine
-      ? exportMap.get(`${node.filePath}:${node.startLine}`) || false
-      : undefined;
+    const isExported =
+      !isFile && node.startLine ? exportMap.get(`${node.filePath}:${node.startLine}`) || false : undefined;
 
     const uniqueId = isFile ? `file-${node.id}` : `symbol-${node.id}`;
     const name = isFile ? getFileDisplayName(node.filePath) : node.label;
@@ -172,14 +170,14 @@ export function getAllSearchableItems(
   // filesInNodeMap: Track which files are in the dependency graph
   // Orphaned files are files that exist in the project but are not imported/parsed
   const filesInNodeMap = new Set<string>();
-  fullNodeMap.forEach(node => {
+  fullNodeMap.forEach((node) => {
     if (!node.id.includes('::')) {
       filesInNodeMap.add(node.filePath);
     }
   });
 
   // Add files not in dependency graph
-  Object.keys(files).forEach(filePath => {
+  Object.keys(files).forEach((filePath) => {
     if (!filesInNodeMap.has(filePath)) {
       const fileName = getFileDisplayName(filePath);
       results.push({
@@ -194,7 +192,7 @@ export function getAllSearchableItems(
 
   // Extract and add all folders
   const folderSet = new Set<string>();
-  Object.keys(files).forEach(filePath => {
+  Object.keys(files).forEach((filePath) => {
     const parts = filePath.split('/');
     for (let i = 1; i < parts.length; i++) {
       const folderPath = parts.slice(0, i).join('/');
@@ -204,7 +202,7 @@ export function getAllSearchableItems(
     }
   });
 
-  folderSet.forEach(folderPath => {
+  folderSet.forEach((folderPath) => {
     const folderName = getFileName(folderPath);
     results.push({
       id: `folder-${folderPath}`,
@@ -233,13 +231,13 @@ export function getAllSearchableItems(
 
   // 4. Remove duplicate usages (same file + same line as declaration)
   const declarationKeys = new Set<string>();
-  results.forEach(item => {
+  results.forEach((item) => {
     if (item.type === 'symbol' && item.nodeType !== 'usage' && item.lineNumber) {
       declarationKeys.add(`${item.filePath}:${item.lineNumber}`);
     }
   });
 
-  const deduped = results.filter(item => {
+  const deduped = results.filter((item) => {
     if (item.type !== 'symbol' || item.nodeType !== 'usage') return true;
 
     const key = `${item.filePath}:${item.lineNumber}`;
@@ -260,4 +258,3 @@ export function getAllSearchableItems(
     return a.name.localeCompare(b.name);
   });
 }
-

@@ -5,9 +5,9 @@
  */
 
 import { useAtomValue } from 'jotai';
-import { fullNodeMapAtom } from '../../../../app/model/atoms.ts';
-import { findDefinitionLocation, isModifierKeyPressed, type DefinitionLocation } from './gotoDefinitionUtils.ts';
 import { useOpenFile } from '@/features/File/OpenFiles/lib/useOpenFile.ts';
+import { fullNodeMapAtom } from '../../../../app/model/atoms.ts';
+import { type DefinitionLocation, findDefinitionLocation, isModifierKeyPressed } from './gotoDefinitionUtils.ts';
 
 export function useGotoDefinition() {
   const fullNodeMap = useAtomValue(fullNodeMapAtom);
@@ -24,7 +24,7 @@ export function useGotoDefinition() {
     // useOpenFile hook을 사용하여 파일 열기 및 스크롤 처리
     // 내부적으로 viewMode에 따라 IDE/Canvas 모드를 자동 분기
     openFile(location.nodeId, {
-      lineNumber: location.lineNum
+      lineNumber: location.lineNum,
     });
   };
 
@@ -78,19 +78,13 @@ export function useGotoDefinition() {
     const { filePath, line } = definitionLocation;
 
     // Find all nodes from the target file
-    const nodesInFile = Array.from(fullNodeMap.values()).filter(
-      n => n.filePath === filePath
-    );
+    const nodesInFile = Array.from(fullNodeMap.values()).filter((n) => n.filePath === filePath);
 
     // Find the node that contains this line
-    let targetNode = nodesInFile.find(n => n.startLine === line);
+    let targetNode = nodesInFile.find((n) => n.startLine === line);
 
     if (!targetNode) {
-      targetNode = nodesInFile.find(
-        n =>
-          n.startLine !== undefined &&
-          line >= n.startLine
-      );
+      targetNode = nodesInFile.find((n) => n.startLine !== undefined && line >= n.startLine);
     }
 
     if (!targetNode) {
@@ -108,7 +102,7 @@ export function useGotoDefinition() {
 
     navigateToLocation({
       nodeId: targetNode.id,
-      lineNum: line
+      lineNum: line,
     });
 
     return true; // 처리됨 (기본 동작 방지)

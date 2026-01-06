@@ -3,13 +3,14 @@
  * 위치 계산 및 offset 적용, 선택 및 드래그 기능
  */
 
-import React, { useMemo, useRef } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useDrag } from '@use-gesture/react';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
+import type React from 'react';
+import { useMemo, useRef } from 'react';
+import { focusedPaneAtom } from '../../app/model/atoms';
 import type { CanvasNode } from '../../entities/CanvasNode/model/types';
 import CodeCard from '../CodeCard/CodeCard';
 import { cardPositionsAtom, selectedNodeIdsAtom, transformAtom } from './model/atoms';
-import { focusedPaneAtom } from '../../app/model/atoms';
 
 interface CanvasCodeCardProps {
   node: CanvasNode;
@@ -24,7 +25,7 @@ export const CanvasCodeCard: React.FC<CanvasCodeCardProps> = ({ node }) => {
   const offset = cardPositions.get(node.id) || { x: 0, y: 0 };
   const isSelected = selectedNodeIds.has(node.id);
 
-  const initialOffsets = useRef(new Map<string, {x: number, y: number}>());
+  const initialOffsets = useRef(new Map<string, { x: number; y: number }>());
   const nodesToDrag = useRef<Set<string>>(new Set());
 
   // useDrag 훅을 사용한 드래그 처리
@@ -71,7 +72,7 @@ export const CanvasCodeCard: React.FC<CanvasCodeCardProps> = ({ node }) => {
 
       // Store initial offsets for all nodes to drag
       initialOffsets.current = new Map();
-      nodesToDrag.current.forEach(nodeId => {
+      nodesToDrag.current.forEach((nodeId) => {
         const pos = cardPositions.get(nodeId) || { x: 0, y: 0 };
         initialOffsets.current.set(nodeId, pos);
       });
@@ -89,7 +90,7 @@ export const CanvasCodeCard: React.FC<CanvasCodeCardProps> = ({ node }) => {
     initialOffsets.current.forEach((initial, nodeId) => {
       newPositions.set(nodeId, {
         x: initial.x + dx,
-        y: initial.y + dy
+        y: initial.y + dy,
       });
     });
 
@@ -99,17 +100,16 @@ export const CanvasCodeCard: React.FC<CanvasCodeCardProps> = ({ node }) => {
   });
 
   // GPU 가속을 위해 transform 사용 (left/top 대신)
-  const style = useMemo(() => ({
-    transform: `translate(${node.x + offset.x}px, ${node.y + offset.y}px)`,
-    zIndex: isSelected ? 30 : 20
-  }), [node.x, node.y, offset.x, offset.y, isSelected]);
+  const style = useMemo(
+    () => ({
+      transform: `translate(${node.x + offset.x}px, ${node.y + offset.y}px)`,
+      zIndex: isSelected ? 30 : 20,
+    }),
+    [node.x, node.y, offset.x, offset.y, isSelected]
+  );
 
   return (
-    <div
-      {...bind()}
-      className="canvas-code-card absolute cursor-grab active:cursor-grabbing touch-none"
-      style={style}
-    >
+    <div {...bind()} className="canvas-code-card absolute cursor-grab active:cursor-grabbing touch-none" style={style}>
       <div className={`${isSelected ? 'ring-1 ring-blue-400/40 rounded-lg' : ''}`}>
         <CodeCard node={node} />
       </div>

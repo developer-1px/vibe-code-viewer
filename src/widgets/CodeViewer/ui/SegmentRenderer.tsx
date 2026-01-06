@@ -3,20 +3,19 @@
  * clickType에 따라 적절한 하위 컴포넌트로 라우팅
  */
 
-
-import React, { useMemo } from 'react';
 import { useAtomValue } from 'jotai';
-import type { CodeSegment, SegmentKind, CodeLine } from '../core/types/codeLine';
-import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
-import { buildSegmentStyle } from '../core/styler/styleBuilder';
-import { visibleNodeIdsAtom } from '../../PipelineCanvas/model/atoms';
+import { useMemo } from 'react';
 import { activeLocalVariablesAtom } from '@/features/Code/FocusMode/model/atoms';
+import { LocalVariableSegment } from '@/features/Code/FocusMode/ui/LocalVariableSegment';
 import { useEditorTheme } from '../../../app/theme/EditorThemeProvider';
-import { StaticSegment } from './segments/StaticSegment';
+import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
+import { visibleNodeIdsAtom } from '../../PipelineCanvas/model/atoms';
+import { buildSegmentStyle } from '../core/styler/styleBuilder';
+import type { CodeLine, CodeSegment, SegmentKind } from '../core/types/codeLine';
+import { DependencyTokenSegment } from './segments/DependencyTokenSegment';
 import { ExpandSegment } from './segments/ExpandSegment';
 import { ExternalSegment } from './segments/ExternalSegment';
-import { LocalVariableSegment } from '@/features/Code/FocusMode/ui/LocalVariableSegment';
-import { DependencyTokenSegment } from './segments/DependencyTokenSegment';
+import { StaticSegment } from './segments/StaticSegment';
 
 // Helper: Identifier 종류인지 체크
 const IDENTIFIER_KINDS: SegmentKind[] = [
@@ -26,11 +25,11 @@ const IDENTIFIER_KINDS: SegmentKind[] = [
   'self',
   'external-import',
   'external-closure',
-  'external-function'
+  'external-function',
 ];
 
 const isIdentifierSegment = (segment: CodeSegment): boolean => {
-  return segment.kinds?.some(kind => IDENTIFIER_KINDS.includes(kind)) ?? false;
+  return segment.kinds?.some((kind) => IDENTIFIER_KINDS.includes(kind)) ?? false;
 };
 
 export const SegmentRenderer = ({
@@ -39,7 +38,7 @@ export const SegmentRenderer = ({
   node,
   line,
   isFolded = false,
-  foldedCount
+  foldedCount,
 }: {
   segment: CodeSegment;
   segIdx: number;
@@ -58,7 +57,7 @@ export const SegmentRenderer = ({
 
   const lineHasFocusedVariable = useMemo(() => {
     if (!hasFocusMode) return false;
-    return line.segments.some(seg => {
+    return line.segments.some((seg) => {
       return isIdentifierSegment(seg) && focusedVariables.has(seg.text);
     });
   }, [hasFocusMode, line.segments, focusedVariables]);
@@ -67,12 +66,12 @@ export const SegmentRenderer = ({
   const isInReturnStatement = useMemo(() => {
     if (!line.hasTopLevelReturn) return false;
 
-    const startIdx = line.segments.findIndex(seg => seg.kinds?.includes('keyword') && seg.text === 'return');
+    const startIdx = line.segments.findIndex((seg) => seg.kinds?.includes('keyword') && seg.text === 'return');
     if (startIdx === -1) return false;
 
     // return 이후 세미콜론 찾기
-    let endIdx = line.segments.findIndex((seg, idx) =>
-      idx > startIdx && seg.kinds?.includes('punctuation') && seg.text === ';'
+    let endIdx = line.segments.findIndex(
+      (seg, idx) => idx > startIdx && seg.kinds?.includes('punctuation') && seg.text === ';'
     );
 
     // 세미콜론이 없으면 라인 끝까지
@@ -101,19 +100,25 @@ export const SegmentRenderer = ({
       return null;
     }
     // JSX의 경우 마지막 > 제거
-    if (segment.text.trim() === '>' && (foldInfo?.foldType === 'jsx-children' || foldInfo?.foldType === 'jsx-fragment')) {
+    if (
+      segment.text.trim() === '>' &&
+      (foldInfo?.foldType === 'jsx-children' || foldInfo?.foldType === 'jsx-fragment')
+    ) {
       return null;
     }
   }
 
   // external-import의 active 상태 체크 (해당 노드가 열려있는지)
-  const isExternalActive = segment.kinds?.includes('external-import') &&
+  const isExternalActive =
+    segment.kinds?.includes('external-import') &&
     segment.definedIn &&
     (visibleNodeIds.has(segment.definedIn) || visibleNodeIds.has(segment.definedIn.split('::')[0]));
 
   // local-variable 또는 parameter의 active 상태 체크 (사용자가 활성화했는지)
-  const isLocalActive = (segment.kinds?.includes('local-variable') || segment.kinds?.includes('parameter')) &&
-    activeLocalVariables.get(node.id)?.has(segment.text) || false;
+  const isLocalActive =
+    ((segment.kinds?.includes('local-variable') || segment.kinds?.includes('parameter')) &&
+      activeLocalVariables.get(node.id)?.has(segment.text)) ||
+    false;
 
   // Check if this segment is focused
   const isFocused = focusedVariables?.has(segment.text) || false;
@@ -129,8 +134,8 @@ export const SegmentRenderer = ({
     isActive: isExternalActive || isLocalActive,
     focusedVariables: lineHasFocusedVariable ? undefined : focusedVariables, // Line이 focused면 normal highlighting
     segmentText: segment.text,
-    theme: theme,  // Pass theme to styleBuilder
-    isDead: segment.isDead  // ✅ VSCode-like muted styling for dead identifiers
+    theme: theme, // Pass theme to styleBuilder
+    isDead: segment.isDead, // ✅ VSCode-like muted styling for dead identifiers
   });
 
   // Special case: identifier with nodeId → DependencyTokenSegment
@@ -139,10 +144,20 @@ export const SegmentRenderer = ({
     segment.kinds?.includes('identifier') &&
     segment.nodeId &&
     !segment.kinds?.includes('external-import') &&
+    !segment.kinds?.includes('external-npm') &&
     !segment.kinds?.includes('external-closure') &&
     !segment.kinds?.includes('external-function')
   ) {
-    return <DependencyTokenSegment key={segIdx} segment={segment} node={node} style={style} lineHasFocusedVariable={lineHasFocusedVariable} isFocused={isFocused} />;
+    return (
+      <DependencyTokenSegment
+        key={segIdx}
+        segment={segment}
+        node={node}
+        style={style}
+        lineHasFocusedVariable={lineHasFocusedVariable}
+        isFocused={isFocused}
+      />
+    );
   }
 
   // 클릭 핸들러 기반 라우팅

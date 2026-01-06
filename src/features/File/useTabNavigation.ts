@@ -4,7 +4,7 @@
  */
 
 import { useAtomValue, useSetAtom } from 'jotai';
-import { openedTabsAtom, activeTabAtom } from '@/features/File/OpenFiles/model/atoms';
+import { activeTabAtom, openedTabsAtom } from '@/features/File/OpenFiles/model/atoms';
 
 export function useTabNavigation() {
   const openedTabs = useAtomValue(openedTabsAtom);
@@ -23,9 +23,7 @@ export function useTabNavigation() {
     }
 
     // Go to previous tab (wrap around to last if at first)
-    const previousIndex = currentActiveIndex === 0
-      ? openedTabs.length - 1
-      : currentActiveIndex - 1;
+    const previousIndex = currentActiveIndex === 0 ? openedTabs.length - 1 : currentActiveIndex - 1;
 
     setActiveTab(openedTabs[previousIndex]);
   };
@@ -42,9 +40,7 @@ export function useTabNavigation() {
     }
 
     // Go to next tab (wrap around to first if at last)
-    const nextIndex = currentActiveIndex === openedTabs.length - 1
-      ? 0
-      : currentActiveIndex + 1;
+    const nextIndex = currentActiveIndex === openedTabs.length - 1 ? 0 : currentActiveIndex + 1;
 
     setActiveTab(openedTabs[nextIndex]);
   };

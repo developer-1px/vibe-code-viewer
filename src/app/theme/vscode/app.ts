@@ -28,7 +28,7 @@ export const vscodeAppTheme: AppTheme = {
       primary: '#cccccc',
       secondary: '#969696',
       tertiary: '#6e6e6e',
-      accent: '#4ec9b0',        // VSCode teal
+      accent: '#4ec9b0', // VSCode teal
     },
 
     // Interactive states

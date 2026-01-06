@@ -11,22 +11,20 @@
  * - FoldLevelButton: Fold 버튼 컴포넌트 분리
  */
 
-import React, { useMemo, useCallback } from 'react';
-import { useSetAtom, useAtomValue } from 'jotai';
-import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
-import { filesAtom, viewModeAtom } from '../../../app/model/atoms';
+import { useAtomValue, useSetAtom } from 'jotai';
+import { useCallback, useMemo } from 'react';
 import { deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
-import { focusedNodeIdAtom } from '../../IDEView/model/atoms';
+import { filesAtom, viewModeAtom } from '../../../app/model/atoms';
+import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
 import { renderCodeLinesDirect } from '../../CodeViewer/core/renderer/renderCodeLinesDirect';
 import { renderVueFile } from '../../CodeViewer/core/renderer/renderVueFile';
-
+import { focusedNodeIdAtom } from '../../IDEView/model/atoms';
+import { useFocusedIdentifiers } from '../hooks/useFocusedIdentifiers';
 // Custom Hooks
 import { useFoldLevel } from '../hooks/useFoldLevel';
-import { useFocusedIdentifiers } from '../hooks/useFocusedIdentifiers';
-
+import { getNodeDisplayLabel, getNodeShortPath, getNodeTypeLabel } from '../lib/nodeDisplay';
 // Utilities
 import { getNodeIcon } from '../lib/nodeIcons';
-import { getNodeDisplayLabel, getNodeTypeLabel, getNodeShortPath } from '../lib/nodeDisplay';
 
 // Components
 import { FoldLevelButton } from './FoldLevelButton';
@@ -79,12 +77,8 @@ const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
 
         {/* Node Label & Path */}
         <div className="flex flex-col">
-          <span className="font-bold text-xs text-slate-100 truncate max-w-[300px]">
-            {displayLabel}
-          </span>
-          <span className="text-[9px] text-slate-500 font-mono truncate max-w-[300px]">
-            {shortPath}
-          </span>
+          <span className="font-bold text-xs text-slate-100 truncate max-w-[300px]">{displayLabel}</span>
+          <span className="text-[9px] text-slate-500 font-mono truncate max-w-[300px]">{shortPath}</span>
         </div>
       </div>
 

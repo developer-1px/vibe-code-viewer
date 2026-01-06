@@ -5,17 +5,20 @@
  * CodeCardLine과 동일한 스타일 + 컴포넌트/변수 참조 지원
  */
 
-import React, { useMemo } from 'react';
-import { useSetAtom } from 'jotai';
-import { visibleNodeIdsAtom } from '../../PipelineCanvas/model/atoms';
-import { fullNodeMapAtom, filesAtom } from '../../../app/model/atoms';
-import { lastExpandedIdAtom } from '../../PipelineCanvas/model/atoms';
-import { useAtomValue } from 'jotai';
-import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
+import { useAtomValue, useSetAtom } from 'jotai';
+import type React from 'react';
+import { useMemo } from 'react';
 import { extractTemplateComponents, extractTemplateVariables } from '@/shared/tsParser/utils/vueTemplateParser';
+import { filesAtom, fullNodeMapAtom } from '../../../app/model/atoms';
 import { useEditorTheme } from '../../../app/theme/EditorThemeProvider';
+import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
+import { lastExpandedIdAtom, visibleNodeIdsAtom } from '../../PipelineCanvas/model/atoms';
 
-const VueTemplateSection = ({template, node, scriptEndLine }: {
+const VueTemplateSection = ({
+  template,
+  node,
+  scriptEndLine,
+}: {
   template: string;
   node: CanvasNode;
   scriptEndLine: number; // script 영역의 마지막 라인 번호
@@ -36,7 +39,7 @@ const VueTemplateSection = ({template, node, scriptEndLine }: {
       // Fallback: 단순 텍스트 렌더링
       return lines.map((lineText, idx) => ({
         lineNum: scriptEndLine + idx + 1,
-        segments: [{ text: lineText, isClickable: false }]
+        segments: [{ text: lineText, isClickable: false }],
       }));
     }
 
@@ -48,33 +51,33 @@ const VueTemplateSection = ({template, node, scriptEndLine }: {
     const tokensByLine = new Map<number, Array<{ start: number; end: number; name: string; nodeId?: string }>>();
 
     // 컴포넌트 토큰 추가
-    components.forEach(comp => {
-      const depId = node.dependencies.find(dep => dep.endsWith(`::${comp.name}`));
+    components.forEach((comp) => {
+      const depId = node.dependencies.find((dep) => dep.endsWith(`::${comp.name}`));
       if (depId) {
         if (!tokensByLine.has(comp.line)) {
           tokensByLine.set(comp.line, []);
         }
-        tokensByLine.get(comp.line)!.push({
+        tokensByLine.get(comp.line)?.push({
           start: comp.column - 1, // column은 1-based
           end: comp.column - 1 + comp.name.length,
           name: comp.name,
-          nodeId: depId
+          nodeId: depId,
         });
       }
     });
 
     // 변수 토큰 추가 (아직 dependencies 연결 안 함, 추후 확장 가능)
-    variables.forEach(variable => {
-      const depId = node.dependencies.find(dep => dep.endsWith(`::${variable.name}`));
+    variables.forEach((variable) => {
+      const depId = node.dependencies.find((dep) => dep.endsWith(`::${variable.name}`));
       if (depId) {
         if (!tokensByLine.has(variable.line)) {
           tokensByLine.set(variable.line, []);
         }
-        tokensByLine.get(variable.line)!.push({
+        tokensByLine.get(variable.line)?.push({
           start: variable.column - 1,
           end: variable.column - 1 + variable.name.length,
           name: variable.name,
-          nodeId: depId
+          nodeId: depId,
         });
       }
     });
@@ -90,12 +93,12 @@ const VueTemplateSection = ({template, node, scriptEndLine }: {
       const segments: Array<{ text: string; nodeId?: string; isClickable: boolean }> = [];
       let cursor = 0;
 
-      tokens.forEach(token => {
+      tokens.forEach((token) => {
         // 토큰 이전 텍스트
         if (token.start > cursor) {
           segments.push({
             text: lineText.slice(cursor, token.start),
-            isClickable: false
+            isClickable: false,
           });
         }
 
@@ -103,7 +106,7 @@ const VueTemplateSection = ({template, node, scriptEndLine }: {
         segments.push({
           text: token.name,
           nodeId: token.nodeId,
-          isClickable: !!token.nodeId
+          isClickable: !!token.nodeId,
         });
 
         cursor = token.end;
@@ -113,7 +116,7 @@ const VueTemplateSection = ({template, node, scriptEndLine }: {
       if (cursor < lineText.length) {
         segments.push({
           text: lineText.slice(cursor),
-          isClickable: false
+          isClickable: false,
         });
       }
 
@@ -142,7 +145,7 @@ const VueTemplateSection = ({template, node, scriptEndLine }: {
 
           const node = fullNodeMap.get(id);
           if (node && node.type !== 'template') {
-            node.dependencies.forEach(depId => {
+            node.dependencies.forEach((depId) => {
               if (fullNodeMap.has(depId)) {
                 expandRecursive(depId);
               }
@@ -161,17 +164,18 @@ const VueTemplateSection = ({template, node, scriptEndLine }: {
   return (
     <div className="flex flex-col">
       {templateLines.map((line, idx) => (
-        <div
-          key={idx}
-          className="flex items-start"
-        >
+        <div key={idx} className="flex items-start">
           {/* Line Number */}
-          <div className={`flex-shrink-0 ${theme.dimensions.lineNumberWidth} ${theme.spacing.lineNumberX} ${theme.spacing.lineY} text-right ${theme.typography.fontSize} ${theme.colors.lineNumber.text} ${theme.typography.fontFamily}`}>
+          <div
+            className={`flex-shrink-0 ${theme.dimensions.lineNumberWidth} ${theme.spacing.lineNumberX} ${theme.spacing.lineY} text-right ${theme.typography.fontSize} ${theme.colors.lineNumber.text} ${theme.typography.fontFamily}`}
+          >
             {line.lineNum}
           </div>
 
           {/* Template Code with Clickable Tokens */}
-          <div className={`flex-1 ${theme.spacing.lineX} ${theme.spacing.lineY} ${theme.typography.fontFamily} ${theme.typography.fontSize} ${theme.typography.lineHeight} overflow-x-auto whitespace-pre-wrap break-words select-text`}>
+          <div
+            className={`flex-1 ${theme.spacing.lineX} ${theme.spacing.lineY} ${theme.typography.fontFamily} ${theme.typography.fontSize} ${theme.typography.lineHeight} overflow-x-auto whitespace-pre-wrap break-words select-text`}
+          >
             {line.segments.map((seg, segIdx) => {
               if (seg.isClickable && seg.nodeId) {
                 return (

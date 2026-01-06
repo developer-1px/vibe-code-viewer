@@ -3,7 +3,6 @@
  * Bottom status bar with git info, cursor position, and AI status
  */
 
-import React from 'react';
 import { StatusBar } from '@/components/ide/StatusBar';
 
 export function AppStatusBar() {
@@ -16,14 +15,5 @@ export function AppStatusBar() {
   const column = 1;
   const aiActive = false;
 
-  return (
-    <StatusBar
-      branch={branch}
-      ahead={ahead}
-      behind={behind}
-      line={line}
-      column={column}
-      aiActive={aiActive}
-    />
-  );
+  return <StatusBar branch={branch} ahead={ahead} behind={behind} line={line} column={column} aiActive={aiActive} />;
 }

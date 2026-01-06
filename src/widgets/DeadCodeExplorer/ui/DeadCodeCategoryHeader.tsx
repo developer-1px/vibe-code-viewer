@@ -1,29 +1,33 @@
 /**
  * DeadCodeCategoryHeader - Category header with toggle and checkbox
  */
-import React from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+
 import { useAtom } from 'jotai';
-import { expandedCategoriesAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import React from 'react';
 import { renderCategoryIcon } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/lib/categoryUtils';
-import { CategoryCheckbox } from '@/features/Code/CodeAnalyzer/DeadCodeSelection/ui/CategoryCheckbox';
+import { expandedCategoriesAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
 import type { CategoryKey } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/types';
+import { CategoryCheckbox } from '@/features/Code/CodeAnalyzer/DeadCodeSelection/ui/CategoryCheckbox';
 import type { DeadCodeItem } from '../../../shared/deadCodeAnalyzer';
 
-export const DeadCodeCategoryHeader = React.forwardRef<HTMLDivElement, {
-  title: string;
-  items: DeadCodeItem[];
-  categoryKey: CategoryKey;
-  focused?: boolean;
-  onFocus?: () => void;
-}>((props, ref) => {
+export const DeadCodeCategoryHeader = React.forwardRef<
+  HTMLDivElement,
+  {
+    title: string;
+    items: DeadCodeItem[];
+    categoryKey: CategoryKey;
+    focused?: boolean;
+    onFocus?: () => void;
+  }
+>((props, ref) => {
   const { title, items, categoryKey, focused, onFocus } = props;
   const [expandedCategories, setExpandedCategories] = useAtom(expandedCategoriesAtom);
 
   const isExpanded = expandedCategories[categoryKey];
 
   const toggleCategory = () => {
-    setExpandedCategories(prev => ({
+    setExpandedCategories((prev) => ({
       ...prev,
       [categoryKey]: !prev[categoryKey],
     }));

@@ -7,11 +7,11 @@
  * 3. Clean up chips for closed nodes
  */
 
-import { useEffect } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { visibleNodeIdsAtom, cardPositionsAtom, transformAtom } from '../../widgets/PipelineCanvas/model/atoms';
+import { useEffect } from 'react';
 import { activeLocalVariablesAtom } from '@/features/Code/FocusMode/model/atoms';
 import { loadWorkspaceState, saveWorkspaceState } from '../../shared/storage/indexedDB';
+import { cardPositionsAtom, transformAtom, visibleNodeIdsAtom } from '../../widgets/PipelineCanvas/model/atoms';
 
 export const WorkspacePersistence = () => {
   const visibleNodeIds = useAtomValue(visibleNodeIdsAtom);
@@ -24,7 +24,7 @@ export const WorkspacePersistence = () => {
 
   // Restore workspace state on app start
   useEffect(() => {
-    loadWorkspaceState().then(state => {
+    loadWorkspaceState().then((state) => {
       if (state) {
         console.log('[Workspace] Restoring state:', state);
         setVisibleNodeIds(new Set(state.visibleNodeIds));
@@ -40,9 +40,9 @@ export const WorkspacePersistence = () => {
       const state = {
         visibleNodeIds: Array.from(visibleNodeIds),
         cardPositions: Array.from(cardPositions.entries()),
-        transform
+        transform,
       };
-      saveWorkspaceState(state).catch(err => {
+      saveWorkspaceState(state).catch((err) => {
         console.error('[Workspace] Failed to save state:', err);
       });
     }, 500); // 500ms debounce
@@ -57,7 +57,7 @@ export const WorkspacePersistence = () => {
       let changed = false;
 
       // Remove chips for closed nodes
-      next.forEach((identifiers, nodeId) => {
+      next.forEach((_identifiers, nodeId) => {
         if (!visibleNodeIds.has(nodeId)) {
           next.delete(nodeId);
           changed = true;

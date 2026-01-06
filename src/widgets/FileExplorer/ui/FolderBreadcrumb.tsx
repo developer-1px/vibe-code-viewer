@@ -10,17 +10,12 @@ interface FolderBreadcrumbProps {
   onNavigate: (path: string | null) => void;
 }
 
-export const FolderBreadcrumb: React.FC<FolderBreadcrumbProps> = ({
-  focusedFolder,
-  onNavigate
-}) => {
+export const FolderBreadcrumb: React.FC<FolderBreadcrumbProps> = ({ focusedFolder, onNavigate }) => {
   // 경로를 세그먼트로 분할
   const segments = focusedFolder.split('/').filter(Boolean);
 
   // 상위 폴더 경로 계산
-  const parentPath = segments.length > 1
-    ? segments.slice(0, -1).join('/')
-    : null;
+  const parentPath = segments.length > 1 ? segments.slice(0, -1).join('/') : null;
 
   // 각 세그먼트의 전체 경로 계산
   const getPaths = () => {
@@ -40,7 +35,7 @@ export const FolderBreadcrumb: React.FC<FolderBreadcrumbProps> = ({
         title="상위 폴더로 이동"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
+          <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
         Back
       </button>

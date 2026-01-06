@@ -3,10 +3,10 @@
  * @vue/compiler-sfc의 AST를 직접 사용
  */
 
+import { compileTemplate, parse } from '@vue/compiler-sfc';
 import * as ts from 'typescript';
 import type { CanvasNode } from '../../../../entities/CanvasNode/model/types';
 import type { CodeLine, CodeSegment } from '../types/codeLine';
-import { parse, compileTemplate } from '@vue/compiler-sfc';
 import { renderCodeLinesDirect } from './renderCodeLinesDirect';
 
 /**
@@ -39,7 +39,7 @@ function extractTokensFromAST(node: any, source: string, tokens: Token[] = []): 
             start: tagStart,
             end: tagStart + node.tag.length,
             text: node.tag,
-            kind: isPascalCase ? 'component' : 'element'
+            kind: isPascalCase ? 'component' : 'element',
           });
         }
 
@@ -54,7 +54,7 @@ function extractTokensFromAST(node: any, source: string, tokens: Token[] = []): 
               start: closingTagStart,
               end: closingTagStart + node.tag.length,
               text: node.tag,
-              kind: isPascalCase ? 'component' : 'element'
+              kind: isPascalCase ? 'component' : 'element',
             });
           }
         }
@@ -63,7 +63,8 @@ function extractTokensFromAST(node: any, source: string, tokens: Token[] = []): 
       // Props (attributes)
       if (node.props) {
         node.props.forEach((prop: any) => {
-          if (prop.type === 6) { // ATTRIBUTE
+          if (prop.type === 6) {
+            // ATTRIBUTE
             // Attribute name
             if (prop.name) {
               const attrNameStart = prop.loc.start.offset;
@@ -71,12 +72,12 @@ function extractTokensFromAST(node: any, source: string, tokens: Token[] = []): 
                 start: attrNameStart,
                 end: attrNameStart + prop.name.length,
                 text: prop.name,
-                kind: 'attribute'
+                kind: 'attribute',
               });
             }
 
             // Attribute value (content만, 따옴표 제외)
-            if (prop.value && prop.value.content) {
+            if (prop.value?.content) {
               const valueContent = prop.value.content;
               // value.loc.start.offset은 따옴표 시작 위치, +1 하면 내용 시작
               const valueStart = prop.value.loc.start.offset + 1;
@@ -85,7 +86,7 @@ function extractTokensFromAST(node: any, source: string, tokens: Token[] = []): 
                 start: valueStart,
                 end: valueStart + valueContent.length,
                 text: valueContent,
-                kind: 'string'
+                kind: 'string',
               });
             }
           }
@@ -99,7 +100,7 @@ function extractTokensFromAST(node: any, source: string, tokens: Token[] = []): 
       break;
 
     case 5: // INTERPOLATION {{ }}
-      if (node.content && node.content.loc) {
+      if (node.content?.loc) {
         // {{ }} 내부의 expression (SIMPLE_EXPRESSION)
         const exprText = node.content.loc.source.trim();
         const exprOffset = node.content.loc.start.offset;
@@ -108,7 +109,7 @@ function extractTokensFromAST(node: any, source: string, tokens: Token[] = []): 
           start: exprOffset,
           end: exprOffset + exprText.length,
           text: exprText,
-          kind: 'interpolation'
+          kind: 'interpolation',
         });
       }
       break;
@@ -147,14 +148,14 @@ function tokensToLines(templateContent: string, tokens: Token[], startLine: numb
     }
 
     // 이 라인에 해당하는 토큰들 찾기
-    const lineTokens = tokens.filter(t => t.start >= lineStart && t.start < lineEnd);
+    const lineTokens = tokens.filter((t) => t.start >= lineStart && t.start < lineEnd);
 
     if (lineTokens.length === 0) {
       // 토큰이 없으면 plain text
       result.push({
         num: lineNum,
         segments: [{ text: lineText, kinds: ['text'] }],
-        hasInput: false
+        hasInput: false,
       });
     } else {
       // 토큰이 있으면 segment로 분할
@@ -164,7 +165,7 @@ function tokensToLines(templateContent: string, tokens: Token[], startLine: numb
       // 라인 내 토큰들을 offset 순서로 정렬
       lineTokens.sort((a, b) => a.start - b.start);
 
-      lineTokens.forEach(token => {
+      lineTokens.forEach((token) => {
         // 토큰 이전의 텍스트 (plain text)
         if (token.start > pos) {
           const beforeText = templateContent.substring(pos, token.start);
@@ -188,7 +189,7 @@ function tokensToLines(templateContent: string, tokens: Token[], startLine: numb
       result.push({
         num: lineNum,
         segments,
-        hasInput: false
+        hasInput: false,
       });
     }
 
@@ -233,7 +234,7 @@ function renderTemplateWithAST(
     const { ast } = compileTemplate({
       source: templateContent,
       filename: 'template.vue',
-      id: 'template'
+      id: 'template',
     });
 
     console.log('🎨 Template AST:', ast);
@@ -243,7 +244,7 @@ function renderTemplateWithAST(
     console.log('🎨 Extracted tokens:', tokens);
 
     // 컴포넌트 토큰에 external-import 마킹
-    tokens.forEach(token => {
+    tokens.forEach((token) => {
       if (token.kind === 'component' && importedComponents.has(token.text)) {
         token.kind = 'external-component';
       }
@@ -251,14 +252,13 @@ function renderTemplateWithAST(
 
     // 토큰을 라인별 segments로 변환
     return tokensToLines(templateContent, tokens, startLine);
-
   } catch (error) {
     console.error('❌ Template AST error:', error);
     const lines = templateContent.split('\n');
     return lines.map((text, idx) => ({
       num: startLine + idx,
       segments: [{ text, kinds: ['text'] }] as CodeSegment[],
-      hasInput: false
+      hasInput: false,
     }));
   }
 }
@@ -270,7 +270,8 @@ function findTagLine(source: string, tagPattern: string, startFromLine: number =
   const lines = source.split('\n');
   const startIndex = Math.max(0, startFromLine - 1); // Ensure non-negative
   for (let i = startIndex; i < lines.length; i++) {
-    if (lines[i] && lines[i].includes(tagPattern)) { // Add existence check
+    if (lines[i]?.includes(tagPattern)) {
+      // Add existence check
       return i + 1; // 1-based line number
     }
   }
@@ -284,27 +285,22 @@ function extractImportedComponents(scriptContent: string): Set<string> {
   const importedComponents = new Set<string>();
 
   // TypeScript AST로 import 문 파싱
-  const sourceFile = ts.createSourceFile(
-    'temp.ts',
-    scriptContent,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TS
-  );
+  const sourceFile = ts.createSourceFile('temp.ts', scriptContent, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 
-  ts.forEachChild(sourceFile, node => {
+  ts.forEachChild(sourceFile, (node) => {
     if (ts.isImportDeclaration(node) && node.importClause) {
       // Default import (import Foo from './Foo.vue')
       if (node.importClause.name) {
         const componentName = node.importClause.name.text;
-        if (/^[A-Z]/.test(componentName)) { // PascalCase = Component
+        if (/^[A-Z]/.test(componentName)) {
+          // PascalCase = Component
           importedComponents.add(componentName);
         }
       }
 
       // Named imports (import { Bar } from './Bar.vue')
       if (node.importClause.namedBindings && ts.isNamedImports(node.importClause.namedBindings)) {
-        node.importClause.namedBindings.elements.forEach(element => {
+        node.importClause.namedBindings.elements.forEach((element) => {
           const componentName = element.name.text;
           if (/^[A-Z]/.test(componentName)) {
             importedComponents.add(componentName);
@@ -354,7 +350,7 @@ export function renderVueFile(node: CanvasNode, files: Record<string, string>): 
       allLines.push({
         num: templateOpenLine,
         segments: [{ text: sourceLines[templateOpenLine - 1], kinds: ['text'] }],
-        hasInput: false
+        hasInput: false,
       });
 
       const templateLines = renderTemplateWithAST(
@@ -368,7 +364,7 @@ export function renderVueFile(node: CanvasNode, files: Record<string, string>): 
       allLines.push({
         num: templateCloseLine,
         segments: [{ text: sourceLines[templateCloseLine - 1], kinds: ['text'] }],
-        hasInput: false
+        hasInput: false,
       });
     };
 
@@ -381,14 +377,14 @@ export function renderVueFile(node: CanvasNode, files: Record<string, string>): 
       allLines.push({
         num: scriptOpenLine,
         segments: [{ text: sourceLines[scriptOpenLine - 1], kinds: ['text'] }],
-        hasInput: false
+        hasInput: false,
       });
 
       // script.content도 앞뒤 빈 줄을 포함할 수 있으므로 trim
       const scriptContent = script.content.replace(/^\n/, '').replace(/\n$/, '');
 
       const scriptSource = ts.createSourceFile(
-        filePath + '.ts',
+        `${filePath}.ts`,
         scriptContent,
         ts.ScriptTarget.Latest,
         true,
@@ -399,7 +395,7 @@ export function renderVueFile(node: CanvasNode, files: Record<string, string>): 
         ...node,
         codeSnippet: scriptContent,
         startLine: script.loc.start.line,
-        sourceFile: scriptSource
+        sourceFile: scriptSource,
       };
 
       const scriptLines = renderCodeLinesDirect(tempNode, files);
@@ -409,7 +405,7 @@ export function renderVueFile(node: CanvasNode, files: Record<string, string>): 
       allLines.push({
         num: scriptCloseLine,
         segments: [{ text: sourceLines[scriptCloseLine - 1], kinds: ['text'] }],
-        hasInput: false
+        hasInput: false,
       });
     };
 
@@ -418,7 +414,7 @@ export function renderVueFile(node: CanvasNode, files: Record<string, string>): 
       sections.push({
         type: 'template',
         startLine: descriptor.template.loc.start.line,
-        render: renderTemplate
+        render: renderTemplate,
       });
     }
 
@@ -426,7 +422,7 @@ export function renderVueFile(node: CanvasNode, files: Record<string, string>): 
       sections.push({
         type: 'script',
         startLine: script.loc.start.line,
-        render: renderScript
+        render: renderScript,
       });
     }
 
@@ -439,9 +435,8 @@ export function renderVueFile(node: CanvasNode, files: Record<string, string>): 
 
       // 섹션 사이의 빈 라인 추가
       if (i < sections.length - 1) {
-        const currentSectionEnd = sections[i].type === 'template'
-          ? descriptor.template!.loc.end.line
-          : script!.loc.end.line;
+        const currentSectionEnd =
+          sections[i].type === 'template' ? descriptor.template?.loc.end.line : script?.loc.end.line;
         const nextSectionStart = sections[i + 1].startLine;
 
         // 사이에 있는 빈 라인들 추가
@@ -450,7 +445,7 @@ export function renderVueFile(node: CanvasNode, files: Record<string, string>): 
             allLines.push({
               num: lineNum,
               segments: [{ text: sourceLines[lineNum - 1], kinds: ['text'] }],
-              hasInput: false
+              hasInput: false,
             });
           }
         }
@@ -458,7 +453,6 @@ export function renderVueFile(node: CanvasNode, files: Record<string, string>): 
     }
 
     return allLines;
-
   } catch (error) {
     console.error('❌ Error rendering Vue file:', error);
     return [];

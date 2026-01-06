@@ -1,37 +1,26 @@
-import * as React from 'react'
-import {
-  Bell,
-  CheckCircle2,
-  AlertTriangle,
-  AlertCircle,
-  Info,
-  X,
-  Check,
-  Trash2,
-  ExternalLink,
-} from 'lucide-react'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
-import { ScrollArea } from '@/components/ui/ScrollArea'
-import { Separator } from '@/components/ui/Separator'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover'
-import { cn } from '@/components/lib/utils'
+import { AlertCircle, AlertTriangle, Bell, Check, CheckCircle2, ExternalLink, Info, Trash2, X } from 'lucide-react';
+import * as React from 'react';
+import { cn } from '@/components/lib/utils';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/Popover';
+import { ScrollArea } from '@/components/ui/ScrollArea';
 
 export interface NotificationCenterProps {
-  className?: string
+  className?: string;
 }
 
-export type NotificationType = 'success' | 'warning' | 'error' | 'info'
+export type NotificationType = 'success' | 'warning' | 'error' | 'info';
 
 export interface Notification {
-  id: string
-  type: NotificationType
-  title: string
-  message?: string
-  timestamp: Date
-  read: boolean
-  actionLabel?: string
-  actionUrl?: string
+  id: string;
+  type: NotificationType;
+  title: string;
+  message?: string;
+  timestamp: Date;
+  read: boolean;
+  actionLabel?: string;
+  actionUrl?: string;
 }
 
 /**
@@ -46,7 +35,7 @@ export interface Notification {
  * - Unread badge count
  */
 export function NotificationCenter({ className }: NotificationCenterProps) {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
   const [notifications, setNotifications] = React.useState<Notification[]>([
     {
       id: '1',
@@ -93,53 +82,51 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
       timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
       read: true,
     },
-  ])
+  ]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const markAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    )
-  }
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  };
 
   const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-  }
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
 
   const removeNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id))
-  }
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
 
   const clearAll = () => {
-    setNotifications([])
-  }
+    setNotifications([]);
+  };
 
   const formatTimestamp = (date: Date) => {
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const minutes = Math.floor(diff / 60000)
-    const hours = Math.floor(diff / 3600000)
-    const days = Math.floor(diff / 86400000)
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
 
-    if (minutes < 1) return 'Just now'
-    if (minutes < 60) return `${minutes}m ago`
-    if (hours < 24) return `${hours}h ago`
-    return `${days}d ago`
-  }
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+  };
 
   const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
       case 'success':
-        return <CheckCircle2 size={14} className="text-status-success" />
+        return <CheckCircle2 size={14} className="text-status-success" />;
       case 'warning':
-        return <AlertTriangle size={14} className="text-status-warning" />
+        return <AlertTriangle size={14} className="text-status-warning" />;
       case 'error':
-        return <AlertCircle size={14} className="text-status-error" />
+        return <AlertCircle size={14} className="text-status-error" />;
       case 'info':
-        return <Info size={14} className="text-warm-300" />
+        return <Info size={14} className="text-warm-300" />;
     }
-  }
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -147,9 +134,7 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
         <Button variant="ghost" size="sm" className={cn('relative h-8 w-8 p-0', className)}>
           <Bell size={14} />
           {unreadCount > 0 && (
-            <Badge
-              className="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-2xs bg-status-error border border-bg-elevated text-white shadow-glow-error"
-            >
+            <Badge className="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-2xs bg-status-error border border-bg-elevated text-white shadow-glow-error">
               {unreadCount > 9 ? '9+' : unreadCount}
             </Badge>
           )}
@@ -173,12 +158,7 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
 
               <div className="flex items-center gap-1">
                 {unreadCount > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-xs"
-                    onClick={markAllAsRead}
-                  >
+                  <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={markAllAsRead}>
                     <Check size={10} className="mr-1" />
                     Mark all read
                   </Button>
@@ -234,9 +214,7 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
                         </div>
 
                         {notification.message && (
-                          <p className="mt-1 text-xs text-text-muted line-clamp-2">
-                            {notification.message}
-                          </p>
+                          <p className="mt-1 text-xs text-text-muted line-clamp-2">{notification.message}</p>
                         )}
 
                         {notification.actionLabel && (
@@ -283,5 +261,5 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
         </div>
       </PopoverContent>
     </Popover>
-  )
+  );
 }

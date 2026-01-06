@@ -6,7 +6,7 @@
 import type React from 'react';
 
 // Re-export domain types from entities layer
-export type { CodeSegment, SegmentKind, DefinitionLocation } from '../../../../entities/CodeSegment/model/types';
+export type { CodeSegment, DefinitionLocation, SegmentKind } from '../../../../entities/CodeSegment/model/types';
 
 /**
  * Segment style definition for rendering (UI-specific)

@@ -6,13 +6,22 @@
 import * as ts from 'typescript';
 import type { SourceFileNode } from '../../SourceFileNode/model/types';
 
-export type SymbolKind = 'function' | 'type' | 'const' | 'component' | 'hook' | 'class' | 'interface' | 'enum' | 'unknown';
+export type SymbolKind =
+  | 'function'
+  | 'type'
+  | 'const'
+  | 'component'
+  | 'hook'
+  | 'class'
+  | 'interface'
+  | 'enum'
+  | 'unknown';
 
 export interface ImportSymbol {
-  name: string;           // Symbol name (e.g., "useState", "Button")
-  kind: SymbolKind;       // Symbol kind
-  fromPath: string;       // Source file path (e.g., "react", "./Button")
-  isTypeOnly: boolean;    // import type { ... }
+  name: string; // Symbol name (e.g., "useState", "Button")
+  kind: SymbolKind; // Symbol kind
+  fromPath: string; // Source file path (e.g., "react", "./Button")
+  isTypeOnly: boolean; // import type { ... }
 }
 
 /**
@@ -35,7 +44,14 @@ function inferSymbolKind(name: string, isTypeOnly: boolean): SymbolKind {
   // PascalCase starting with uppercase → Component or Class
   if (/^[A-Z]/.test(name)) {
     // Known React components or custom components
-    if (name.endsWith('Provider') || name.endsWith('Context') || name.endsWith('Button') || name.endsWith('Modal') || name.endsWith('View') || name.endsWith('Card')) {
+    if (
+      name.endsWith('Provider') ||
+      name.endsWith('Context') ||
+      name.endsWith('Button') ||
+      name.endsWith('Modal') ||
+      name.endsWith('View') ||
+      name.endsWith('Card')
+    ) {
       return 'component';
     }
     // Class-like names
@@ -90,7 +106,7 @@ export function extractImports(node: SourceFileNode): ImportSymbol[] {
             name,
             kind,
             fromPath,
-            isTypeOnly: isTypeOnly || element.isTypeOnly
+            isTypeOnly: isTypeOnly || element.isTypeOnly,
           });
         });
       }
@@ -102,7 +118,7 @@ export function extractImports(node: SourceFileNode): ImportSymbol[] {
           name,
           kind: 'const',
           fromPath,
-          isTypeOnly
+          isTypeOnly,
         });
       }
     }
@@ -115,7 +131,7 @@ export function extractImports(node: SourceFileNode): ImportSymbol[] {
         name,
         kind,
         fromPath,
-        isTypeOnly
+        isTypeOnly,
       });
     }
   });

@@ -3,13 +3,13 @@
  * sample/App.tsx 기반, 기존 tsParser 사용
  */
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useAtomValue } from 'jotai';
-import { openedTabsAtom, activeTabAtom } from '@/features/File/OpenFiles/model/atoms';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { activeTabAtom, openedTabsAtom } from '@/features/File/OpenFiles/model/atoms';
 import { fullNodeMapAtom } from '../../app/model/atoms';
 import { convertToDocData } from './lib/tsAdapter';
-import { DocViewer } from './ui/DocViewer';
 import type { DocData } from './model/types';
+import { DocViewer } from './ui/DocViewer';
 
 type LayoutMode = 'linear' | 'split';
 
@@ -57,16 +57,14 @@ const CodeDocView = () => {
       <div className="flex-1 h-full flex items-center justify-center bg-bg-elevated text-text-tertiary">
         <div className="text-center">
           <div className="mb-4 text-4xl font-serif text-gray-300">📄</div>
-          <p className="text-sm">
-            No files open. Use search (Shift+Shift) or click a file in the sidebar to open.
-          </p>
+          <p className="text-sm">No files open. Use search (Shift+Shift) or click a file in the sidebar to open.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="absolute inset-0 bg-bg-elevated overflow-hidden">
+    <div className="absolute inset-0 bg-gray-50 overflow-hidden">
       {/* Top Control Bar */}
       <div className="absolute top-6 right-8 z-50 print:hidden">
         <button
@@ -93,14 +91,17 @@ const CodeDocView = () => {
       </div>
 
       {/* Content Area - Centered */}
-      <div ref={scrollContainerRef} className="absolute inset-0 flex items-start justify-center overflow-y-auto custom-scrollbar">
+      <div
+        ref={scrollContainerRef}
+        className="absolute inset-0 flex items-start justify-center overflow-y-auto custom-scrollbar"
+      >
         <div className="w-full max-w-7xl p-6 md:p-12">
           {allDocData.map(({ filePath, docData }, index) => (
             <div
               key={filePath}
               id={`doc-${filePath}`}
-              className={`mx-auto shadow-sm min-h-[900px] transition-all duration-300 ${
-                layoutMode === 'split' ? 'max-w-full' : 'max-w-4xl bg-white border border-gray-200 px-12 py-16'
+              className={`mx-auto min-h-[900px] transition-all duration-300 ${
+                layoutMode === 'split' ? 'max-w-full' : 'max-w-4xl px-12 py-16'
               } ${index > 0 ? 'mt-12' : ''}`}
             >
               <DocViewer data={docData} layout={layoutMode} />

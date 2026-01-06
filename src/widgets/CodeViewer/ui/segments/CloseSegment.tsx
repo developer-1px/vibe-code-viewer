@@ -2,13 +2,13 @@
  * CloseSegment - 카드 닫기 핸들러
  */
 
-import React from 'react';
-import { useSetAtom, useAtomValue } from 'jotai';
-import type { CodeSegment, SegmentStyle } from '../../core/types';
+import { useAtomValue, useSetAtom } from 'jotai';
+import type React from 'react';
+import { fullNodeMapAtom } from '../../../../app/model/atoms';
 import type { CanvasNode } from '../../../../entities/CanvasNode/model/types';
 import { visibleNodeIdsAtom } from '../../../PipelineCanvas/model/atoms';
-import { fullNodeMapAtom } from '../../../../app/model/atoms';
 import { pruneDetachedNodes } from '../../../PipelineCanvas/utils';
+import type { CodeSegment, SegmentStyle } from '../../core/types';
 
 interface CloseSegmentProps {
   segment: CodeSegment;

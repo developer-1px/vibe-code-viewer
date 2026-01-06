@@ -11,10 +11,7 @@ let fuzzyWorker: Worker | null = null;
 
 function getFuzzyWorker(): Worker {
   if (!fuzzyWorker) {
-    fuzzyWorker = new Worker(
-      new URL('./fuzzySearchWorker.ts', import.meta.url),
-      { type: 'module' }
-    );
+    fuzzyWorker = new Worker(new URL('./fuzzySearchWorker.ts', import.meta.url), { type: 'module' });
   }
   return fuzzyWorker;
 }
@@ -26,10 +23,7 @@ function getFuzzyWorker(): Worker {
  * Worker receives lightweight data (id, name, type) and returns IDs + matches
  * Main thread merges with original data to preserve all fields (codeSnippet, etc.)
  */
-export function searchResultsFuzzy(
-  query: string,
-  allResults: SearchResult[],
-): Promise<SearchResult[]> {
+export function searchResultsFuzzy(query: string, allResults: SearchResult[]): Promise<SearchResult[]> {
   return new Promise((resolve) => {
     // Empty query returns empty results immediately
     if (!query.trim()) {
@@ -38,14 +32,14 @@ export function searchResultsFuzzy(
     }
 
     // Create lookup map for fast access to original data
-    const resultMap = new Map(allResults.map(item => [item.id, item]));
+    const resultMap = new Map(allResults.map((item) => [item.id, item]));
 
     // Send only lightweight data to worker (id, name, type, filePath)
-    const lightweightItems = allResults.map(item => ({
+    const lightweightItems = allResults.map((item) => ({
       id: item.id,
       name: item.name,
       type: item.type,
-      filePath: item.filePath
+      filePath: item.filePath,
     }));
 
     const worker = getFuzzyWorker();
@@ -57,12 +51,12 @@ export function searchResultsFuzzy(
 
         // Merge worker results (id + matches) with original data
         const results: SearchResult[] = event.data.results
-          .map(workerResult => {
+          .map((workerResult) => {
             const originalData = resultMap.get(workerResult.id);
             if (!originalData) return null;
 
             return {
-              ...originalData,  // Full original data (includes codeSnippet!)
+              ...originalData, // Full original data (includes codeSnippet!)
               score: 50,
               matchType: 'fuzzy' as const,
               matches: workerResult.matches,

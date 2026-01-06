@@ -1,90 +1,96 @@
-import * as React from 'react'
-import { cn } from '@/components/lib/utils'
-import { FileTreeItem } from './FileTreeItem'
+import * as React from 'react';
+import { cn } from '@/components/lib/utils';
 
 // AppSidebar.Header - Compound Component
 export interface SidebarHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
-const SidebarHeader = React.forwardRef<HTMLDivElement, SidebarHeaderProps>(
-  ({ className, children, ...props }, ref) => {
-    return (
-      <div
-        ref={ref}
-        className={cn(
-          'flex h-8 items-center justify-between border-b border-border-DEFAULT px-2 flex-shrink-0',
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </div>
-    )
-  }
-)
-SidebarHeader.displayName = 'SidebarHeader'
+const SidebarHeader = React.forwardRef<HTMLDivElement, SidebarHeaderProps>(({ className, children, ...props }, ref) => {
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        'flex h-8 items-center justify-between border-b border-border-DEFAULT px-2 flex-shrink-0',
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+});
+SidebarHeader.displayName = 'SidebarHeader';
 
 // AppSidebar - Main Component
 export interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode
-  side?: 'left' | 'right' // Which side to place the sidebar
-  resizable?: boolean // Enable resize handle
-  defaultWidth?: number // Default width in pixels
-  minWidth?: number // Min width in pixels
-  maxWidth?: number // Max width in pixels
-  onWidthChange?: (width: number) => void // Callback when width changes
+  children: React.ReactNode;
+  side?: 'left' | 'right'; // Which side to place the sidebar
+  resizable?: boolean; // Enable resize handle
+  defaultWidth?: number; // Default width in pixels
+  minWidth?: number; // Min width in pixels
+  maxWidth?: number; // Max width in pixels
+  onWidthChange?: (width: number) => void; // Callback when width changes
 }
 
 const SidebarRoot = React.forwardRef<HTMLDivElement, SidebarProps>(
-  ({ className, children, side = 'left', resizable = false, defaultWidth = 240, minWidth = 180, maxWidth = 600, onWidthChange, ...props }, ref) => {
-    const [width, setWidth] = React.useState(defaultWidth)
-    const [isResizing, setIsResizing] = React.useState(false)
-    const startXRef = React.useRef(0)
-    const startWidthRef = React.useRef(defaultWidth)
+  (
+    {
+      className,
+      children,
+      side = 'left',
+      resizable = false,
+      defaultWidth = 240,
+      minWidth = 180,
+      maxWidth = 600,
+      onWidthChange,
+      ...props
+    },
+    ref
+  ) => {
+    const [width, setWidth] = React.useState(defaultWidth);
+    const [isResizing, setIsResizing] = React.useState(false);
+    const startXRef = React.useRef(0);
+    const startWidthRef = React.useRef(defaultWidth);
 
     const handleMouseDown = (e: React.MouseEvent) => {
-      setIsResizing(true)
-      startXRef.current = e.clientX
-      startWidthRef.current = width
-      e.preventDefault()
-    }
+      setIsResizing(true);
+      startXRef.current = e.clientX;
+      startWidthRef.current = width;
+      e.preventDefault();
+    };
 
     React.useEffect(() => {
-      if (!isResizing) return
+      if (!isResizing) return;
 
       const handleMouseMove = (e: MouseEvent) => {
-        const deltaX = e.clientX - startXRef.current
+        const deltaX = e.clientX - startXRef.current;
         // Right side: drag left to increase width (negative deltaX)
-        const adjustedDelta = side === 'right' ? -deltaX : deltaX
-        const newWidth = Math.min(maxWidth, Math.max(minWidth, startWidthRef.current + adjustedDelta))
-        setWidth(newWidth)
+        const adjustedDelta = side === 'right' ? -deltaX : deltaX;
+        const newWidth = Math.min(maxWidth, Math.max(minWidth, startWidthRef.current + adjustedDelta));
+        setWidth(newWidth);
         if (onWidthChange) {
-          onWidthChange(newWidth)
+          onWidthChange(newWidth);
         }
-      }
+      };
 
       const handleMouseUp = () => {
-        setIsResizing(false)
-      }
+        setIsResizing(false);
+      };
 
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
 
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove)
-        document.removeEventListener('mouseup', handleMouseUp)
-      }
-    }, [isResizing, minWidth, maxWidth, onWidthChange, side])
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }, [isResizing, minWidth, maxWidth, onWidthChange, side]);
 
     // Separate header from content
-    const childrenArray = React.Children.toArray(children)
-    const header = childrenArray.find(
-      (child) => React.isValidElement(child) && child.type === SidebarHeader
-    )
-    const content = childrenArray.filter(
-      (child) => !(React.isValidElement(child) && child.type === SidebarHeader)
-    )
+    const childrenArray = React.Children.toArray(children);
+    const header = childrenArray.find((child) => React.isValidElement(child) && child.type === SidebarHeader);
+    const content = childrenArray.filter((child) => !(React.isValidElement(child) && child.type === SidebarHeader));
 
     return (
       <div
@@ -109,14 +115,14 @@ const SidebarRoot = React.forwardRef<HTMLDivElement, SidebarProps>(
           />
         )}
       </div>
-    )
+    );
   }
-)
-SidebarRoot.displayName = 'Sidebar'
+);
+SidebarRoot.displayName = 'Sidebar';
 
 // Compound Component Pattern
 const Sidebar = Object.assign(SidebarRoot, {
-  Header: SidebarHeader
-})
+  Header: SidebarHeader,
+});
 
-export { Sidebar }
+export { Sidebar };

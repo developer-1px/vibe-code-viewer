@@ -30,9 +30,9 @@
  *   )}
  * </TreeView>
  */
-import React, { useRef } from 'react';
-import { useTreeState } from './lib/useTreeState';
+import { useRef } from 'react';
 import { useTreeRenderer } from './lib/useTreeRenderer';
+import { useTreeState } from './lib/useTreeState';
 import type { TreeViewProps } from './model/types';
 
 export function TreeView<TNode>({
@@ -52,13 +52,7 @@ export function TreeView<TNode>({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // State management (supports both internal and external state)
-  const {
-    collapsedPaths,
-    toggleCollapse,
-    focusedIndex,
-    setFocusedIndex,
-    itemRefs,
-  } = useTreeState({
+  const { collapsedPaths, toggleCollapse, focusedIndex, setFocusedIndex, itemRefs } = useTreeState({
     collapsedPaths: externalCollapsed,
     onToggleCollapse: externalToggle,
     focusedIndex: externalFocused,
@@ -80,5 +74,9 @@ export function TreeView<TNode>({
     children,
   });
 
-  return <div ref={scrollContainerRef} className={className}>{renderTree(data)}</div>;
+  return (
+    <div ref={scrollContainerRef} className={className}>
+      {renderTree(data)}
+    </div>
+  );
 }

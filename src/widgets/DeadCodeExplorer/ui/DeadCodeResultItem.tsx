@@ -2,14 +2,15 @@
  * DeadCodeResultItem - Individual dead code result item
  * Layout: [icon] symbolName ← | → fileName:lineNo [checkbox]
  */
-import React from 'react';
+
 import { useSetAtom } from 'jotai';
-import { Import, Variable, FunctionSquare, FileBox, Component, Code2 } from 'lucide-react';
+import { Code2, Component, FileBox, FunctionSquare, Import, Variable } from 'lucide-react';
+import React from 'react';
 import { Checkbox } from '@/components/ui/Checkbox';
-import { targetLineAtom } from '@/features/File/Navigation/model/atoms';
-import { viewModeAtom } from '../../../app/model/atoms';
 import { useDeadCodeSelection } from '@/features/Code/CodeAnalyzer/DeadCodeSelection/lib/useDeadCodeSelection';
+import { targetLineAtom } from '@/features/File/Navigation/model/atoms';
 import { useOpenFile } from '@/features/File/OpenFiles/lib/useOpenFile';
+import { viewModeAtom } from '../../../app/model/atoms';
 import type { DeadCodeItem } from '../../../shared/deadCodeAnalyzer';
 
 // Get icon for dead code kind
@@ -32,12 +33,15 @@ function getKindIcon(kind: DeadCodeItem['kind']) {
   }
 }
 
-export const DeadCodeResultItem = React.forwardRef<HTMLDivElement, {
-  item: DeadCodeItem;
-  depth: number;
-  focused?: boolean;
-  onFocus?: () => void;
-}>((props, ref) => {
+export const DeadCodeResultItem = React.forwardRef<
+  HTMLDivElement,
+  {
+    item: DeadCodeItem;
+    depth: number;
+    focused?: boolean;
+    onFocus?: () => void;
+  }
+>((props, ref) => {
   const { item, depth, focused, onFocus } = props;
   const setTargetLine = useSetAtom(targetLineAtom);
   const setViewMode = useSetAtom(viewModeAtom);
@@ -66,24 +70,16 @@ export const DeadCodeResultItem = React.forwardRef<HTMLDivElement, {
       {/* Left side: Icon + Symbol name */}
       <div className="flex items-center gap-2 min-w-0">
         <KindIcon size={12} className="text-text-muted shrink-0" />
-        <span className="text-[10px] text-text-primary font-medium truncate">
+        <span className="text-2xs text-text-primary font-medium truncate">
           {item.symbolName}
-          {item.componentName && (
-            <span className="text-text-tertiary ml-1">
-              (in {item.componentName})
-            </span>
-          )}
-          {item.functionName && (
-            <span className="text-text-tertiary ml-1">
-              (in {item.functionName})
-            </span>
-          )}
+          {item.componentName && <span className="text-text-tertiary ml-1">(in {item.componentName})</span>}
+          {item.functionName && <span className="text-text-tertiary ml-1">(in {item.functionName})</span>}
         </span>
       </div>
 
       {/* Right side: File location + Checkbox */}
       <div className="flex items-center gap-2 shrink-0">
-        <span className="text-[10px] text-text-tertiary">
+        <span className="text-2xs text-text-tertiary">
           {fileName}:{item.line}
         </span>
         <Checkbox

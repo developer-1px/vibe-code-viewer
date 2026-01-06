@@ -2,16 +2,21 @@
  * DeadCodeExplorer - Dead code navigation component
  * Single TreeView with all categories for unified keyboard navigation
  */
-import React, { useMemo } from 'react';
-import { useAtomValue, useAtom } from 'jotai';
-import { deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
-import { isAnalyzingAtom, expandedCategoriesAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
-import { useCategoryIndices } from './lib/useCategoryIndices';
-import { TreeView } from '../../shared/ui/TreeView/TreeView';
+
+import { useAtom, useAtomValue } from 'jotai';
+import type React from 'react';
+import { useMemo } from 'react';
+import {
+  deadCodeResultsAtom,
+  expandedCategoriesAtom,
+  isAnalyzingAtom,
+} from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
+import type { DeadCodeItem } from '../../shared/deadCodeAnalyzer';
 import { useTreeKeyboardNavigation } from '../../shared/hooks/useTreeKeyboardNavigation';
+import { TreeView } from '../../shared/ui/TreeView/TreeView';
+import { useCategoryIndices } from './lib/useCategoryIndices';
 import { DeadCodeCategoryHeader } from './ui/DeadCodeCategoryHeader';
 import { DeadCodeResultItem } from './ui/DeadCodeResultItem';
-import type { DeadCodeItem } from '../../shared/deadCodeAnalyzer';
 
 export function DeadCodeExplorer({ containerRef }: { containerRef: React.RefObject<HTMLDivElement> }) {
   const deadCodeResults = useAtomValue(deadCodeResultsAtom);
@@ -25,7 +30,7 @@ export function DeadCodeExplorer({ containerRef }: { containerRef: React.RefObje
   const unifiedTree = useMemo(() => {
     const tree: any[] = [];
 
-    categories.forEach(category => {
+    categories.forEach((category) => {
       // Add category header node with children
       const categoryNode: any = {
         id: `category-${category.key}`,
@@ -62,12 +67,8 @@ export function DeadCodeExplorer({ containerRef }: { containerRef: React.RefObje
     return null;
   }
 
-  if (categories.length === 0 || categories.every(cat => cat.items.length === 0)) {
-    return (
-      <div className="px-3 py-6 text-xs text-text-secondary text-center">
-        No dead code found
-      </div>
-    );
+  if (categories.length === 0 || categories.every((cat) => cat.items.length === 0)) {
+    return <div className="px-3 py-6 text-xs text-text-secondary text-center">No dead code found</div>;
   }
 
   return (

@@ -19,7 +19,7 @@ function analyzeCommentStyle(commentText: string): {
   if (separatorMatch) {
     return {
       style: 'separator',
-      headingText: separatorMatch[1].trim()
+      headingText: separatorMatch[1].trim(),
     };
   }
 
@@ -51,7 +51,7 @@ function cleanCommentText(commentText: string, style: CommentStyle): string {
   if (style === 'jsdoc') {
     // /** ... */ 형식 정제
     return lines
-      .map(line => {
+      .map((line) => {
         let cleaned = line.trim();
         // 시작/끝 기호 제거
         cleaned = cleaned.replace(/^\/\*\*\s*/, '').replace(/\*\/$/, '');
@@ -66,7 +66,7 @@ function cleanCommentText(commentText: string, style: CommentStyle): string {
   if (style === 'xml') {
     // /// ... 형식 정제
     return lines
-      .map(line => line.trim().replace(/^\/\/\/\s?/, ''))
+      .map((line) => line.trim().replace(/^\/\/\/\s?/, ''))
       .join('\n')
       .trim();
   }
@@ -74,7 +74,7 @@ function cleanCommentText(commentText: string, style: CommentStyle): string {
   if (style === 'block') {
     // /* ... */ 형식 정제
     return lines
-      .map(line => {
+      .map((line) => {
         let cleaned = line.trim();
         cleaned = cleaned.replace(/^\/\*\s*/, '').replace(/\*\/$/, '');
         cleaned = cleaned.replace(/^\*\s?/, '');
@@ -89,9 +89,7 @@ function cleanCommentText(commentText: string, style: CommentStyle): string {
   }
 
   // 일반 한줄 주석: // ...
-  return lines
-    .map(line => line.trim().replace(/^\/\/\s?/, ''))
-    .join('\n');
+  return lines.map((line) => line.trim().replace(/^\/\/\s?/, '')).join('\n');
 }
 
 /**
@@ -106,7 +104,7 @@ function isCommentLine(line: string): boolean {
  * 파일 상단 주석 추출 (첫 번째 import 전까지)
  */
 export function extractFileHeader(lines: string[]): CodeDocSection | null {
-  let headerLines: string[] = [];
+  const headerLines: string[] = [];
   let inComment = false;
   let commentStartLine = 1;
 
@@ -159,6 +157,6 @@ export function extractFileHeader(lines: string[]): CodeDocSection | null {
     endLine: commentStartLine + headerLines.length - 1,
     commentStyle: style,
     headingText,
-    depth: 0
+    depth: 0,
   };
 }

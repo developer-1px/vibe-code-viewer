@@ -3,9 +3,8 @@
  * 다크/라이트 모드 전환 버튼
  */
 
-import React from 'react';
 import { useAtom } from 'jotai';
-import { Sun, Moon } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
 import { documentModeAtom } from '../../app/model/atoms';
 
 export const DocumentModeToggle = () => {
