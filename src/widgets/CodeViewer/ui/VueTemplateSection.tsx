@@ -9,10 +9,10 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import type React from 'react';
 import { useMemo } from 'react';
 import { extractTemplateComponents, extractTemplateVariables } from '@/shared/tsParser/utils/vueTemplateParser';
+import { lastExpandedIdAtom, visibleNodeIdsAtom } from '@/widgets/MainContents/PipelineCanvas/model/atoms';
 import { filesAtom, fullNodeMapAtom } from '../../../app/model/atoms';
 import { useEditorTheme } from '../../../app/theme/EditorThemeProvider';
 import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
-import { lastExpandedIdAtom, visibleNodeIdsAtom } from '../../PipelineCanvas/model/atoms';
 
 const VueTemplateSection = ({
   template,

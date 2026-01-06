@@ -1,14 +1,14 @@
 import { Package } from 'lucide-react';
+import { FileIcon } from '@/entities/SourceFileNode/ui/FileIcon';
 import { useOpenFile } from '@/features/File/OpenFiles/lib/useOpenFile';
 import type { DependencyItem } from '@/shared/dependencyAnalyzer';
-import { FileIcon } from '@/entities/SourceFileNode/ui/FileIcon';
 
 interface RelatedPanelItemProps {
   item: DependencyItem;
   depth: number;
 }
 
-export function RelatedPanelItem({ item, depth }: RelatedPanelItemProps) {
+export function RelatedPanelItem({ item, depth: _depth }: RelatedPanelItemProps) {
   const { openFile } = useOpenFile();
 
   const handleClick = () => {
@@ -22,25 +22,31 @@ export function RelatedPanelItem({ item, depth }: RelatedPanelItemProps) {
     ? item.filePath // NPM 모듈은 패키지명 전체
     : item.filePath.split('/').pop() || item.filePath;
 
-  // NPM 모듈은 indent 없음, 로컬 파일은 depth에 따라 indent
-  const indentStyle = item.isNpm ? {} : { paddingLeft: `calc(12px + ${depth} * var(--limn-indent))` };
-
   return (
     <div
-      className={`flex items-center gap-2 px-2 py-1 text-xs ${
+      className={`flex items-center gap-2 pl-7 pr-2 py-1 text-2xs ${
         item.isNpm
           ? 'text-text-tertiary cursor-default'
           : 'text-text-secondary hover:text-text-primary hover:bg-bg-deep/50 cursor-pointer'
       } transition-colors`}
-      style={indentStyle}
       onClick={handleClick}
+      onKeyDown={(e) => {
+        if (!item.isNpm && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
+      role={item.isNpm ? undefined : 'button'}
+      tabIndex={item.isNpm ? undefined : 0}
       title={item.isNpm ? `NPM: ${item.filePath}` : item.filePath}
     >
       {/* Icon */}
       {item.isNpm ? (
-        <Package size={12} className="text-warm-300 shrink-0" />
+        <div className="shrink-0 flex items-center justify-center" style={{ width: '11px', height: '11px' }}>
+          <Package size={11} className="text-warm-300" />
+        </div>
       ) : (
-        <FileIcon fileName={fileName} size={12} className="text-text-tertiary" />
+        <FileIcon fileName={fileName} size={11} className="text-text-tertiary" />
       )}
 
       {/* File name */}

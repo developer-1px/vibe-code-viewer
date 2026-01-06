@@ -14,18 +14,17 @@
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useMemo } from 'react';
 import { deadCodeResultsAtom } from '@/features/Code/CodeAnalyzer/DeadCodeAnalyzer/model/atoms';
+import { focusedNodeIdAtom } from '@/widgets/MainContents/IDEScrollView/model/atoms.ts';
 import { filesAtom, viewModeAtom } from '../../../app/model/atoms';
 import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
 import { renderCodeLinesDirect } from '../../CodeViewer/core/renderer/renderCodeLinesDirect';
 import { renderVueFile } from '../../CodeViewer/core/renderer/renderVueFile';
-import { focusedNodeIdAtom } from '../../IDEView/model/atoms';
 import { useFocusedIdentifiers } from '../hooks/useFocusedIdentifiers';
 // Custom Hooks
 import { useFoldLevel } from '../hooks/useFoldLevel';
 import { getNodeDisplayLabel, getNodeShortPath, getNodeTypeLabel } from '../lib/nodeDisplay';
 // Utilities
 import { getNodeIcon } from '../lib/nodeIcons';
-
 // Components
 import { FoldLevelButton } from './FoldLevelButton';
 
@@ -46,7 +45,10 @@ const CodeCardHeader = ({ node }: { node: CanvasNode }) => {
 
   // Custom Hooks - 복잡한 로직 캡슐화
   const { currentLevel, toggleLevel, canFold } = useFoldLevel(node, processedLines);
-  const { identifiers, removeIdentifier } = useFocusedIdentifiers(node, processedLines);
+  const { identifiers: _identifiers, removeIdentifier: _removeIdentifier } = useFocusedIdentifiers(
+    node,
+    processedLines
+  );
 
   // Node Icon 정보
   const iconConfig = getNodeIcon(node.type);

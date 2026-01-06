@@ -1,7 +1,7 @@
 /**
  * FileExplorer - Type Definitions
  */
-import type { DeadCodeItem } from '../../../shared/deadCodeAnalyzer';
+import type { DeadCodeItem } from '../../../features/Code/CodeAnalyzer/DeadCodeAnalyzer/lib/deadCodeAnalyzer.ts';
 
 export interface FolderNode {
   id: string; // 고유 ID (불변)

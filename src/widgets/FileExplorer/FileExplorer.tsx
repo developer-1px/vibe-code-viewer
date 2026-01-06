@@ -10,8 +10,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FileTreeItem } from '@/components/ide/FileTreeItem';
 import { useOpenFile } from '@/features/File/OpenFiles/lib/useOpenFile';
 import { activeTabAtom, openedTabsAtom } from '@/features/File/OpenFiles/model/atoms';
-import { FileIcon } from '../../entities/SourceFileNode/ui/FileIcon.tsx';
 import { filesAtom, focusedFolderAtom } from '../../app/model/atoms';
+import { FileIcon } from '../../entities/SourceFileNode/ui/FileIcon.tsx';
 import { useTreeKeyboardNavigation } from '../../shared/hooks/useTreeKeyboardNavigation';
 import { TreeView } from '../../shared/ui/TreeView/TreeView';
 import { buildFileTree } from './lib/buildFileTree';
@@ -118,7 +118,7 @@ export function FileExplorer({ containerRef }: { containerRef: React.RefObject<H
               ? isCollapsed
                 ? Folder
                 : FolderOpen
-              : (() => <FileIcon fileName={node.name} />) as React.ComponentType;
+              : ((() => <FileIcon fileName={node.name} />) as React.ComponentType);
 
           return (
             <FileTreeItem

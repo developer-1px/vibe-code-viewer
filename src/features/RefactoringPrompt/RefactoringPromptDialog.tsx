@@ -8,7 +8,7 @@ import * as React from 'react';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Dialog';
 import { ScrollArea } from '@/components/ui/ScrollArea';
-import type { DeadCodeResults } from '../../shared/deadCodeAnalyzer';
+import type { DeadCodeResults } from '../Code/CodeAnalyzer/DeadCodeAnalyzer/lib/deadCodeAnalyzer.ts';
 import { generateRefactoringPrompt, type RefactoringPrompt } from './lib/promptGenerator';
 
 export interface RefactoringPromptDialogProps {

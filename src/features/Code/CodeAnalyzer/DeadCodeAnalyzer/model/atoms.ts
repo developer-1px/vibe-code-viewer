@@ -2,7 +2,7 @@
  * DeadCodeAnalyzer - Atoms
  */
 import { atom } from 'jotai';
-import type { DeadCodeResults } from '../../../../../shared/deadCodeAnalyzer.ts';
+import type { DeadCodeResults } from '../lib/deadCodeAnalyzer.ts';
 import type { CategoryState } from './types.ts';
 
 // ============================================================================

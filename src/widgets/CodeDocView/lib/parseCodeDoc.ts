@@ -4,8 +4,8 @@
  */
 
 import * as ts from 'typescript';
-import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
 import { getImports } from '../../../entities/SourceFileNode/lib/metadata';
+import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
 import { extractExportSignatures } from './extractExportSignatures';
 import { extractFileHeader } from './extractFileHeader';
 import type { CodeDocSection, CommentStyle, ImportSymbol, ParsedCodeDoc, SymbolKind } from './types';

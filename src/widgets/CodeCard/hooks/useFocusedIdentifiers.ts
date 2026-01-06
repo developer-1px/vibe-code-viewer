@@ -8,11 +8,11 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useMemo } from 'react';
 import { activeLocalVariablesAtom } from '@/features/Code/FocusMode/model/atoms';
+import { visibleNodeIdsAtom } from '@/widgets/MainContents/PipelineCanvas/model/atoms';
+import { pruneDetachedNodes } from '@/widgets/MainContents/PipelineCanvas/utils';
 import { fullNodeMapAtom } from '../../../app/model/atoms';
 import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
 import type { CodeLine } from '../../../entities/CodeLine/model/types';
-import { visibleNodeIdsAtom } from '../../PipelineCanvas/model/atoms';
-import { pruneDetachedNodes } from '../../PipelineCanvas/utils';
 
 export interface IdentifierMetadata {
   name: string;

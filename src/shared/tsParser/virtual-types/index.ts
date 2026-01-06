@@ -7,17 +7,17 @@
 
 // Vite raw import로 타입 정의 파일을 문자열로 가져옴
 import libDts from './lib.d.ts?raw';
-import libEs5Dts from './lib.es5.d.ts?raw';
-import libEs2015Dts from './lib.es2015.d.ts?raw';
-import libEs2015CoreDts from './lib.es2015.core.d.ts?raw';
-import libEs2015PromiseDts from './lib.es2015.promise.d.ts?raw';
-import libEs2015IterableDts from './lib.es2015.iterable.d.ts?raw';
-import libEs2015SymbolDts from './lib.es2015.symbol.d.ts?raw';
-import libEs2015SymbolWellknownDts from './lib.es2015.symbol.wellknown.d.ts?raw';
-import libEs2015GeneratorDts from './lib.es2015.generator.d.ts?raw';
-import libEs2022Dts from './lib.es2022.d.ts?raw';
 import libDomDts from './lib.dom.d.ts?raw';
 import libDomIterableDts from './lib.dom.iterable.d.ts?raw';
+import libEs5Dts from './lib.es5.d.ts?raw';
+import libEs2015CoreDts from './lib.es2015.core.d.ts?raw';
+import libEs2015Dts from './lib.es2015.d.ts?raw';
+import libEs2015GeneratorDts from './lib.es2015.generator.d.ts?raw';
+import libEs2015IterableDts from './lib.es2015.iterable.d.ts?raw';
+import libEs2015PromiseDts from './lib.es2015.promise.d.ts?raw';
+import libEs2015SymbolDts from './lib.es2015.symbol.d.ts?raw';
+import libEs2015SymbolWellknownDts from './lib.es2015.symbol.wellknown.d.ts?raw';
+import libEs2022Dts from './lib.es2022.d.ts?raw';
 import reactDts from './react.d.ts?raw';
 import reactGlobalDts from './react-global.d.ts?raw';
 
@@ -51,9 +51,8 @@ export const virtualTypeFiles: Record<string, string> = {
 /**
  * Virtual 타입 파일의 총 크기 (참고용)
  */
-export const virtualTypeFilesSize = Object.values(virtualTypeFiles).reduce(
-  (sum, content) => sum + content.length,
-  0
-);
+export const virtualTypeFilesSize = Object.values(virtualTypeFiles).reduce((sum, content) => sum + content.length, 0);
 
-console.log(`[Virtual Types] Loaded ${Object.keys(virtualTypeFiles).length} type definition files (${(virtualTypeFilesSize / 1024).toFixed(2)} KB)`);
+console.log(
+  `[Virtual Types] Loaded ${Object.keys(virtualTypeFiles).length} type definition files (${(virtualTypeFilesSize / 1024).toFixed(2)} KB)`
+);

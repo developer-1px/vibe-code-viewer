@@ -5,8 +5,8 @@
 import { useAtomValue, useSetAtom } from 'jotai';
 import type React from 'react';
 import { hoveredIdentifierAtom } from '@/app/model/atoms';
+import { visibleNodeIdsAtom } from '@/widgets/MainContents/PipelineCanvas/model/atoms';
 import type { CanvasNode } from '../../../../entities/CanvasNode/model/types';
-import { visibleNodeIdsAtom } from '../../../PipelineCanvas/model/atoms';
 import type { CodeSegment, SegmentStyle } from '../../core/types';
 
 interface ExpandSegmentProps {
@@ -16,7 +16,7 @@ interface ExpandSegmentProps {
   isFocused?: boolean;
 }
 
-export const ExpandSegment: React.FC<ExpandSegmentProps> = ({ segment, node, style, isFocused }) => {
+export const ExpandSegment: React.FC<ExpandSegmentProps> = ({ segment, node: _node, style, isFocused }) => {
   const setVisibleNodeIds = useSetAtom(visibleNodeIdsAtom);
   const hoveredIdentifier = useAtomValue(hoveredIdentifierAtom);
   const setHoveredIdentifier = useSetAtom(hoveredIdentifierAtom);

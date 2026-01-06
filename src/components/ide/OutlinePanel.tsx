@@ -1,8 +1,8 @@
 import { ChevronRight, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { DefinitionSymbol } from '../../widgets/Panels/DefinitionPanel/definitionExtractor.ts';
 import type { OutlineNode } from '../../shared/outlineExtractor';
 import { DefinitionPanel } from '../../widgets/Panels/DefinitionPanel/DefinitionPanel.tsx';
+import type { DefinitionSymbol } from '../../widgets/Panels/DefinitionPanel/definitionExtractor.ts';
 import { OutlinePanelItem } from './OutlinePanelItem';
 
 export interface OutlinePanelProps {

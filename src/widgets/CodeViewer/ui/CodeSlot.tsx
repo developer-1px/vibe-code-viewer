@@ -2,10 +2,14 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import type React from 'react';
 import { useMemo } from 'react';
 import { targetLineAtom } from '@/features/File/Navigation/model/atoms';
+import {
+  lastExpandedIdAtom,
+  layoutLinksAtom,
+  visibleNodeIdsAtom,
+} from '@/widgets/MainContents/PipelineCanvas/model/atoms';
 import { useEditorTheme } from '../../../app/theme/EditorThemeProvider';
 import { getSlotColor } from '../../../entities/SourceFileNode/lib/styleUtils';
 import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
-import { lastExpandedIdAtom, layoutLinksAtom, visibleNodeIdsAtom } from '../../PipelineCanvas/model/atoms';
 
 const CodeSlot = ({
   tokenId,

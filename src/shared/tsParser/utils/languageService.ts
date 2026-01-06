@@ -343,11 +343,7 @@ export function getParameterHintsForCall(
     const exprPos = expr.getEnd(); // getEnd()를 사용하여 함수 이름 끝 위치
 
     // 2. Language Service로 함수 signature 가져오기
-    const signatureHelp = languageService.getSignatureHelpItems(
-      fileName,
-      exprPos,
-      {}
-    );
+    const signatureHelp = languageService.getSignatureHelpItems(fileName, exprPos, {});
 
     if (!signatureHelp || signatureHelp.items.length === 0) {
       return hints;

@@ -7,7 +7,7 @@ Warning: all of these interfaces are empty. If you want type definitions for var
 (such as HTMLInputElement.prototype.value), you need to add `--lib DOM` (via command line or tsconfig.json).
 */
 
-interface Event {}
+type Event = {};
 interface AnimationEvent extends Event {}
 interface ClipboardEvent extends Event {}
 interface CompositionEvent extends Event {}
@@ -23,13 +23,13 @@ interface TransitionEvent extends Event {}
 interface UIEvent extends Event {}
 interface WheelEvent extends Event {}
 
-interface EventTarget {}
-interface Document {}
-interface DataTransfer {}
-interface StyleMedia {}
+type EventTarget = {};
+type Document = {};
+type DataTransfer = {};
+type StyleMedia = {};
 
-interface Element {}
-interface DocumentFragment {}
+type Element = {};
+type DocumentFragment = {};
 
 interface HTMLElement extends Element {}
 interface HTMLAnchorElement extends HTMLElement {}
@@ -152,10 +152,10 @@ interface SVGTSpanElement extends SVGElement {}
 interface SVGUseElement extends SVGElement {}
 interface SVGViewElement extends SVGElement {}
 
-interface FormData {}
-interface Text {}
-interface TouchList {}
-interface WebGLRenderingContext {}
-interface WebGL2RenderingContext {}
+type FormData = {};
+type Text = {};
+type TouchList = {};
+type WebGLRenderingContext = {};
+type WebGL2RenderingContext = {};
 
-interface TrustedHTML {}
+type TrustedHTML = {};

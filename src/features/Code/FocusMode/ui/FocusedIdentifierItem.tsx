@@ -6,9 +6,9 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import type React from 'react';
 import { useRef } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
+import { visibleNodeIdsAtom } from '@/widgets/MainContents/PipelineCanvas/model/atoms.ts';
+import { pruneDetachedNodes } from '@/widgets/MainContents/PipelineCanvas/utils.ts';
 import { fullNodeMapAtom } from '../../../../app/model/atoms.ts';
-import { visibleNodeIdsAtom } from '../../../../widgets/PipelineCanvas/model/atoms.ts';
-import { pruneDetachedNodes } from '../../../../widgets/PipelineCanvas/utils.ts';
 import { activeLocalVariablesAtom } from '../model/atoms.ts';
 import type { IdentifierMetadata } from './FocusedIdentifiers.tsx';
 
@@ -74,6 +74,14 @@ export const FocusedIdentifierItem: React.FC<FocusedIdentifierItemProps> = ({ me
     <div
       ref={chipRef}
       onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleRemove();
+        }
+      }}
+      role="button"
+      tabIndex={0}
       className="
         group relative flex items-start gap-2 px-3 py-1.5 text-xs font-mono
         border-l-2 border-l-cyan-400 rounded-r transition-all duration-200

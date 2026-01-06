@@ -4,7 +4,7 @@
  * Virtual 타입 파일이 제대로 로드되어 React와 JavaScript 기본 타입을 추론하는지 확인
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createLanguageService } from '../utils/languageService';
 
 describe('타입 추론 - Virtual Types', () => {
@@ -91,7 +91,7 @@ describe('타입 추론 - Virtual Types', () => {
 
   it('Virtual 타입 파일이 메모리에 로드됨', () => {
     const files = {
-      '/test.ts': `const x = 1;`,
+      '/test.ts': 'const x = 1;',
     };
 
     const languageService = createLanguageService(files);

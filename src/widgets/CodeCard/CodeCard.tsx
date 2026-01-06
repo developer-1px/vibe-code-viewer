@@ -5,6 +5,7 @@ import { getFoldableLinesByMaxDepth } from '@/features/Code/CodeFold/lib/foldUti
 // Atoms
 import { foldedLinesAtom } from '@/features/Code/CodeFold/model/atoms';
 import { activeTabAtom } from '@/features/File/OpenFiles/model/atoms';
+import { hoveredFilePathAtom } from '@/widgets/MainContents/IDEScrollView/model/atoms';
 import { filesAtom } from '../../app/model/atoms';
 import type { CanvasNode } from '../../entities/CanvasNode/model/types';
 import { getNodeBorderColor } from '../../entities/SourceFileNode/lib/styleUtils';
@@ -13,7 +14,6 @@ import CodeViewer from '../CodeViewer/CodeViewer';
 import { renderCodeLinesDirect } from '../CodeViewer/core/renderer/renderCodeLinesDirect';
 import { renderVueFile } from '../CodeViewer/core/renderer/renderVueFile';
 import VueTemplateSection from '../CodeViewer/ui/VueTemplateSection';
-import { hoveredFilePathAtom } from '../IDEScrollView/model/atoms';
 import CodeCardCopyButton from './ui/CodeCardCopyButton';
 // UI Components
 import CodeCardHeader from './ui/CodeCardHeader';
@@ -52,7 +52,9 @@ const CodeCard = ({ node }: { node: CanvasNode }) => {
     setFoldedLinesMap((prev) => {
       const next = new Map(prev);
       const nodeFolds = new Set<number>();
-      linesToFold.forEach((lineNum) => nodeFolds.add(lineNum));
+      linesToFold.forEach((lineNum) => {
+        nodeFolds.add(lineNum);
+      });
       next.set(node.id, nodeFolds);
       return next;
     });

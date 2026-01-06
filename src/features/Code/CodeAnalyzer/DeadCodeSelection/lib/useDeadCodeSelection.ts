@@ -2,8 +2,8 @@
  * Dead Code Selection Hook
  */
 import { useAtom } from 'jotai';
-import type { DeadCodeItem } from '../../../../../shared/deadCodeAnalyzer.ts';
 import { getItemKey } from '../../DeadCodeAnalyzer/lib/categoryUtils.tsx';
+import type { DeadCodeItem } from '../../DeadCodeAnalyzer/lib/deadCodeAnalyzer.ts';
 import { selectedDeadCodeItemsAtom } from '../../DeadCodeAnalyzer/model/atoms.ts';
 
 export function useDeadCodeSelection() {
@@ -26,10 +26,14 @@ export function useDeadCodeSelection() {
 
     if (allSelected) {
       // Deselect all in this category
-      items.forEach((item) => newSelected.delete(getItemKey(item)));
+      items.forEach((item) => {
+        newSelected.delete(getItemKey(item));
+      });
     } else {
       // Select all in this category
-      items.forEach((item) => newSelected.add(getItemKey(item)));
+      items.forEach((item) => {
+        newSelected.add(getItemKey(item));
+      });
     }
 
     setSelectedItems(newSelected);

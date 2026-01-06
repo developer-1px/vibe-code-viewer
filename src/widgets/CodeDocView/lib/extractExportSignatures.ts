@@ -4,8 +4,8 @@
  */
 
 import * as ts from 'typescript';
-import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
 import { getExports } from '../../../entities/SourceFileNode/lib/metadata';
+import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
 import type { CodeDocSection } from './types';
 
 /**

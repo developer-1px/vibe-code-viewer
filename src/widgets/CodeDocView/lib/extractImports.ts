@@ -3,8 +3,8 @@
  * Import 선언 추출 (View 기반)
  */
 
-import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
 import { getImports } from '../../../entities/SourceFileNode/lib/metadata';
+import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
 
 export type SymbolKind =
   | 'function'

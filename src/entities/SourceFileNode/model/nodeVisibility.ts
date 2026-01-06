@@ -99,7 +99,9 @@ export const collapseDependencies = (
   }
 
   // Step 2: Remove candidates temporarily
-  toRemove.forEach((id) => next.delete(id));
+  toRemove.forEach((id) => {
+    next.delete(id);
+  });
 
   // Step 3: Find which candidates are still reachable from other visible nodes
   const stillReachable = new Set<string>();
@@ -126,7 +128,9 @@ export const collapseDependencies = (
   });
 
   // Step 4: Restore nodes that are still reachable
-  stillReachable.forEach((id) => next.add(id));
+  stillReachable.forEach((id) => {
+    next.add(id);
+  });
 
   return next;
 };

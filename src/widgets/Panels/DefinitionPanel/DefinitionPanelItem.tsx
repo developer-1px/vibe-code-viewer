@@ -1,4 +1,17 @@
-import { BookA, Box, Dot, FunctionSquare, MessageSquare, PackageOpen, Blocks, Type, Layers, CheckCircle, Settings, BugPlay } from 'lucide-react';
+import {
+  Blocks,
+  BookA,
+  Box,
+  BugPlay,
+  CheckCircle,
+  Dot,
+  FunctionSquare,
+  Layers,
+  MessageSquare,
+  PackageOpen,
+  Settings,
+  Type,
+} from 'lucide-react';
 import { cn } from '@/components/lib/utils';
 import type { DefinitionSymbol, SymbolKind } from '../../shared/definitionExtractor';
 

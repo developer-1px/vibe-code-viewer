@@ -1,6 +1,6 @@
 import { Type } from 'lucide-react';
-import type { DependencyItem } from '@/shared/dependencyAnalyzer';
 import { useOpenFile } from '@/features/File/OpenFiles/lib/useOpenFile';
+import type { DependencyItem } from '@/shared/dependencyAnalyzer';
 
 interface EntityItemProps {
   item: DependencyItem;
@@ -23,7 +23,13 @@ export function EntityItem({ item }: EntityItemProps) {
   };
 
   // Entity 이름: exportName 우선, 없으면 filePath에서 추출
-  const entityName = item.exportName || item.filePath.split('/').pop()?.replace(/\.(tsx?|jsx?)$/, '') || item.filePath;
+  const entityName =
+    item.exportName ||
+    item.filePath
+      .split('/')
+      .pop()
+      ?.replace(/\.(tsx?|jsx?)$/, '') ||
+    item.filePath;
 
   // Kind color (type | interface)
   const kindColor = item.kind === 'interface' ? 'text-blue-400' : 'text-purple-400';
@@ -50,9 +56,7 @@ export function EntityItem({ item }: EntityItemProps) {
         <Type size={11} className={`shrink-0 ${iconColor}`} />
         <span className="font-medium flex-shrink-0">{entityName}</span>
       </div>
-      <span className="text-3xs text-text-faint ml-2 truncate min-w-0 font-mono">
-        {displayLocation}
-      </span>
+      <span className="text-3xs text-text-faint ml-2 truncate min-w-0 font-mono">{displayLocation}</span>
     </div>
   );
 }

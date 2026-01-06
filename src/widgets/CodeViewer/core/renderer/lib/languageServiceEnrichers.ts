@@ -3,9 +3,8 @@
  */
 
 import * as ts from 'typescript';
+import { createLanguageService, getParameterHintsForCall } from '../../../../../shared/tsParser/utils/languageService';
 import type { CodeLine } from '../../types/codeLine';
-import { getParameterHintsForCall } from '../../../../../shared/tsParser/utils/languageService';
-import { createLanguageService } from '../../../../../shared/tsParser/utils/languageService';
 import { findDefinitionLocation, getQuickInfoAtPosition } from '../tsLanguageService';
 
 // Development mode flag

@@ -18,7 +18,7 @@ import {
 } from './astHooks';
 import { addComments, getSegmentKind } from './lib/astAnalyzers';
 import { extractDeadIdentifiers } from './lib/deadCodeHelpers';
-import { enrichWithLanguageService, addInlayHints } from './lib/languageServiceEnrichers';
+import { addInlayHints, enrichWithLanguageService } from './lib/languageServiceEnrichers';
 // Refactored pure functions
 import { addSegmentToLines, createInitialLines, finalizeAllLines } from './lib/segmentBuilders';
 import type { RenderContext } from './lib/types';

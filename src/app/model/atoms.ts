@@ -32,7 +32,8 @@ export const parseErrorAtom = atom(null as string | null);
 export const parseProgressAtom = atom<{
   isLoading: boolean;
   current: number;
-  total: number;aom
+  total: number;
+  aom;
   currentFile: string | null;
 }>({
   isLoading: false,

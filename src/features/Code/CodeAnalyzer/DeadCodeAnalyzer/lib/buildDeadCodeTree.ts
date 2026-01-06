@@ -3,8 +3,8 @@
  * Each DeadCodeItem becomes an independent node for keyboard navigation
  */
 
-import type { DeadCodeItem } from '../../../../../shared/deadCodeAnalyzer.ts';
 import type { FolderNode } from '../../../../../widgets/FileExplorer/model/types.ts';
+import type { DeadCodeItem } from './deadCodeAnalyzer.ts';
 
 export function buildDeadCodeTree(items: DeadCodeItem[]): FolderNode[] {
   const rootChildren: FolderNode[] = [];
@@ -41,7 +41,7 @@ export function buildDeadCodeTree(items: DeadCodeItem[]): FolderNode[] {
       }
 
       parentId = currentPath;
-      currentParent = folder.children!;
+      currentParent = folder.children ?? [];
     }
 
     // Create dead-code-item node

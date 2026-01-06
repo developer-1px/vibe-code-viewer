@@ -219,7 +219,12 @@ export function CommandPalette({
   // Render result subtitle
   const renderSubtitle = (result: SearchResult, isSelected: boolean) => {
     // FILE/FOLDER/TYPE/INTERFACE: Show file path
-    if (result.type === 'file' || result.type === 'folder' || result.nodeType === 'type' || result.nodeType === 'interface') {
+    if (
+      result.type === 'file' ||
+      result.type === 'folder' ||
+      result.nodeType === 'type' ||
+      result.nodeType === 'interface'
+    ) {
       return highlightText(result.filePath, 'filePath', result, isSelected);
     }
 
@@ -329,7 +334,10 @@ export function CommandPalette({
                     </div>
 
                     {/* Content */}
-                    {result.type === 'file' || result.type === 'folder' || result.nodeType === 'type' || result.nodeType === 'interface' ? (
+                    {result.type === 'file' ||
+                    result.type === 'folder' ||
+                    result.nodeType === 'type' ||
+                    result.nodeType === 'interface' ? (
                       // FILE/FOLDER/TYPE/INTERFACE: Name → full path
                       <>
                         <div className="flex-1 min-w-0 flex items-center gap-2">

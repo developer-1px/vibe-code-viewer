@@ -5,8 +5,8 @@
 
 import * as ts from 'typescript';
 import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
-import { extractDefinitions } from '../../Panels/DefinitionPanel/definitionExtractor.ts';
 import { getFileName } from '../../../shared/pathUtils';
+import { extractDefinitions } from '../../Panels/DefinitionPanel/definitionExtractor.ts';
 import type { DocBlock, DocData, ImportItem, SymbolDetail } from '../model/types';
 import { parseCodeDoc } from './parseCodeDoc';
 

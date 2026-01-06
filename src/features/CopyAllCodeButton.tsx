@@ -2,8 +2,8 @@ import { useAtomValue } from 'jotai';
 import { Check as IconCheck, Copy as IconCopy } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
+import { layoutNodesAtom } from '@/widgets/MainContents/PipelineCanvas/model/atoms';
 import { fullNodeMapAtom } from '../app/model/atoms';
-import { layoutNodesAtom } from '../widgets/PipelineCanvas/model/atoms';
 
 const CopyAllCodeButton: React.FC = () => {
   const layoutNodes = useAtomValue(layoutNodesAtom);
@@ -60,6 +60,7 @@ const CopyAllCodeButton: React.FC = () => {
   return (
     <div className="absolute bottom-6 right-6 z-40">
       <button
+        type="button"
         onClick={handleCopyAllCode}
         className="bg-theme-panel/90 backdrop-blur px-4 py-2.5 rounded-lg border border-theme-border text-theme-text-primary hover:text-theme-text-accent hover:border-theme-text-accent flex items-center gap-2 text-sm shadow-xl transition-all font-medium group"
         title="Copy all visible code for AI analysis"

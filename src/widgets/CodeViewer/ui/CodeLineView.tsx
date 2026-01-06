@@ -5,11 +5,11 @@ import { foldedLinesAtom } from '@/features/Code/CodeFold/model/atoms';
 import FoldBadge from '@/features/Code/CodeFold/ui/FoldBadge';
 import FoldButton from '@/features/Code/CodeFold/ui/FoldButton';
 import { targetLineAtom } from '@/features/File/Navigation/model/atoms';
+import { layoutNodesAtom } from '@/widgets/MainContents/PipelineCanvas/model/atoms';
 import { useEditorTheme } from '../../../app/theme/EditorThemeProvider';
 import type { CanvasNode } from '../../../entities/CanvasNode/model/types';
-import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
 import { getSymbolUsages } from '../../../entities/SourceFileNode/lib/metadata';
-import { layoutNodesAtom } from '../../PipelineCanvas/model/atoms';
+import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
 import type { CodeLine } from '../core/types';
 import CodeLineExportSlots from './CodeLineExportSlots';
 import CodeLineSegment from './CodeLineSegment';
@@ -46,7 +46,7 @@ const CodeLineView = ({
   node,
   foldRanges,
   isHighlighted = false,
-  allLines,
+  allLines: _allLines,
   options = {
     showFoldButton: true,
     showSlots: true,

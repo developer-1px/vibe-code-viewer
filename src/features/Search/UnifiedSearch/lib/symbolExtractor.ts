@@ -4,8 +4,8 @@
 
 import * as ts from 'typescript';
 import type { CodeSymbolMetadata } from '../../../../entities/CodeSymbol/model/types.ts';
-import type { SourceFileNode } from '../../../../entities/SourceFileNode/model/types.ts';
 import { getExports } from '../../../../entities/SourceFileNode/lib/metadata.ts';
+import type { SourceFileNode } from '../../../../entities/SourceFileNode/model/types.ts';
 import { getFileName } from '../../../../shared/pathUtils.ts';
 import type { SearchResult } from '../model/types.ts';
 

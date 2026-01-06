@@ -5,36 +5,33 @@
  * 정렬 순서: 리프 노드 (의존성 없음) → 루트 노드 (현재 파일) 순서
  */
 
-import { getImports, getExports } from '../entities/SourceFileNode/lib/metadata';
+import { getExports, getImports } from '../entities/SourceFileNode/lib/metadata';
 import type { GraphData, SourceFileNode } from '../entities/SourceFileNode/model/types';
 import { resolvePath } from './tsParser/utils/pathResolver';
 
 export interface DependencyItem {
   filePath: string;
-  depth: number;          // 현재 파일로부터의 깊이 (0 = 현재 파일)
-  isNpm: boolean;         // NPM 모듈 여부
+  depth: number; // 현재 파일로부터의 깊이 (0 = 현재 파일)
+  isNpm: boolean; // NPM 모듈 여부
   directImporter?: string; // 이 파일을 직접 import한 파일 경로
-  exportName?: string;    // Entity 이름 (type/interface의 경우)
-  kind?: 'type' | 'interface' | 'file';  // 항목 종류
-  line?: number;          // 선언 위치 (line number)
+  exportName?: string; // Entity 이름 (type/interface의 경우)
+  kind?: 'type' | 'interface' | 'file'; // 항목 종류
+  line?: number; // 선언 위치 (line number)
   isDirectlyUsed?: boolean; // 현재 파일에서 직접 사용 여부 (entities only)
 }
 
 export interface DependencyResults {
-  localFiles: DependencyItem[];  // 로컬 파일들 (토폴로지 정렬됨)
-  npmModules: DependencyItem[];  // NPM 모듈들
-  entities: DependencyItem[];    // Type/Interface 선언들
-  importedBy: DependencyItem[];  // 이 파일을 직접 import하는 파일들 (역방향 의존성, Direct)
-  importedByIndirect: DependencyItem[];  // 재귀적으로 영향받는 파일들 (Indirect)
+  localFiles: DependencyItem[]; // 로컬 파일들 (토폴로지 정렬됨)
+  npmModules: DependencyItem[]; // NPM 모듈들
+  entities: DependencyItem[]; // Type/Interface 선언들
+  importedBy: DependencyItem[]; // 이 파일을 직접 import하는 파일들 (역방향 의존성, Direct)
+  importedByIndirect: DependencyItem[]; // 재귀적으로 영향받는 파일들 (Indirect)
 }
 
 /**
  * 현재 파일의 모든 의존성을 재귀적으로 분석하고 토폴로지 정렬
  */
-export function analyzeDependencies(
-  currentFilePath: string | null,
-  graphData: GraphData | null
-): DependencyResults {
+export function analyzeDependencies(currentFilePath: string | null, graphData: GraphData | null): DependencyResults {
   const results: DependencyResults = {
     localFiles: [],
     npmModules: [],
@@ -63,12 +60,9 @@ export function analyzeDependencies(
     directlyUsedTypes.add(imp.name);
   });
 
-
   // Phase 0.5: 현재 파일에 정의된 타입들 수집 (This File)
   const currentExports = getExports(currentNode);
-  const currentTypeExports = currentExports.filter(
-    (exp) => exp.kind === 'type' || exp.kind === 'interface'
-  );
+  const currentTypeExports = currentExports.filter((exp) => exp.kind === 'type' || exp.kind === 'interface');
 
   // Phase 0.6: files Record 생성 (resolvePath용)
   const files: Record<string, string> = {};
@@ -79,10 +73,10 @@ export function analyzeDependencies(
   // Phase 1: DFS로 모든 의존성 수집
   const visited = new Set<string>();
   const localDeps = new Map<string, DependencyItem>(); // filePath → DependencyItem
-  const npmDeps = new Map<string, DependencyItem>();   // moduleName → DependencyItem
-  const entities = new Map<string, DependencyItem>();  // entityKey → DependencyItem (type/interface)
+  const npmDeps = new Map<string, DependencyItem>(); // moduleName → DependencyItem
+  const entities = new Map<string, DependencyItem>(); // entityKey → DependencyItem (type/interface)
   const adjacencyList = new Map<string, Set<string>>(); // filePath → dependencies
-  const indegree = new Map<string, number>();          // filePath → incoming edge count
+  const indegree = new Map<string, number>(); // filePath → incoming edge count
 
   // 현재 파일의 타입들을 entities에 추가 (depth=0, isDirectlyUsed=true)
   currentTypeExports.forEach((typeExp) => {
@@ -119,9 +113,7 @@ export function analyzeDependencies(
 
     // 🔥 Entity 추출: 이 파일의 type/interface export 수집
     const exports = getExports(node);
-    const typeExports = exports.filter(
-      (exp) => exp.kind === 'type' || exp.kind === 'interface'
-    );
+    const typeExports = exports.filter((exp) => exp.kind === 'type' || exp.kind === 'interface');
 
     typeExports.forEach((typeExp) => {
       const entityKey = `${node.filePath}#${typeExp.name}`; // 중복 방지용 unique key
