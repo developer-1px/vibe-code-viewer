@@ -13,6 +13,8 @@ import {
   graphDataAtom,
   parseErrorAtom,
   parseProgressAtom,
+  rightPanelOpenAtom,
+  rightPanelTypeAtom,
   viewModeAtom,
 } from '@/entities/AppView/model/atoms';
 import { store } from '@/entities/AppView/model/store';
@@ -25,6 +27,7 @@ import PipelineCanvas from '@/widgets/MainContents/PipelineCanvas/PipelineCanvas
 import type { SourceFileNode } from './entities/SourceFileNode/model/types';
 import { KeyboardShortcuts } from './features/KeyboardShortcuts/KeyboardShortcuts';
 import CodeDocView from './widgets/CodeDocView/CodeDocView';
+import { WorkspacePanel } from './widgets/WorkspacePanel/WorkspacePanel';
 
 const AppContent: React.FC = () => {
   // Parse project when files change
@@ -34,6 +37,9 @@ const AppContent: React.FC = () => {
   const setParseProgress = useSetAtom(parseProgressAtom);
   const viewMode = useAtomValue(viewModeAtom);
   const deadCodePanelOpen = useAtomValue(deadCodePanelOpenAtom);
+  const rightPanelOpen = useAtomValue(rightPanelOpenAtom);
+  const rightPanelType = useAtomValue(rightPanelTypeAtom);
+  const setRightPanelOpen = useSetAtom(rightPanelOpenAtom);
   const workerRef = useRef<Worker | null>(null);
 
   // 🔥 Web Worker for Project Parsing
@@ -168,6 +174,11 @@ const AppContent: React.FC = () => {
               {viewMode === 'ide' && <IDEScrollView />}
               {viewMode === 'codeDoc' && <CodeDocView />}
             </div>
+
+            {/* Right Panel: Workspace */}
+            {rightPanelOpen && rightPanelType === 'workspace' && (
+              <WorkspacePanel onClose={() => setRightPanelOpen(false)} />
+            )}
           </>
         )}
       </div>

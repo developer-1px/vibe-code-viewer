@@ -83,5 +83,8 @@ export const hoveredIdentifierAtom = atom<string | null>(null);
 // 우측 패널 표시 여부 (기본값: true - 미리 열어둠)
 export const rightPanelOpenAtom = atom<boolean>(true);
 
-// 우측 패널 타입 ('definition' | 'related')
-export const rightPanelTypeAtom = atom<'definition' | 'related'>('definition');
+// 우측 패널 타입 ('workspace' | 'definition' | 'related')
+// workspace: 열린 파일 목록
+// definition: 파일 정의/아웃라인 (삭제됨, 레거시)
+// related: 관련 파일 (삭제됨, 레거시)
+export const rightPanelTypeAtom = atom<'workspace' | 'definition' | 'related'>('workspace');

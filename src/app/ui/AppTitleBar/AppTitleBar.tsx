@@ -4,7 +4,7 @@
  */
 
 import { useAtom } from 'jotai';
-import { ListTree, Network, X } from 'lucide-react';
+import { FolderOpen, X } from 'lucide-react';
 import { TitleBar } from '@/components/ide/TitleBar.tsx';
 import { rightPanelOpenAtom, rightPanelTypeAtom } from '@/entities/AppView/model/atoms';
 
@@ -19,40 +19,22 @@ export function AppTitleBar() {
     <TitleBar filename={activeFileName} projectName="teo.v">
       {/* Right Panel Tabs */}
       <div className="flex items-center gap-0.5 border border-border-DEFAULT rounded overflow-hidden">
-        {/* Definition Tab */}
+        {/* Workspace Tab */}
         <button
           type="button"
           className={`flex items-center gap-1.5 px-2 py-1 text-xs transition-colors ${
-            rightPanelOpen && rightPanelType === 'definition'
+            rightPanelOpen && rightPanelType === 'workspace'
               ? 'bg-warm-300/15 text-warm-300'
               : 'text-text-secondary hover:text-text-primary hover:bg-bg-deep/50'
           }`}
           onClick={() => {
-            setRightPanelType('definition');
+            setRightPanelType('workspace');
             if (!rightPanelOpen) setRightPanelOpen(true);
           }}
-          title="Definitions Panel"
+          title="Workspace Panel"
         >
-          <ListTree size={14} />
-          <span>Definitions</span>
-        </button>
-
-        {/* Related Tab */}
-        <button
-          type="button"
-          className={`flex items-center gap-1.5 px-2 py-1 text-xs border-l border-border-DEFAULT transition-colors ${
-            rightPanelOpen && rightPanelType === 'related'
-              ? 'bg-warm-300/15 text-warm-300'
-              : 'text-text-secondary hover:text-text-primary hover:bg-bg-deep/50'
-          }`}
-          onClick={() => {
-            setRightPanelType('related');
-            if (!rightPanelOpen) setRightPanelOpen(true);
-          }}
-          title="Related Files Panel"
-        >
-          <Network size={14} />
-          <span>Related</span>
+          <FolderOpen size={14} />
+          <span>Workspace</span>
         </button>
 
         {/* Close Button */}
