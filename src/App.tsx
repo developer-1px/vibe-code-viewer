@@ -13,6 +13,8 @@ import {
   graphDataAtom,
   parseErrorAtom,
   parseProgressAtom,
+  rightPanelOpenAtom,
+  rightPanelTypeAtom,
   viewModeAtom,
 } from '@/entities/AppView/model/atoms';
 import { store } from '@/entities/AppView/model/store';
@@ -20,11 +22,12 @@ import { UnifiedSearchModal } from '@/features/Search/UnifiedSearch/ui/UnifiedSe
 import { JsonExplorer } from '@/pages/JsonExplorer/JsonExplorer';
 import { deadCodePanelOpenAtom } from '@/pages/PageAnalysis/DeadCodePanel/model/atoms';
 import { PageAnalysis } from '@/pages/PageAnalysis/PageAnalysis';
-import IDEScrollView from '@/widgets/MainContents/IDEScrollView/IDEScrollView';
 import PipelineCanvas from '@/widgets/MainContents/PipelineCanvas/PipelineCanvas.tsx';
+import { TabContainer } from '@/widgets/MainContents/TabContainer';
 import type { SourceFileNode } from './entities/SourceFileNode/model/types';
 import { KeyboardShortcuts } from './features/KeyboardShortcuts/KeyboardShortcuts';
 import CodeDocView from './widgets/CodeDocView/CodeDocView';
+import { WorkspacePanel } from './widgets/WorkspacePanel/WorkspacePanel';
 
 const AppContent: React.FC = () => {
   // Parse project when files change
@@ -34,6 +37,9 @@ const AppContent: React.FC = () => {
   const setParseProgress = useSetAtom(parseProgressAtom);
   const viewMode = useAtomValue(viewModeAtom);
   const deadCodePanelOpen = useAtomValue(deadCodePanelOpenAtom);
+  const rightPanelOpen = useAtomValue(rightPanelOpenAtom);
+  const rightPanelType = useAtomValue(rightPanelTypeAtom);
+  const setRightPanelOpen = useSetAtom(rightPanelOpenAtom);
   const workerRef = useRef<Worker | null>(null);
 
   // 🔥 Web Worker for Project Parsing
@@ -162,12 +168,17 @@ const AppContent: React.FC = () => {
             {/* Left Sidebar: File Explorer */}
             <AppSidebar />
 
-            {/* Main Content Area: Canvas or IDEScrollView or CodeDocView */}
+            {/* Main Content Area: Canvas or TabContainer (IDE/Search) or CodeDocView */}
             <div className="flex-1 relative overflow-hidden">
               {viewMode === 'canvas' && <PipelineCanvas />}
-              {viewMode === 'ide' && <IDEScrollView />}
+              {(viewMode === 'ide' || viewMode === 'contentSearch') && <TabContainer />}
               {viewMode === 'codeDoc' && <CodeDocView />}
             </div>
+
+            {/* Right Panel: Workspace */}
+            {rightPanelOpen && rightPanelType === 'workspace' && (
+              <WorkspacePanel onClose={() => setRightPanelOpen(false)} />
+            )}
           </>
         )}
       </div>

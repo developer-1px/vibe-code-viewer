@@ -19,18 +19,26 @@ import { getFlatItemList } from './lib/getFlatItemList';
 import { getInitialCollapsedFolders } from './lib/getInitialCollapsedFolders';
 import { FolderBreadcrumb } from './ui/FolderBreadcrumb';
 
-export function FileExplorer({ containerRef }: { containerRef: React.RefObject<HTMLDivElement> }) {
+interface FileExplorerProps {
+  containerRef: React.RefObject<HTMLDivElement>;
+  filteredFiles?: Record<string, string>;
+}
+
+export function FileExplorer({ containerRef, filteredFiles }: FileExplorerProps) {
   const files = useAtomValue(filesAtom);
   const activeTab = useAtomValue(activeTabAtom);
   const openedTabs = useAtomValue(openedTabsAtom);
   const { openFile } = useOpenFile();
   const [focusedFolder, setFocusedFolder] = useAtom(focusedFolderAtom);
 
+  // Use filtered files if provided, otherwise use all files
+  const displayFiles = filteredFiles || files;
+
   // Collapsed folders state - initial: root level open, others collapsed
-  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(() => getInitialCollapsedFolders(files));
+  const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(() => getInitialCollapsedFolders(displayFiles));
 
   // Build file tree from flat file list (with Folder Focus Mode support)
-  const fileTree = useMemo(() => buildFileTree(files, focusedFolder), [files, focusedFolder]);
+  const fileTree = useMemo(() => buildFileTree(displayFiles, focusedFolder), [displayFiles, focusedFolder]);
 
   // Flat list of all visible items for keyboard navigation
   const flatItemList = useMemo(() => getFlatItemList(fileTree, collapsedFolders), [fileTree, collapsedFolders]);

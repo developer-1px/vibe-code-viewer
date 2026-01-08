@@ -4,8 +4,8 @@
  */
 
 import * as ts from 'typescript';
-import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
 import { extractDefinitions } from '../../../entities/SourceFileNode/lib/definitionExtractor';
+import type { SourceFileNode } from '../../../entities/SourceFileNode/model/types';
 import { getFileName } from '../../../shared/pathUtils';
 import type { DocBlock, DocData, ImportItem, SymbolDetail } from '../model/types';
 import { parseCodeDoc } from './parseCodeDoc';
@@ -126,7 +126,7 @@ function _generateFlowchart(sourceFile: ts.SourceFile, body: ts.Block | ts.Node)
   const getId = () => `N${nodeIdCounter++}`;
   const getSubgraphId = () => `SG${subgraphIdCounter++}`;
   // Mermaid 텍스트에서 특수문자를 안전하게 처리
-  const escapeMermaid = (str: string) =>
+  const _escapeMermaid = (str: string) =>
     str
       .replace(/"/g, '#quot;') // " → #quot;
       .replace(/\[/g, '#91;') // [ → #91;

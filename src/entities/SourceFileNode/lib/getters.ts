@@ -122,3 +122,32 @@ export function getLocalIdentifiers(node: SourceFileNode): Set<string> {
   visit(node.sourceFile);
   return locals;
 }
+
+/**
+ * 특정 파일을 import하고 있는 파일들을 찾음 (dependents)
+ * @param targetFilePath - 찾으려는 파일 경로
+ * @param fullNodeMap - 전체 파일 노드 맵
+ * @param files - 파일 콘텐츠 맵
+ * @param resolvePath - 경로 해석 함수
+ * @returns targetFilePath를 import하는 파일 경로 배열
+ */
+export function getDependents(
+  targetFilePath: string,
+  fullNodeMap: Map<string, SourceFileNode>,
+  files: Record<string, string>,
+  resolvePath: (from: string, to: string, files: Record<string, string>) => string | null
+): string[] {
+  const dependents: string[] = [];
+
+  fullNodeMap.forEach((node) => {
+    // Symbol 노드는 스킵 (type === 'file'만 처리)
+    if (node.type !== 'file') return;
+
+    const deps = getDependencies(node, files, resolvePath);
+    if (deps.includes(targetFilePath)) {
+      dependents.push(node.filePath);
+    }
+  });
+
+  return dependents;
+}

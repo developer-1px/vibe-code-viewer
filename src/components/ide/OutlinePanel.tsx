@@ -1,7 +1,7 @@
 import { ChevronRight, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { OutlineNode } from '../../shared/outlineExtractor';
 import type { DefinitionSymbol } from '../../entities/SourceFileNode/lib/definitionExtractor';
+import type { OutlineNode } from '../../shared/outlineExtractor';
 import { OutlinePanelItem } from './OutlinePanelItem';
 
 export interface OutlinePanelProps {

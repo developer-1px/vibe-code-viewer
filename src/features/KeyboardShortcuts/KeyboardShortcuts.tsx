@@ -4,19 +4,22 @@
  * - 렌더링 없는 로직 전용 컴포넌트
  */
 
-import { useAtomValue, useSetAtom } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { isSidebarOpenAtom } from '@/app/ui/AppSidebar/model/atoms';
 import { viewModeAtom } from '@/entities/AppView/model/atoms';
 import { useOpenFile } from '@/features/File/OpenFiles/lib/useOpenFile';
 import { searchModalOpenAtom } from '@/features/Search/UnifiedSearch/model/atoms';
+import { activeTabIdAtom, openedTabsAtom } from '@/widgets/MainContents/model/atoms';
 
 const GLOBAL_HOTKEYS = {
   TOGGLE_SIDEBAR: 'mod+\\',
   TOGGLE_VIEW_MODE: 'backquote',
   CLOSE_FILE: 'mod+w',
   CLOSE_FILE_ESC: 'escape',
+  CONTENT_SEARCH: 'mod+shift+f',
+  NEW_SEARCH_TAB: 'mod+shift+tab',
 } as const;
 
 export const KeyboardShortcuts = () => {
@@ -25,6 +28,8 @@ export const KeyboardShortcuts = () => {
   const viewMode = useAtomValue(viewModeAtom);
   const setViewMode = useSetAtom(viewModeAtom);
   const { closeFile } = useOpenFile();
+  const [openedTabs, setOpenedTabs] = useAtom(openedTabsAtom);
+  const setActiveTabId = useSetAtom(activeTabIdAtom);
 
   // Global hotkeys (no ref needed - always active)
   useHotkeys(
@@ -47,10 +52,40 @@ export const KeyboardShortcuts = () => {
           closeFile();
           console.log('[KeyboardShortcuts] Close current file');
           break;
+        case GLOBAL_HOTKEYS.CONTENT_SEARCH:
+          setViewMode('contentSearch');
+          console.log('[KeyboardShortcuts] Content search view opened');
+          break;
+        case GLOBAL_HOTKEYS.NEW_SEARCH_TAB: {
+          // 새 Search 탭 열기
+          const existingSearchTab = openedTabs.find((tab) => tab.type === 'search');
+
+          if (existingSearchTab) {
+            // 이미 Search 탭이 있으면 그 탭으로 전환
+            setActiveTabId(existingSearchTab.id);
+          } else {
+            // 없으면 새로 생성
+            const newSearchTab = {
+              id: `search-${Date.now()}`,
+              type: 'search' as const,
+              label: 'Search',
+            };
+            setOpenedTabs([...openedTabs, newSearchTab]);
+            setActiveTabId(newSearchTab.id);
+          }
+
+          // viewMode를 TabContainer가 표시되도록 설정
+          if (viewMode !== 'ide' && viewMode !== 'contentSearch') {
+            setViewMode('contentSearch');
+          }
+
+          console.log('[KeyboardShortcuts] New search tab opened');
+          break;
+        }
       }
     },
     { enableOnFormTags: true },
-    [setIsSidebarOpen, setViewMode, viewMode, closeFile]
+    [setIsSidebarOpen, setViewMode, viewMode, closeFile, openedTabs, setOpenedTabs, setActiveTabId]
   );
 
   // Shift+Shift (더블탭) - 검색 모달 열기
