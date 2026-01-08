@@ -1,6 +1,6 @@
 import { Provider, useAtomValue, useSetAtom } from 'jotai';
 import type React from 'react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { HotkeysProvider } from 'react-hotkeys-hook';
 import * as ts from 'typescript';
 import { AppActivityBar } from '@/app/ui/AppActivityBar/AppActivityBar';
@@ -10,12 +10,9 @@ import { AppTitleBar } from '@/app/ui/AppTitleBar/AppTitleBar';
 import { ThemeProvider } from '@/entities/AppTheme/ThemeProvider';
 import {
   filesAtom,
-  fullNodeMapAtom,
   graphDataAtom,
   parseErrorAtom,
   parseProgressAtom,
-  rightPanelOpenAtom,
-  rightPanelTypeAtom,
   viewModeAtom,
 } from '@/entities/AppView/model/atoms';
 import { store } from '@/entities/AppView/model/store';
@@ -25,13 +22,9 @@ import { deadCodePanelOpenAtom } from '@/pages/PageAnalysis/DeadCodePanel/model/
 import { PageAnalysis } from '@/pages/PageAnalysis/PageAnalysis';
 import IDEScrollView from '@/widgets/MainContents/IDEScrollView/IDEScrollView';
 import PipelineCanvas from '@/widgets/MainContents/PipelineCanvas/PipelineCanvas.tsx';
-import { getFileMetadata } from './entities/SourceFileNode/lib/metadata';
 import type { SourceFileNode } from './entities/SourceFileNode/model/types';
-import { activeTabAtom } from './features/File/OpenFiles/model/atoms';
 import { KeyboardShortcuts } from './features/KeyboardShortcuts/KeyboardShortcuts';
 import CodeDocView from './widgets/CodeDocView/CodeDocView';
-import { DefinitionPanel } from './widgets/Panels/DefinitionPanel/DefinitionPanel.tsx';
-import { RelatedPanel } from './widgets/Panels/RelatedPanel/RelatedPanel.tsx';
 
 const AppContent: React.FC = () => {
   // Parse project when files change
@@ -41,10 +34,6 @@ const AppContent: React.FC = () => {
   const setParseProgress = useSetAtom(parseProgressAtom);
   const viewMode = useAtomValue(viewModeAtom);
   const deadCodePanelOpen = useAtomValue(deadCodePanelOpenAtom);
-  const rightPanelOpen = useAtomValue(rightPanelOpenAtom);
-  const rightPanelType = useAtomValue(rightPanelTypeAtom);
-  const activeTab = useAtomValue(activeTabAtom);
-  const fullNodeMap = useAtomValue(fullNodeMapAtom);
   const workerRef = useRef<Worker | null>(null);
 
   // 🔥 Web Worker for Project Parsing
@@ -148,17 +137,6 @@ const AppContent: React.FC = () => {
     };
   }, [files, setGraphData, setParseError, setParseProgress]);
 
-  // 🔥 Performance Optimization: Use cached metadata instead of extractDefinitions
-  // - getFileMetadata() returns cached result if available
-  // - Avoids duplicate AST traversal (App.tsx + IDEView.tsx + CodeDocView.tsx)
-  const definitions = useMemo(() => {
-    if (!activeTab || !fullNodeMap.has(activeTab)) return [];
-    const node = fullNodeMap.get(activeTab);
-    if (!node) return [];
-    const metadata = getFileMetadata(node, files);
-    return metadata.definitions;
-  }, [activeTab, fullNodeMap, files]);
-
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-bg-deep text-text-primary select-none">
       {/* Workspace persistence (save/restore state) */}
@@ -190,14 +168,6 @@ const AppContent: React.FC = () => {
               {viewMode === 'ide' && <IDEScrollView />}
               {viewMode === 'codeDoc' && <CodeDocView />}
             </div>
-
-            {/* Right Sidebar: DefinitionPanel or RelatedPanel */}
-            {rightPanelOpen &&
-              (rightPanelType === 'definition' ? (
-                <DefinitionPanel symbols={definitions} />
-              ) : (
-                <RelatedPanel currentFilePath={activeTab} />
-              ))}
           </>
         )}
       </div>

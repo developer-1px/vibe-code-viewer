@@ -84,4 +84,4 @@ export const hoveredIdentifierAtom = atom<string | null>(null);
 export const rightPanelOpenAtom = atom<boolean>(true);
 
 // 우측 패널 타입 ('definition' | 'related')
-export const rightPanelTypeAtom = atom<'definition' | 'related'>('related');
+export const rightPanelTypeAtom = atom<'definition' | 'related'>('definition');

@@ -1,780 +1,700 @@
 # Project Conventions
 
-## Architecture
-
-### Feature-Sliced Design (FSD)
-
-프로젝트는 FSD 아키텍처를 따릅니다:
-
-```
-src/
-├── app/              # Application initialization
-├── components/       # LIMN Design System (shadcn/ui style)
-├── entities/         # Business entities (domain models)
-├── features/         # User features (business logic units)
-├── widgets/          # Complex UI components
-├── shared/           # Shared utilities (currently not used)
-├── services/         # External services & APIs
-├── store/            # Global state (Jotai atoms)
-└── hooks/            # Custom React hooks
-```
-
-### Layer Rules
-
-#### components/
-- **LIMN 디자인 시스템 컴포넌트 (shadcn/ui 방식)**
-- 디자인팀에서 제공받은 컴포넌트를 복사하여 사용
-- **직접 수정 가능** (프로젝트 요구사항에 맞게)
-- 수정사항은 디자인팀에 피드백하여 LIMN에 반영
-- `ui/` - 기본 UI 컴포넌트 (Button, Badge, Input 등)
-- `ide/` - IDE 특화 컴포넌트 (ActivityBar, StatusBar, TabBar 등)
-- 예: `components/ui/CommandPalette.tsx`, `components/ide/ActivityBar.tsx`
-
-#### entities/
-- **순수한 도메인 로직만 포함**
-- UI 컴포넌트는 포함하지 않음 (lib, model만)
-- 예: `entities/VariableNode/lib/`, `entities/CanvasNode/`
-
-#### features/
-- **독립적인 비즈니스 기능 단위**
-- `lib/` - 순수 로직, 타입 정의
-- `ui/` - UI 컴포넌트
-- **중요**: Handler는 props로 전달하지 않고, 컴포넌트 내부에서 atom으로 처리
-- 예: `features/CodeFold/`
-
-#### widgets/
-- **복잡한 UI 컴포넌트 조합**
-- 여러 features/entities를 조합
-- `ui/` - 하위 컴포넌트들
-- 예: `widgets/CodeCard/`, `widgets/PipelineCanvas/`
+> **목적**: 일관된 구조로 협업 효율 향상, 파일 탐색 용이, 유지보수 비용 절감
 
 ---
 
-## Import/Export Conventions
+## 핵심 원칙 (Core Principles)
 
-### ❌ 배럴 Export 사용 금지
+### 1. Routes와 Pages 분리
 
-**절대 사용하지 않음:**
-```typescript
-// ❌ index.ts - 만들지 않음
-export * from './Component';
-export { default } from './Component';
+**원칙**: 라우팅 정의와 페이지 로직을 분리
+
+```
+app/routes/   → 라우팅 정의만 (얇은 레이어, definePageMeta + export)
+pages/        → 페이지 로직 저장소 (평탄한 구조, 비즈니스 로직)
 ```
 
-**올바른 방법:**
-```typescript
-// ✅ 직접 import
-import FoldButton from '../../../features/CodeFold/ui/FoldButton';
-import { FoldInfo } from '../../../features/CodeFold/lib/types';
+**이유**: Nuxt 파일 기반 라우팅은 URL 구조를 따라 깊어지므로, 로직을 평탄한 pages/에 분리
+
 ```
+❌ 문제:
+app/routes/support/edu/[article]/apply/
+  ├── index.vue
+  ├── entities/              ← 경로 너무 깊음
+  └── features/
 
-### Import 경로 규칙
+✅ 해결:
+app/routes/support/edu/[article]/apply/index.vue
+  → export { default } from '~/pages/edu-apply/PageEduApply.vue'
 
-1. **확장자 제거**: `.tsx`, `.ts` 확장자 생략
-   ```typescript
-   // ✅
-   import Component from './Component';
-
-   // ❌
-   import Component from './Component.tsx';
-   ```
-
-2. **상대 경로 사용**: 가능한 상대 경로 사용
-   ```typescript
-   // ✅ 일반적인 경우 - 상대 경로
-   import { atom } from '../../../store/atoms';
-   import { CodeFold } from '../../../features/CodeFold/ui/CodeFold';
-
-   // ✅ components/ 예외 - @/ alias 허용
-   import { ActivityBar } from '@/components/ide/ActivityBar';
-   import { Button } from '@/components/ui/Button';
-
-   // ❌ components 외에는 path alias 사용 안 함
-   import { atom } from '@/store/atoms';
-   ```
-
----
-
-## Props Drilling Convention
-
-### Handler Props Drilling 금지
-
-**핵심 원칙**: 데이터는 props로 받되, Handler는 컴포넌트 내부에서 atom으로 처리
-
-#### ❌ 잘못된 예 (Props Drilling)
-```typescript
-// Parent Component
-const Parent = () => {
-  const handleClick = () => { /* ... */ };
-
-  return <Child onClick={handleClick} />;
-};
-
-// Child Component
-interface ChildProps {
-  onClick: () => void;  // ❌ Handler를 props로 받음
-}
-
-const Child: React.FC<ChildProps> = ({ onClick }) => {
-  return <button onClick={onClick}>Click</button>;
-};
-```
-
-#### ✅ 올바른 예 (Atom 사용)
-```typescript
-// Parent Component
-const Parent = () => {
-  // Handler 전달 없음
-  return <Child nodeId="123" data={someData} />;
-};
-
-// Child Component (features/)
-interface ChildProps {
-  nodeId: string;      // ✅ 데이터는 props로 받음
-  data: SomeData;      // ✅ 데이터는 props로 받음
-}
-
-const Child: React.FC<ChildProps> = ({ nodeId, data }) => {
-  const setAtom = useSetAtom(someAtom);  // ✅ Handler는 내부에서 atom 사용
-
-  const handleClick = () => {
-    setAtom((prev) => {
-      // atom 업데이트 로직
-    });
-  };
-
-  return <button onClick={handleClick}>Click</button>;
-};
-```
-
-### Props vs Atom 판단 기준
-
-| 항목 | Props로 전달 | Atom으로 처리 |
-|------|--------------|---------------|
-| **데이터** (nodeId, text, isActive 등) | ✅ | ❌ |
-| **Handler** (onClick, onToggle 등) | ❌ | ✅ |
-| **설정값** (config, options 등) | ✅ | ❌ |
-| **상태 변경 로직** | ❌ | ✅ |
-
----
-
-## State Management (Jotai)
-
-### Atom 정의 위치
-- **Global atoms**: `src/store/atoms.ts`
-- **Feature-specific atoms**: Feature 디렉토리 내부 (필요시)
-
-### Atom 사용 패턴
-```typescript
-// atoms.ts
-export const foldedLinesAtom = atom(new Map<string, Set<number>>());
-
-// Component
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { foldedLinesAtom } from '../../../store/atoms';
-
-const Component = () => {
-  // Read-only
-  const foldedLines = useAtomValue(foldedLinesAtom);
-
-  // Write-only
-  const setFoldedLines = useSetAtom(foldedLinesAtom);
-
-  // Read-write
-  const [foldedLines, setFoldedLines] = useAtom(foldedLinesAtom);
-};
+pages/edu-apply/              ← 평탄함
+  ├── PageEduApply.vue
+  ├── entities/
+  └── features/
 ```
 
 ---
 
-## File Naming
+### 2. 단방향 의존성
 
-### Component Files
-- **PascalCase**: `ComponentName.tsx`
-- **예**: `FoldButton.tsx`, `CodeCardLine.tsx`
+```
+Page
+ ↓
+Module
+ ↓
+Feature ←┐
+ ↓       │
+Entity ←┘
+```
 
-### Utility Files
-- **camelCase**: `utilityName.ts`
-- **예**: `styleUtils.ts`, `tokenUtils.ts`
-
-### Type Definition Files
-- **camelCase**: `types.ts`
-- **위치**: `lib/types.ts` 또는 `model/types.ts`
+**규칙**:
+- ✅ 상위 → 하위 의존 가능
+- ❌ 하위 → 상위 의존 금지
+- ❌ 같은 레벨 간 의존 금지 (Feature ↔ Feature)
+- ✅ Entity ↔ Entity만 예외 허용 (도메인 관계)
 
 ---
 
-## TypeScript Conventions
+### 3. 평탄한 구조 (Flat Structure)
 
-### Interface vs Inline Props
+**원칙**: pages 폴더는 가능한 평탄하게
 
-**핵심 원칙**: Interface는 **데이터 구조**에만 사용, 컴포넌트 Props는 **Inline으로 작성**
+```
+✅ 선호:
+pages/edu-list/
+pages/edu-apply/
+pages/notice-detail/
 
-#### ✅ Interface - 데이터 구조 정의
+⚠️ 고려:
+pages/notice/
+  ├── list/
+  └── detail/
+  └── _shared/      # 목록-상세 패턴에서 entities 공유 시
+```
+
+**[미확정]**: Flat vs Nested는 팀 논의 중
+
+---
+
+### 4. 그룹핑 우선 네이밍
+
+**원칙**: 알파벳 정렬 시 관련 항목이 함께 모이도록
+
+```
+✅ 그룹핑 우선:
+PageEduList.vue
+PageEduApply.vue
+→ "Page" 검색으로 모든 페이지 찾기
+
+❌ 그룹핑 안 됨:
+EduListPage.vue
+EduApplyPage.vue
+→ Edu로 시작해서 분산됨
+```
+
+---
+
+### 5. 최소 표현 차이
+
+**원칙**: 같은 것을 다르게 표현하지 않음
+
 ```typescript
-// 순수 데이터 모델 - 여러 곳에서 재사용
-export interface CodeLine {
-  num: number;
-  segments: CodeSegment[];
-  foldInfo?: FoldInfo;
-}
+✅ 일관된 표현:
+interface Product { }
+폴더: entities/Product/
+props: { product: Product }
 
-export interface FoldInfo {
-  isFoldable: boolean;
-  foldStart: number;
-  foldEnd: number;
-}
+❌ 다른 표현:
+interface Product { }
+폴더: entities/ProductItem/
+props: { id, name, price }
+```
 
-// 도메인 엔티티
-export interface CanvasNode {
-  id: string;
-  label: string;
-  dependencies: string[];
+---
+
+## 레이어 구조
+
+### 레이어별 책임
+
+| 레이어 | 정의 | 책임 |
+|--------|------|------|
+| **Page** | Route 중심 단위 | 라우트 1:1 매핑, Module 조합, 레이아웃 |
+| **Module** | 독립 가능한 개념 단위 | 페이지 섹션 조합 (Hero, Content, Footer) |
+| **Feature** | UI 횡단 상태관리 | 사용자 기능, Entity 타입 **직접 안 씀** |
+| **Entity** | Interface 중심 단위 | 도메인 모델, Interface 타입 **직접 씀** |
+
+### 배치 기준: 타입 직접 사용 여부
+
+```typescript
+// ✅ Entity에 배치 (타입 직접 사용)
+interface Props {
+  product: Product     // ← 직접 사용
+}
+const useFetchProduct = (): Promise<Product> => { }
+
+// ✅ Feature에 배치 (타입 직접 안 씀)
+interface Props {
+  placeholder: string  // ← 원시 타입
+  onSelect: (value: string) => void
 }
 ```
 
-**Interface 사용 기준:**
-- ✅ 비즈니스 데이터 구조
-- ✅ API 응답/요청 타입
-- ✅ 여러 컴포넌트에서 재사용되는 타입
-- ✅ 도메인 모델, 엔티티
+**핵심 판단**:
+```
+"props, args, return에 특정 interface를 직접 사용하는가?"
 
-#### ✅ Inline Props - 컴포넌트 Props
+YES → entities/{InterfaceName}/
+NO  → features/{feature-name}/
+```
+
+---
+
+## 폴더 구조
+
+### 전체 구조
+
+```
+project/
+├── app/
+│   └── routes/              # 라우팅 정의 (URL 구조 따름)
+│       └── support/edu/[article]/apply/index.vue
+│
+└── pages/                   # 페이지 로직 (평탄함)
+    ├── shared/              # 앱 전역 공유 (도메인 무관)
+    │   ├── entities/        # User, ApiResponse
+    │   └── features/        # captcha, email-form
+    │
+    └── edu-apply/           # 페이지별 폴더
+        ├── PageEduApply.vue
+        ├── entities/        # 이 페이지만 사용
+        ├── features/
+        └── modules/
+```
+
+### Entity 구조
+
+```
+entities/{InterfaceName}/    # PascalCase, Interface명과 정확히 동일!
+  ├── api/
+  │   ├── useFetch{Entity}.ts
+  │   ├── useQuery{Entity}.ts
+  │   └── useMutation{Entity}.ts
+  ├── model/
+  │   ├── {InterfaceName}.d.ts
+  │   └── use{Entity}Actions.ts
+  └── ui/
+      ├── {Entity}Card.vue
+      └── {Entity}ListItem.vue
+```
+
+### Feature 구조
+
+```
+features/{feature-name}/     # kebab-case
+  ├── ui/
+  │   └── {FeatureName}.vue
+  └── use{FeatureName}.ts
+```
+
+### Module
+
+```
+modules/{PageName}{ModuleName}.vue     # Page 접두사 없음!
+  예: EduListHero.vue, NoticeDetailContent.vue
+```
+
+---
+
+## 네이밍 규칙
+
+### 케이스별 사용
+
+| 대상 | 케이스 | 예시 | 이유 |
+|------|--------|------|------|
+| **Pages 폴더** | kebab-case | `edu-apply/`, `notice-list/` | route 이름 따라감 |
+| **Entities 폴더** | PascalCase | `Product/`, `EduArticle/` | Interface명과 일치 |
+| **Features 폴더** | kebab-case | `filter-bar/`, `search-input/` | 일반적 이름 |
+| **Vue 컴포넌트** | PascalCase | `PageEduList.vue`, `ProductCard.vue` | Vue 컨벤션 |
+| **Composables** | camelCase | `useFetchProduct.ts` | use 접두사 |
+| **타입 파일** | PascalCase | `Product.d.ts` | Interface명과 일치 |
+
+### Pages 네이밍
+
+```
+패턴: pages/{domain}-{action}/Page{PascalCase}.vue
+
+✅ 올바른 예:
+pages/edu-apply/PageEduApply.vue
+pages/notice-detail/PageNoticeDetail.vue
+
+❌ 잘못된 예:
+pages/eduApply/              # camelCase
+pages/EduApply.vue           # Page 접두사 없음
+pages/EduApplyPage.vue       # Page가 뒤에
+```
+
+### Entities 네이밍
+
+```
+🚫 CRITICAL: 폴더명 = Interface명 (정확히 동일!)
+
+✅ 올바른 예:
+interface Product { }
+entities/Product/
+
+interface EduArticle { }
+entities/EduArticle/
+
+❌ 절대 불가:
+interface Product { }
+entities/ProductItem/      # 다름!
+entities/product/          # 케이스 다름!
+```
+
+### Features 네이밍
+
+```
+패턴: features/{feature-name}/
+
+✅ 올바른 예:
+features/filter-bar/FilterBar.vue
+features/search-input/SearchInput.vue
+
+❌ 잘못된 예:
+features/FilterBar/          # PascalCase
+features/filter_bar/         # snake_case
+```
+
+### Features 조직 패턴 (도메인 그룹핑)
+
+**규모가 커지면서 도메인별 그룹핑 권장** (현재 과도기):
+
+```
+features/
+├── {Domain}/               # 도메인 폴더 (관련 features 3개 이상 시)
+│   ├── {FeatureA}/
+│   ├── {FeatureB}/
+│   └── {FeatureC}/
+└── {IndependentFeature}/   # 독립 feature (도메인 무관)
+
+예시:
+features/
+├── Code/                   # Code 도메인
+│   ├── CodeFold/
+│   ├── FocusMode/
+│   └── CodeAnalyzer/
+├── File/                   # File 도메인
+│   ├── OpenFiles/
+│   ├── Navigation/
+│   └── GotoDefinition/
+├── Search/                 # Search 도메인
+│   └── UnifiedSearch/
+└── KeyboardShortcuts/      # 독립
+```
+
+**규칙**:
+- ✅ 관련 features 3개 이상 → 도메인 폴더 생성
+- ✅ 독립 feature → 최상위 배치
+- ⚠️ 과도기: 점진적으로 도메인 그룹화 중
+- 🎯 향후: 모든 features를 도메인별로 그룹핑
+
+**동일한 패턴을 entities/에도 적용 가능**:
+```
+entities/
+├── Code/                   # 향후
+│   ├── CodeLine/
+│   ├── CodeSegment/
+│   └── CodeFold/
+└── SourceFileNode/         # 현재
+```
+
+### Modules 네이밍
+
+```
+패턴: modules/{PageName}{ModuleName}.vue
+
+✅ 올바른 예:
+modules/EduListHero.vue           # Page 없음!
+modules/EduListContent.vue
+modules/NoticeDetailContent.vue
+
+❌ 잘못된 예:
+modules/PageEduListHero.vue       # Page 붙이지 않음
+modules/Hero.vue                  # 페이지명 없음
+```
+
+---
+
+## 공유 코드 관리
+
+### 공유 기준
+
+```
+"이게 특정 도메인에 속하는가?"
+
+NO (도메인 무관) → pages/shared/
+YES (도메인 종속) → pages/{page}/
+
+✅ shared 예시:
+- User (인증)
+- ApiResponse (API 공통)
+- Captcha, email-form
+
+❌ shared 아님:
+- Product (commerce 도메인)
+- EduArticle (education 도메인)
+```
+
+**3번 반복 규칙 없음**: 횟수가 아니라 성격이 기준
+
+---
+
+## 라우팅 전략
+
+### Routes 책임
+
+```vue
+<!-- ✅ Routes에서 허용 -->
+<script setup lang="ts">
+definePageMeta({
+  layout: 'support',
+  middleware: ['auth']
+})
+</script>
+
+<script>
+export { default } from '~/pages/edu-apply/PageEduApply.vue'
+</script>
+
+<!-- ❌ Routes에서 금지 -->
+<script setup lang="ts">
+const { data } = await useFetch('/api/edu')  # 로직 금지
+const filtered = computed(() => { })          # 로직 금지
+</script>
+```
+
+### 매핑 규칙
+
+```
+하나의 route → 하나의 page (1:1)
+
+예시:
+/support/edu                  → pages/edu-list/PageEduList.vue
+/support/edu/[article]        → pages/edu-detail/PageEduDetail.vue
+/support/edu/[article]/apply  → pages/edu-apply/PageEduApply.vue
+```
+
+---
+
+## 금지 사항 (Critical)
+
+### 🚫 절대 금지
+
 ```typescript
-// ✅ 컴포넌트 Props는 Inline으로
-const FoldButton = ({
-  nodeId,
-  lineNum,
-  foldInfo,
-  isFolded
-}: {
-  nodeId: string;
-  lineNum: number;
-  foldInfo?: FoldInfo;  // 데이터 구조는 interface 재사용
-  isFolded: boolean;
-}) => {
+// 1. Entity 폴더명 ≠ Interface명
+❌ interface Product { }
+   entities/ProductItem/
+
+// 2. 순환 참조
+❌ entities/Product/ → features/filter-bar/
+   features/filter-bar/ → entities/Product/
+
+// 3. 하위 → 상위 의존
+❌ entities/Product/ → features/search/
+   features/search/ → modules/SearchModule/
+
+// 4. Feature 간 의존
+❌ features/filter-bar/ → features/search-bar/
+
+// 5. Module 간 의존
+❌ modules/EduListContent.vue → modules/NoticeListContent.vue
+
+// 6. Routes에 로직
+❌ app/routes/support/edu/index.vue에 fetch, computed 작성
+```
+
+---
+
+## Best Practices
+
+### Entity Props 통째로 넘기기
+
+```typescript
+✅ 권장:
+interface Props {
+  product: Product  # 전체 entity
+}
+
+❌ 지양:
+interface Props {
+  id: string
+  name: string
+  price: number
+}
+```
+
+### Module 분리 시점
+
+```
+✅ 분리:
+- 시각적으로 독립 영역 (Hero, Content, Footer)
+- 100줄 이상 (복잡도)
+- 독립적 상태 관리 필요
+
+❌ 분리 안 함:
+- 10~20줄 간단한 마크업
+- 단순 wrapper
+```
+
+### 공유 vs 복제
+
+```
+복제가 나은 경우:
+✅ 지금은 같지만 나중에 달라질 가능성
+✅ 도메인별로 미묘하게 다른 로직
+✅ 독립적으로 발전해야 하는 기능
+
+공유가 나은 경우:
+✅ 도메인 무관
+✅ 변경 시 모든 곳에 동일 적용 필요
+✅ 안정적 비즈니스 로직
+```
+
+---
+
+## React/TypeScript 컴포넌트 패턴
+
+### 컴포넌트 정의 (React.FC 금지)
+
+```typescript
+❌ 사용 금지: React.FC
+const Component: React.FC<Props> = ({ ... }) => { }
+
+✅ 권장: Inline props
+const Component = ({ id, data }: { id: string; data: SomeData }) => {
   // ...
-};
-
-// ❌ 컴포넌트 Props를 interface로 정의하지 않음
-interface FoldButtonProps {  // 이렇게 하지 않음
-  nodeId: string;
-  lineNum: number;
 }
 
-// ❌ React.FC 사용하지 않음
-const FoldButton: React.FC<FoldButtonProps> = ({ ... }) => { ... }
+이유:
+- React.FC는 불필요한 타입 복잡도 추가
+- Inline props가 더 명확하고 간결
+- children 타입을 명시적으로 관리 가능
 ```
 
-**Inline Props 사용 이유:**
-1. **응집도 향상** - 타입과 구현이 한 곳에
-2. **재사용 불필요** - 그 컴포넌트에서만 사용
-3. **보일러플레이트 감소** - Interface 정의 단계 제거
-4. **명확한 구분** - 데이터(interface) vs UI 계약(inline props)
-
-### Type Exports
-```typescript
-// ✅ export type 사용 (데이터 구조만)
-export type { FoldInfo, FoldPlaceholder };
-
-// ✅ export interface 사용 (데이터 구조만)
-export interface CodeSegment {
-  text: string;
-  kind: string;
-}
-```
-
----
-
-## Keyboard Shortcuts (react-hotkeys-hook)
-
-### Scope Management 필수 원칙
-
-**핵심 원칙**: 여러 컴포넌트가 동일한 키를 사용할 때 반드시 **scope 시스템**으로 충돌 방지
-
-#### 🚨 Critical: Scope 없이 사용하면 충돌 발생
+### Props 인터페이스 규칙
 
 ```typescript
-// ❌ 잘못된 예 - scope 없음
-// FolderView.tsx
-useHotkeys('down', () => setFocusedIndex(prev => prev + 1), {
-  enabled: true  // scope 없음!
-});
-
-// UnifiedSearchModal.tsx
-useHotkeys('down', () => setFocusedIndex(prev => prev + 1), {
-  enabled: isOpen  // scope 없음!
-});
-
-// 문제: 두 컴포넌트가 동시에 'down' 키를 처리하려고 해서 충돌
-```
-
-#### ✅ 올바른 예 - Scope 시스템 사용
-
-**1단계: App.tsx에서 HotkeysProvider 설정**
-```typescript
-import { HotkeysProvider } from 'react-hotkeys-hook';
-
-function App() {
-  return (
-    <HotkeysProvider initiallyActiveScopes={['sidebar']}>
-      <AppContent />
-    </HotkeysProvider>
-  );
-}
-```
-
-**2단계: 각 컴포넌트마다 고유한 scope 지정**
-
-```typescript
-// widgets/AppSidebar/FolderView.tsx - 'sidebar' scope
-import { useHotkeys } from 'react-hotkeys-hook';
-
-const FolderView = () => {
-  useHotkeys('down', () => {
-    setFocusedIndex(prev => prev + 1);
-  }, {
-    scopes: ['sidebar'],           // ✅ 고유 scope
-    enabled: focusedPane === 'sidebar'
-  });
-
-  useHotkeys('up', () => {
-    setFocusedIndex(prev => prev - 1);
-  }, {
-    scopes: ['sidebar'],           // ✅ 고유 scope
-    enabled: focusedPane === 'sidebar'
-  });
-};
-```
-
-```typescript
-// features/UnifiedSearch/ui/UnifiedSearchModal.tsx - 'search' scope
-import { useHotkeys, useHotkeysContext } from 'react-hotkeys-hook';
-
-const UnifiedSearchModal = () => {
-  const [isOpen, setIsOpen] = useAtom(searchModalOpenAtom);
-
-  // Scope 제어 함수
-  const { enableScope, disableScope } = useHotkeysContext();
-
-  // 모달 열릴 때 'search' scope 활성화
-  useEffect(() => {
-    if (isOpen) {
-      enableScope('search');
-      console.log('[UnifiedSearchModal] Enabled search scope');
-    } else {
-      disableScope('search');
-      console.log('[UnifiedSearchModal] Disabled search scope');
-    }
-  }, [isOpen, enableScope, disableScope]);
-
-  // 모든 hotkey에 scopes: ['search'] 지정
-  useHotkeys('escape', (e) => {
-    e.preventDefault();
-    handleClose();
-  }, {
-    scopes: ['search'],             // ✅ 고유 scope
-    enabled: isOpen,
-    enableOnFormTags: true          // input 필드에서도 동작
-  }, [isOpen]);
-
-  useHotkeys('down', (e) => {
-    e.preventDefault();
-    setFocusedIndex((prev) => Math.min(prev + 1, results.length - 1));
-  }, {
-    scopes: ['search'],             // ✅ 고유 scope
-    enabled: isOpen,
-    enableOnFormTags: true          // input 필드에서도 동작
-  }, [isOpen, results.length, setFocusedIndex]);
-};
-```
-
-### Scope 시스템 작동 방식
-
-**Scope 격리 (Isolation)**:
-- 모달 닫혀있을 때: `'sidebar'` scope 활성화 → FolderView의 down/up 작동
-- 모달 열렸을 때: `'search'` scope 활성화 → UnifiedSearchModal의 down/up 작동
-- **충돌 없음!** 각 scope에서 독립적으로 동일한 키 사용 가능
-
-### enableOnFormTags 옵션
-
-**언제 `true`로 설정하는가?**
-
-```typescript
-// ✅ enableOnFormTags: true
-// input/textarea에서도 단축키가 작동해야 할 때
-useHotkeys('escape', handleClose, {
-  scopes: ['search'],
-  enableOnFormTags: true  // ✅ input에 포커스 있어도 ESC는 작동
-});
-
-useHotkeys('down', handleNavigate, {
-  scopes: ['search'],
-  enableOnFormTags: true  // ✅ input에서 검색 중에도 화살표로 결과 탐색
-});
-
-// ❌ enableOnFormTags: false (기본값)
-// 일반적인 경우 - input에서는 타이핑이 우선
-useHotkeys('ctrl+s', handleSave, {
-  scopes: ['editor'],
-  enableOnFormTags: false  // input에서는 Ctrl+S가 브라우저 기본 동작
-});
-```
-
-### useHotkeys 시그니처
-
-```typescript
-useHotkeys(
-  keys: string,              // 'down', 'escape', 'ctrl+k', 'shift+shift'
-  callback: (e: KeyboardEvent) => void,
-  options: {
-    scopes?: string[],       // ✅ 필수! 고유한 scope 지정
-    enabled?: boolean,       // 조건부 활성화
-    enableOnFormTags?: boolean  // input/textarea에서도 작동 여부
-  },
-  dependencies: any[]        // ✅ 필수! callback에서 사용하는 모든 값
-);
-```
-
-### 의존성 배열 (Dependencies)
-
-**❌ 의존성 배열 없으면 stale closure 발생**
-```typescript
-// ❌ 잘못된 예
-useHotkeys('down', () => {
-  setFocusedIndex(prev => Math.min(prev + 1, results.length - 1));
-}, {
-  scopes: ['search'],
-  enabled: isOpen
-});
-// 문제: results.length가 변해도 이전 값 참조
-```
-
-**✅ 의존성 배열 제대로 지정**
-```typescript
-// ✅ 올바른 예
-useHotkeys('down', () => {
-  setFocusedIndex(prev => Math.min(prev + 1, results.length - 1));
-}, {
-  scopes: ['search'],
-  enabled: isOpen,
-  enableOnFormTags: true
-}, [isOpen, results.length, setFocusedIndex]);
-// ✅ callback에서 사용하는 모든 값을 배열에 포함
-```
-
-### Scope 명명 규칙
-
-| Component/Feature | Scope Name | 설명 |
-|-------------------|------------|------|
-| Sidebar (FolderView) | `'sidebar'` | 파일 탐색기 키보드 내비게이션 |
-| UnifiedSearchModal | `'search'` | 통합 검색 모달 |
-| CodeCard/Canvas | `'canvas'` | 캔버스 내비게이션 (향후) |
-| IDEView | `'ide'` | IDE 모드 (향후) |
-
-### 커스텀 Scope Hook 패턴 (권장)
-
-**네이밍 규칙**: `useHotkeys` 접두사 + scope 이름 → IDE 자동완성에서 찾기 쉬움
-
-```typescript
-// ✅ 권장 패턴: 커스텀 훅으로 scope 옵션 캡슐화
-const UnifiedSearchModal = () => {
-  const [isOpen, setIsOpen] = useAtom(searchModalOpenAtom);
-  const [results, setResults] = useAtom(searchResultsAtom);
-
-  // useHotkeys로 시작하는 네이밍으로 IDE 자동완성 활용
-  const useHotkeysSearch = (
-    keys: string,
-    callback: (e: KeyboardEvent) => void,
-    deps: any[]
-  ) => {
-    useHotkeys(keys, callback, {
-      scopes: ['search'],
-      enabled: isOpen,
-      enableOnFormTags: true
-    }, deps);
-  };
-
-  // 사용: 매번 옵션 반복하지 않고 간결하게
-  useHotkeysSearch('escape', (e) => {
-    e.preventDefault();
-    handleClose();
-  }, [isOpen]);
-
-  useHotkeysSearch('down', (e) => {
-    e.preventDefault();
-    setFocusedIndex(prev => Math.min(prev + 1, results.length - 1));
-  }, [isOpen, results.length, setFocusedIndex]);
-};
-```
-
-**장점**:
-- ✅ IDE에서 `useHotkeys` 타이핑하면 `useHotkeysSearch`가 자동완성
-- ✅ 옵션 중복 제거, 한 곳에서 관리
-- ✅ 실수로 다른 scope 사용하는 것 방지
-- ✅ 컴포넌트 로직과 scope 설정 분리
-
-**명명 규칙**:
-- `useHotkeysSearch` - 검색 모달 (scope: 'search')
-- `useHotkeysSidebar` - 사이드바 (scope: 'sidebar')
-- `useHotkeysCanvas` - 캔버스 (scope: 'canvas')
-
-### 체크리스트
-
-새로운 컴포넌트에 키보드 단축키를 추가할 때:
-- [ ] App.tsx에 HotkeysProvider가 설정되어 있는가?
-- [ ] 고유한 scope 이름을 정했는가? (기존 scope와 중복 방지)
-- [ ] `useHotkeys{ScopeName}` 형태의 커스텀 훅을 만들었는가? (권장)
-- [ ] 모달/동적 컴포넌트인 경우 `useHotkeysContext()`로 scope를 활성화/비활성화하는가?
-- [ ] input 필드에서도 동작해야 하는 키는 `enableOnFormTags: true`를 설정했는가?
-- [ ] 의존성 배열을 제대로 지정했는가?
-
-### 디버깅 팁
-
-```typescript
-// Scope 활성화/비활성화 로그 추가
-useEffect(() => {
-  if (isOpen) {
-    enableScope('search');
-    console.log('[ComponentName] Enabled search scope');
-  } else {
-    disableScope('search');
-    console.log('[ComponentName] Disabled search scope');
-  }
-}, [isOpen, enableScope, disableScope]);
-
-// 단축키가 작동하는지 테스트
-useHotkeys('down', (e) => {
-  console.log('[ComponentName] Down key pressed');
-  // 실제 로직
-}, {
-  scopes: ['search'],
-  enabled: isOpen,
-  enableOnFormTags: true
-}, [isOpen]);
-```
-
----
-
-## Component Structure
-
-### Feature Component Template
-```typescript
-/**
- * Component Description
- *
- * 주요 기능 설명
- */
-
-import React from 'react';
-import { useSetAtom } from 'jotai';
-import { someAtom } from '../../../store/atoms';
-import type { SomeData } from '../../../entities/SomeEntity/lib/types';
-
-// ✅ Inline Props - Interface 정의 없음
-const ComponentName = ({
+✅ Inline props (features/, widgets/)
+// 비즈니스 로직을 담은 컴포넌트는 재사용할 이유가 없음
+const FeatureComponent = ({
   id,
   data
 }: {
   id: string;
-  data: SomeData;  // 데이터 구조는 interface 재사용
+  data: SomeData;
 }) => {
-  // Atom을 통한 상태 관리
-  const setSomeState = useSetAtom(someAtom);
+  // Handler는 컴포넌트 내부에서 atom으로 처리
+  const doSomething = useSetAtom(someActionAtom);
+  // ...
+}
 
-  // Handler는 컴포넌트 내부에서 정의
-  const handleAction = (e: React.MouseEvent) => {
-    e.stopPropagation();
+✅ Interface props (shared/)
+// 재사용 가능한 컴포넌트만 interface 허용
+interface TreeViewProps {
+  data: TreeNode[];
+  onSelect: (id: string) => void;
+  className?: string;
+}
 
-    setSomeState((prev) => {
-      // 상태 업데이트 로직
-      return newState;
-    });
-  };
+const TreeView = ({ data, onSelect, className }: TreeViewProps) => {
+  // ...
+}
 
-  return (
-    <div onClick={handleAction}>
-      {/* JSX */}
-    </div>
-  );
-};
+이유:
+- Features/widgets는 최소한의 비즈니스 로직을 담고 있어 재사용 불필요
+- Shared 컴포넌트만 재사용성을 위해 interface 정의
+- Props drilling 방지: handlers는 atoms로 관리
+```
 
-export default ComponentName;
+### Import 규칙
+
+```typescript
+❌ 확장자 포함 금지
+import { FoldInfo } from '../../../features/CodeFold/lib/types.ts';
+import { Component } from './Component.tsx';
+
+✅ 확장자 제거
+import { FoldInfo } from '../../../features/CodeFold/lib/types';
+import { Component } from './Component';
+
+❌ @/ alias 남용
+import { atoms } from '@/store/atoms';
+import { types } from '@/features/Code/types';
+
+✅ 상대 경로 우선
+import { atoms } from '../../../store/atoms';
+import { types } from '../Code/types';
+
+⚠️ @/ alias 허용 범위
+// components/ (design system)
+import { Button } from '@/components/ui/Button';
+
+// Top-level entry points
+import '@/app.css';
+
+// Workers (절대 경로 필요)
+import Worker from '@/workers/parse.worker?worker';
+
+이유:
+- 확장자는 번들러가 자동 처리 (불필요한 중복)
+- 상대 경로는 파일 이동 시 IDE 자동 리팩토링 가능
+- @/ alias는 필수 상황에만 사용
 ```
 
 ---
 
-## Parser Conventions
+## 체크리스트
 
-### AST 사용 원칙
+### 새 컴포넌트 추가
 
-**❌ 절대 사용 금지: 정규식을 이용한 코드 분석**
-```typescript
-// ❌ 코드 분석에 정규식 사용 금지
-const identifiers = code.match(/\w+/g);
-const functions = code.split('function');
+```
+□ 레이어 판단
+  1. Props/args/return에 특정 interface 직접 사용?
+     → YES: entities/{InterfaceName}/
+     → NO: 다음
+
+  2. Entity 타입 안 쓰지만 사용자 기능?
+     → YES: features/{feature-name}/
+     → NO: 다음
+
+  3. 특정 페이지의 섹션 단위?
+     → YES: modules/{PageName}{ModuleName}.vue
+     → NO: 다음
+
+  4. 라우트와 1:1 매핑?
+     → YES: pages/{domain-action}/Page{}.vue
+
+□ 네이밍 확인
+  - Entity: PascalCase, Interface명과 정확히 동일
+  - Feature: kebab-case
+  - Module: {PageName}{ModuleName}.vue (Page 없음)
+  - Page: Page{PascalCase}.vue
+
+□ 의존성 확인
+  - 하위 레이어만 import
+  - 순환 참조 없음
 ```
 
-**✅ 올바른 방법: AST Parser 사용**
-```typescript
-// ✅ TypeScript AST
-import * as ts from 'typescript';
-const sourceFile = ts.createSourceFile(filename, code, ts.ScriptTarget.Latest);
+### 코드 리뷰
 
-// ✅ Babel Parser
-import { parse } from '@babel/parser';
-const ast = parse(code, { sourceType: 'module', plugins: ['typescript', 'jsx'] });
-
-// ✅ Vue Compiler
-import { parse } from '@vue/compiler-sfc';
-const { descriptor } = parse(code);
 ```
+□ 네이밍
+  - 케이스 규칙 준수
+  - Entity 폴더명 = Interface명
+  - 그룹핑 고려 (접두사)
 
-### 정규식 허용 범위
-- ✅ 경로 정규화: `path.replace(/\\/g, '/')`
-- ✅ 문자열 정리: `text.trim()`, `text.replace(/\s+/g, ' ')`
-- ❌ 코드 분석: 절대 사용 금지
+□ 구조
+  - 올바른 레이어 배치
+  - Entity 타입 직접 사용 → entities
+  - Entity 타입 안 씀 → features
 
-### Symbol 수집 원칙 (Single AST Traversal)
+□ 의존성
+  - 단방향 의존성 준수
+  - Feature ↔ Feature 의존 없음
 
-**핵심**: Worker 파싱 시점에 파일 노드 + Symbol 노드 모두 생성
+□ 공유
+  - 도메인 무관 → shared
+  - 도메인 종속 → 페이지 내부
 
-#### Worker Symbol Extraction
-
-```typescript
-// ✅ parseProject.worker.ts
-function parseProjectInWorker(files: Record<string, string>): SerializedSourceFileNode[] {
-  const nodes: SerializedSourceFileNode[] = [];
-
-  filePathsArray.forEach((filePath) => {
-    const sourceFile = ts.createSourceFile(...);
-
-    // 1️⃣ 파일 노드 생성
-    nodes.push({ id: filePath, type: 'file', ... });
-
-    // 2️⃣ Symbol 노드 생성 (AST 순회 1번으로 완료)
-    extractSymbolNodes(sourceFile, filePath, nodes);
-  });
-
-  return nodes;
-}
+□ Routes
+  - export만 있는가
+  - 로직은 pages에 있는가
 ```
-
-#### Symbol Node Types
-
-Worker가 자동으로 수집하는 Symbol:
-- `type` - Type alias 선언
-- `interface` - Interface 선언
-- `function` - Function 선언
-- `const` - Const 변수
-- `variable` - Let/Var 변수
-- `class` - Class 선언
-- `enum` - Enum 선언
-
-#### Symbol Node ID Convention
-
-```typescript
-// File nodes
-id: 'src/app/atoms.ts'
-
-// Symbol nodes (filePath::symbolName)
-id: 'src/app/atoms.ts::DocumentMode'
-id: 'src/app/atoms.ts::filesAtom'
-id: 'src/app/atoms.ts::parseProject'
-```
-
-#### Symbol 사용 패턴
-
-```typescript
-// ✅ CORRECT - fullNodeMap 필터링
-function getTypeSymbols(fullNodeMap: Map<string, SourceFileNode>) {
-  return Array.from(fullNodeMap.values()).filter(
-    node => node.type === 'type'
-  );
-}
-
-// ❌ WRONG - AST 재순회 (Worker가 이미 함!)
-function getTypeSymbols(node: SourceFileNode) {
-  const types = [];
-  ts.forEachChild(node.sourceFile, (child) => {
-    if (ts.isTypeAliasDeclaration(child)) {
-      types.push(child.name.text);
-    }
-  });
-  return types;
-}
-```
-
-#### 예외: Usage 추출
-
-**Top-level 선언이 아닌 Usage는 AST 순회 필요**:
-```typescript
-// ✅ OK - Usage는 Worker에서 수집 불가
-fullNodeMap.forEach((node) => {
-  if (node.type !== 'file') return;
-  const usages = getIdentifiers(node.sourceFile, declaredSymbols);
-});
-```
-
-#### 체크리스트
-
-TypeScript 기능 추가 시:
-- [ ] Symbol 정보 필요? → fullNodeMap 필터링
-- [ ] 새 Symbol 타입 필요? → Worker `extractSymbolNodes()` 수정
-- [ ] AST 순회 시도? → STOP! fullNodeMap 확인
-- [ ] Usage 찾기? → OK (예외적으로 순회 필요)
 
 ---
 
-## Git Commit Convention
+## FAQ
 
-### Commit Message Format
-```
-<type>: <subject>
+**Q1. Entity vs Feature 판단이 헷갈려요**
+```typescript
+A: Props 타입 시그니처 확인
 
-<body>
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
+Entity: props: { product: Product }  # Interface 직접 사용
+Feature: props: { items: any[] }     # 원시 타입
 ```
 
-### Types
-- `feat`: 새로운 기능 추가
-- `fix`: 버그 수정
-- `refactor`: 코드 리팩토링
-- `docs`: 문서 수정
-- `style`: 코드 포맷팅
-- `test`: 테스트 추가/수정
-- `chore`: 빌드, 설정 변경
+**Q2. 한 페이지에서만 쓰는 Entity도 entities에?**
+```
+A: 네. 기준은 "타입 직접 사용"이지 "사용 횟수" 아님
+pages/edu-apply/entities/ApplyForm/  # 1곳만 써도 OK
+```
+
+**Q3. Feature에서 Entity composable 호출 가능?**
+```typescript
+A: 네, 가능
+
+✅ 내부에서 간접 사용:
+const { data } = useFetchProduct()  # OK
+
+❌ Props로 직접 사용:
+props: { product: Product }  # Entity로 가야 함
+```
+
+**Q4. shared에 언제 올리나요?**
+```
+A: "특정 도메인에 속하는가?"
+
+NO → pages/shared/
+YES → 페이지/도메인 내부
+
+횟수는 기준 아님 (1곳만 써도 도메인 무관하면 shared)
+```
+
+**Q5. Entity 폴더명이 Interface명과 꼭 같아야?**
+```
+A: 네, 절대적으로 같아야 함 (향후 ESLint 강제)
+
+interface Product { }
+entities/Product/  # 정확히 동일
+```
+
+**Q6. Module을 언제 분리?**
+```
+A: 시각적/기능적 독립 영역일 때
+
+✅ Hero, Content, Footer 같은 섹션
+✅ 100줄 이상
+❌ 10~20줄 간단한 마크업
+```
 
 ---
 
-## 요약
+## 용어집
 
-### 핵심 원칙 5가지
+**Entity**: Interface 중심 단위, 타입 직접 사용
+**Feature**: UI 횡단 상태관리, 타입 직접 안 씀
+**Module**: 페이지 섹션 (Hero, Content, Footer)
+**Page**: Route와 1:1 매핑, 조합과 레이아웃
+**Shared**: 도메인 무관 공통 모듈
 
-1. **배럴 Export 사용 안 함** - 직접 import만 사용
-2. **Handler Props Drilling 금지** - 데이터는 props, Handler는 atom
-3. **Interface는 데이터 구조만** - 컴포넌트 Props는 Inline으로
-4. **정규식으로 코드 분석 금지** - 반드시 AST Parser 사용
-5. **Single AST Traversal** - Worker에서 파일 + Symbol 노드 모두 생성, AST 재순회 금지
+**Flat Structure**: 평탄한 구조 (pages/edu-list/, pages/edu-apply/)
+**Nested Structure**: 중첩 구조 (pages/notice/list/, pages/notice/detail/)
 
-### 빠른 체크리스트
+**kebab-case**: `edu-apply`, `filter-bar` (pages, features)
+**PascalCase**: `Product`, `EduArticle`, `PageEduList` (entities, Vue)
+**camelCase**: `useFetchProduct`, `useFormValidation` (composables)
 
-컴포넌트 작성 시:
-- [ ] Props를 Inline으로 작성했는가? (interface 만들지 않음)
-- [ ] Handler를 props로 받지 않고 atom 사용했는가?
-- [ ] React.FC를 사용하지 않았는가?
-- [ ] import 경로에 확장자(.tsx, .ts)를 제거했는가?
+**단방향 의존성**: 상위 → 하위만 가능, 하위 → 상위 금지
+**타입 직접 사용**: Props/args/return에 interface 직접 사용 (Entity 기준)
 
-타입 정의 시:
-- [ ] 재사용되는 데이터 구조만 interface로 정의했는가?
-- [ ] 컴포넌트 Props를 interface로 만들지 않았는가?
+---
 
-TypeScript 기능 추가 시:
-- [ ] Symbol 정보가 필요한가? → fullNodeMap 필터링만 사용
-- [ ] AST를 순회하려고 하는가? → STOP! fullNodeMap 먼저 확인
-- [ ] 새로운 Symbol 타입이 필요한가? → Worker의 extractSymbolNodes() 수정
-- [ ] Usage(사용처)를 찾는가? → OK (예외적으로 AST 순회 필요)
+## 참고
 
-이 컨벤션을 따르면 유지보수가 쉽고 확장 가능한 코드베이스를 유지할 수 있습니다.
+- CLAUDE.md - AI 코딩 컨벤션 (FSD, Props 규칙, Import 규칙)
+- [Feature-Sliced Design](https://feature-sliced.design/)
+- [Nuxt Directory Structure](https://nuxt.com/docs/guide/directory-structure)
+
+**문서 버전**: 1.0
+**상태**: 초안 (Flat vs Nested 논의 중)
