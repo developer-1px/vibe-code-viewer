@@ -16,6 +16,7 @@ import {
   contentSearchResultsAtom,
 } from '../../../features/Search/ContentSearch/model/atoms';
 import { useListKeyboardNavigation } from '../../../shared/hooks/useListKeyboardNavigation';
+import { getFileName } from '../../../shared/pathUtils';
 
 export function ContentSearchView() {
   const viewMode = useAtomValue(viewModeAtom);
@@ -89,6 +90,39 @@ export function ContentSearchView() {
     enableOnFormTags: true,
   });
 
+  // Get current preview info
+  const previewInfo = useMemo(() => {
+    if (flatResults.length === 0 || focusedIndex >= flatResults.length) return null;
+
+    const focused = flatResults[focusedIndex];
+    const result = results[focused.fileIndex];
+    const fileContent = files[result.filePath] || '';
+    const matchLine = focused.matchIndex !== undefined ? result.matches[focused.matchIndex].line : undefined;
+
+    return {
+      filePath: result.filePath,
+      fileName: getFileName(result.filePath),
+      content: fileContent,
+      matchLine,
+    };
+  }, [flatResults, focusedIndex, results, files]);
+
+  // Auto-scroll to matched line in preview
+  const previewRef = useRef<HTMLPreElement>(null);
+  useEffect(() => {
+    if (!previewRef.current || !previewInfo?.matchLine) return;
+
+    // Find line element and scroll into view
+    const lineElements = previewRef.current.querySelectorAll('[data-line]');
+    const targetLine = Array.from(lineElements).find(
+      (el) => el.getAttribute('data-line') === String(previewInfo.matchLine)
+    );
+
+    if (targetLine) {
+      targetLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [previewInfo?.matchLine]);
+
   let currentFlatIndex = 0;
 
   return (
@@ -137,76 +171,119 @@ export function ContentSearchView() {
         </label>
       </div>
 
-      {/* Results */}
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-        {results.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-text-tertiary text-xs">
-            {query ? 'No results found' : 'Type to search...'}
-          </div>
-        ) : (
-          <div className="py-2">
-            {results.map((result, _fileIndex) => {
-              const fileItemIndex = currentFlatIndex++;
-              const isFileFocused = focusedIndex === fileItemIndex;
+      {/* Main content: Results (left) + Preview (right) */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Results List */}
+        <div
+          ref={scrollContainerRef}
+          className="w-[400px] flex-shrink-0 overflow-y-auto border-r border-border-DEFAULT"
+        >
+          {results.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-text-tertiary text-xs">
+              {query ? 'No results found' : 'Type to search...'}
+            </div>
+          ) : (
+            <div className="py-2">
+              {results.map((result, _fileIndex) => {
+                const fileItemIndex = currentFlatIndex++;
+                const isFileFocused = focusedIndex === fileItemIndex;
 
-              return (
-                <div key={result.filePath} className="mb-3">
-                  {/* File header */}
-                  <button
-                    type="button"
-                    ref={(el) => {
-                      if (el) itemRefs.current.set(fileItemIndex, el);
-                      else itemRefs.current.delete(fileItemIndex);
-                    }}
-                    onClick={() => setFocusedIndex(fileItemIndex)}
-                    className={`w-full flex items-center justify-between px-4 py-1.5 text-left hover:bg-bg-elevated transition-colors ${
-                      isFileFocused ? 'bg-bg-elevated' : ''
-                    }`}
-                  >
-                    <span className="text-xs font-medium text-text-primary">{result.filePath}</span>
-                    <span className="text-2xs text-text-tertiary">
-                      {result.totalMatches} {result.totalMatches === 1 ? 'match' : 'matches'}
-                    </span>
-                  </button>
+                return (
+                  <div key={result.filePath} className="mb-3">
+                    {/* File header */}
+                    <button
+                      type="button"
+                      ref={(el) => {
+                        if (el) itemRefs.current.set(fileItemIndex, el);
+                        else itemRefs.current.delete(fileItemIndex);
+                      }}
+                      onClick={() => setFocusedIndex(fileItemIndex)}
+                      className={`w-full flex items-center justify-between px-4 py-1.5 text-left hover:bg-bg-elevated transition-colors ${
+                        isFileFocused ? 'bg-bg-elevated' : ''
+                      }`}
+                    >
+                      <span className="text-xs font-medium text-text-primary">{result.filePath}</span>
+                      <span className="text-2xs text-text-tertiary">
+                        {result.totalMatches} {result.totalMatches === 1 ? 'match' : 'matches'}
+                      </span>
+                    </button>
 
-                  {/* Matches */}
-                  <div className="space-y-0.5 ml-4">
-                    {result.matches.map((match, matchIndex) => {
-                      const matchItemIndex = currentFlatIndex++;
-                      const isMatchFocused = focusedIndex === matchItemIndex;
+                    {/* Matches */}
+                    <div className="space-y-0.5 ml-4">
+                      {result.matches.map((match, matchIndex) => {
+                        const matchItemIndex = currentFlatIndex++;
+                        const isMatchFocused = focusedIndex === matchItemIndex;
 
-                      return (
-                        <button
-                          key={matchIndex}
-                          type="button"
-                          ref={(el) => {
-                            if (el) itemRefs.current.set(matchItemIndex, el);
-                            else itemRefs.current.delete(matchItemIndex);
-                          }}
-                          onClick={() => setFocusedIndex(matchItemIndex)}
-                          className={`w-full px-4 py-1 text-left hover:bg-bg-elevated transition-colors ${
-                            isMatchFocused ? 'bg-bg-elevated' : ''
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 text-2xs">
-                            <span className="text-text-tertiary font-mono">{match.line}</span>
-                            <span className="text-text-secondary truncate font-mono">
-                              {match.text.slice(0, match.matchStart)}
-                              <span className="bg-warm-300/20 text-warm-300">
-                                {match.text.slice(match.matchStart, match.matchEnd)}
+                        return (
+                          <button
+                            key={matchIndex}
+                            type="button"
+                            ref={(el) => {
+                              if (el) itemRefs.current.set(matchItemIndex, el);
+                              else itemRefs.current.delete(matchItemIndex);
+                            }}
+                            onClick={() => setFocusedIndex(matchItemIndex)}
+                            className={`w-full px-4 py-1 text-left hover:bg-bg-elevated transition-colors ${
+                              isMatchFocused ? 'bg-bg-elevated' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 text-2xs">
+                              <span className="text-text-tertiary font-mono">{match.line}</span>
+                              <span className="text-text-secondary truncate font-mono">
+                                {match.text.slice(0, match.matchStart)}
+                                <span className="bg-warm-300/20 text-warm-300">
+                                  {match.text.slice(match.matchStart, match.matchEnd)}
+                                </span>
+                                {match.text.slice(match.matchEnd)}
                               </span>
-                              {match.text.slice(match.matchEnd)}
-                            </span>
-                          </div>
-                        </button>
-                      );
-                    })}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Preview Panel */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-bg-elevated">
+          {previewInfo ? (
+            <>
+              {/* Preview Header */}
+              <div className="flex items-center justify-between px-4 py-2 border-b border-border-DEFAULT flex-shrink-0">
+                <span className="text-xs font-medium text-text-primary">{previewInfo.fileName}</span>
+                <span className="text-2xs text-text-tertiary">{previewInfo.filePath}</span>
+              </div>
+
+              {/* Preview Content */}
+              <pre
+                ref={previewRef}
+                className="flex-1 overflow-auto p-4 text-2xs font-mono text-text-secondary bg-bg-deep"
+              >
+                {previewInfo.content.split('\n').map((line, index) => {
+                  const lineNumber = index + 1;
+                  const isMatchLine = lineNumber === previewInfo.matchLine;
+
+                  return (
+                    <div key={lineNumber} data-line={lineNumber} className={`${isMatchLine ? 'bg-warm-300/10' : ''}`}>
+                      <span className="inline-block w-12 text-right pr-4 text-text-tertiary select-none">
+                        {lineNumber}
+                      </span>
+                      <span className={isMatchLine ? 'text-warm-300' : ''}>{line}</span>
+                    </div>
+                  );
+                })}
+              </pre>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full text-text-tertiary text-xs">
+              Select a search result to preview
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
