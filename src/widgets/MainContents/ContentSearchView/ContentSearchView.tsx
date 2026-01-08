@@ -5,8 +5,7 @@
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { Search } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useHotkeys, useHotkeysContext } from 'react-hotkeys-hook';
+import { useEffect, useMemo, useRef } from 'react';
 import { filesAtom, viewModeAtom } from '../../../entities/AppView/model/atoms';
 import { useOpenFile } from '../../../features/File/OpenFiles/lib/useOpenFile';
 import { searchInContent } from '../../../features/Search/ContentSearch/lib/searchContent';
@@ -16,6 +15,7 @@ import {
   contentSearchQueryAtom,
   contentSearchResultsAtom,
 } from '../../../features/Search/ContentSearch/model/atoms';
+import { useListKeyboardNavigation } from '../../../shared/hooks/useListKeyboardNavigation';
 
 export function ContentSearchView() {
   const viewMode = useAtomValue(viewModeAtom);
@@ -29,21 +29,8 @@ export function ContentSearchView() {
   const { openFile } = useOpenFile();
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const [focusedIndex, setFocusedIndex] = useState(0);
 
   const isActive = viewMode === 'contentSearch';
-
-  // Get scope control
-  const { enableScope, disableScope } = useHotkeysContext();
-
-  // Enable/disable scope
-  useEffect(() => {
-    if (isActive) {
-      enableScope('contentSearch');
-    } else {
-      disableScope('contentSearch');
-    }
-  }, [isActive, enableScope, disableScope]);
 
   // Focus input when view opens
   useEffect(() => {
@@ -62,7 +49,7 @@ export function ContentSearchView() {
         const searchResults = searchInContent(files, query, options);
         setResults(searchResults);
         setLoading(false);
-        setFocusedIndex(0);
+        // Note: focusedIndex is automatically reset to 0 by useListKeyboardNavigation when items change
       } else {
         setResults([]);
       }
@@ -83,84 +70,24 @@ export function ContentSearchView() {
     return flat;
   }, [results]);
 
-  const handleClose = () => {
-    setViewMode('ide');
-    setQuery('');
-    setResults([]);
-    setFocusedIndex(0);
-  };
-
-  const handleSelect = () => {
-    const focused = flatResults[focusedIndex];
-    if (!focused) return;
-
-    const result = results[focused.fileIndex];
-    if (focused.type === 'file') {
+  // Keyboard navigation with auto-scroll
+  const { focusedIndex, setFocusedIndex, itemRefs, scrollContainerRef } = useListKeyboardNavigation({
+    items: flatResults,
+    onSelect: (item) => {
+      const result = results[item.fileIndex];
       openFile(result.filePath);
       setViewMode('ide');
-    } else if (focused.type === 'match' && focused.matchIndex !== undefined) {
-      openFile(result.filePath);
+      // TODO: Scroll to line number if match item
+    },
+    onClose: () => {
       setViewMode('ide');
-      // TODO: Scroll to line number
-    }
-  };
-
-  // Keyboard shortcuts (scoped to 'contentSearch')
-  useHotkeys(
-    'escape',
-    (e) => {
-      e.preventDefault();
-      handleClose();
+      setQuery('');
+      setResults([]);
     },
-    {
-      scopes: ['contentSearch'],
-      enabled: isActive,
-      enableOnFormTags: true,
-    },
-    [isActive]
-  );
-
-  useHotkeys(
-    'down',
-    (e) => {
-      e.preventDefault();
-      setFocusedIndex((prev) => Math.min(prev + 1, flatResults.length - 1));
-    },
-    {
-      scopes: ['contentSearch'],
-      enabled: isActive,
-      enableOnFormTags: true,
-    },
-    [isActive, flatResults.length]
-  );
-
-  useHotkeys(
-    'up',
-    (e) => {
-      e.preventDefault();
-      setFocusedIndex((prev) => Math.max(prev - 1, 0));
-    },
-    {
-      scopes: ['contentSearch'],
-      enabled: isActive,
-      enableOnFormTags: true,
-    },
-    [isActive]
-  );
-
-  useHotkeys(
-    'enter',
-    (e) => {
-      e.preventDefault();
-      handleSelect();
-    },
-    {
-      scopes: ['contentSearch'],
-      enabled: isActive,
-      enableOnFormTags: true,
-    },
-    [isActive, focusedIndex, flatResults, results]
-  );
+    scope: 'contentSearch',
+    enabled: isActive,
+    enableOnFormTags: true,
+  });
 
   let currentFlatIndex = 0;
 
@@ -211,7 +138,7 @@ export function ContentSearchView() {
       </div>
 
       {/* Results */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         {results.length === 0 ? (
           <div className="flex items-center justify-center h-full text-text-tertiary text-xs">
             {query ? 'No results found' : 'Type to search...'}
@@ -227,10 +154,11 @@ export function ContentSearchView() {
                   {/* File header */}
                   <button
                     type="button"
-                    onClick={() => {
-                      openFile(result.filePath);
-                      setViewMode('ide');
+                    ref={(el) => {
+                      if (el) itemRefs.current.set(fileItemIndex, el);
+                      else itemRefs.current.delete(fileItemIndex);
                     }}
+                    onClick={() => setFocusedIndex(fileItemIndex)}
                     className={`w-full flex items-center justify-between px-4 py-1.5 text-left hover:bg-bg-elevated transition-colors ${
                       isFileFocused ? 'bg-bg-elevated' : ''
                     }`}
@@ -251,10 +179,11 @@ export function ContentSearchView() {
                         <button
                           key={matchIndex}
                           type="button"
-                          onClick={() => {
-                            openFile(result.filePath);
-                            setViewMode('ide');
+                          ref={(el) => {
+                            if (el) itemRefs.current.set(matchItemIndex, el);
+                            else itemRefs.current.delete(matchItemIndex);
                           }}
+                          onClick={() => setFocusedIndex(matchItemIndex)}
                           className={`w-full px-4 py-1 text-left hover:bg-bg-elevated transition-colors ${
                             isMatchFocused ? 'bg-bg-elevated' : ''
                           }`}
